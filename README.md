@@ -4,7 +4,7 @@ FairyGUI-as3
 A flexible UI framework for Flash AS3, working with the professional Game UI Editor: FairyGUI Editor.
 Download the editor from here: [www.fairygui.org](http://www.fairygui.org)
 
-![](http://www.fairygui.com/wp-content/uploads/2015/09/show11.jpg)  
+![](http://www.fairygui.com/wp-content/uploads/2015/09/show2.jpg)  
 
 #Why FairyGUI
 Game UI production is a game development process in a heavy workload. The work includes the arrangement of resources, the realization of various controls and the preparation of response code, etc..<br/><br/>
