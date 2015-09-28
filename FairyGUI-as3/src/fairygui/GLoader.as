@@ -351,7 +351,7 @@ package fairygui
 		{
 			_content = content;
 			_container.addChild(_content);
-			if(content.loaderInfo)
+			if(content.loaderInfo && content.loaderInfo!=displayObject.loaderInfo)
 			{
 				_contentSourceWidth = content.loaderInfo.width;
 				_contentSourceHeight =  content.loaderInfo.height;
