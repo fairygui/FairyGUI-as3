@@ -1,32 +1,30 @@
-package
+package fairygui
 {
 	import flash.geom.Point;
 	
-	import fairygui.GLoader;
-	import fairygui.GObject;
-	import fairygui.GRoot;
 	import fairygui.event.DragEvent;
+	import fairygui.event.DropEvent;
 	
-	public class DragManager
+	public class DragDropManager
 	{
 		private var _agent:GLoader;
 		private var _sourceData:Object;
 		
-		private static var _inst:DragManager;
-		public static function get inst():DragManager
+		private static var _inst:DragDropManager;
+		public static function get inst():DragDropManager
 		{
 			if(_inst==null)
-				_inst = new DragManager();
+				_inst = new DragDropManager();
 			return _inst;
 		}
 		
-		public function DragManager()
+		public function DragDropManager()
 		{
 			_agent = new GLoader();
 			_agent.draggable = true;
 			_agent.touchable = false;//important
-			_agent.setSize(88,88);
-			_agent.alwaysOnTop = int.MAX_VALUE;
+			_agent.setSize(100,100);
+			_agent.sortingOrder = int.MAX_VALUE;
 			_agent.addEventListener(DragEvent.DRAG_END, __dragEnd);
 		}
 		
@@ -40,7 +38,7 @@ package
 			return _agent.parent!=null;
 		}
 		
-		public function startDrag(source:GObject, icon:String, sourceData:Object):void
+		public function startDrag(source:GObject, icon:String, sourceData:Object, touchPointId:int = -1):void
 		{
 			if(_agent.parent!=null)
 				return;
@@ -50,7 +48,7 @@ package
 			GRoot.inst.addChild(_agent);
 			var pt:Point = source.localToGlobal();
 			_agent.setXY(pt.x, pt.y);
-			_agent.startDrag();
+			_agent.startDrag(null, touchPointId);
 		}
 		
 		public function cancel():void

@@ -10,6 +10,7 @@ package fairygui
 	import flash.events.IOErrorEvent;
 	import flash.geom.ColorTransform;
 	import flash.geom.Point;
+	import flash.geom.Rectangle;
 	import flash.net.URLRequest;
 	
 	import fairygui.display.MovieClip;
@@ -324,10 +325,14 @@ package fairygui
 			}
 			else
 				_container.addChild(_content);
-			fairygui.display.MovieClip(_content).interval = pi.interval;
-			fairygui.display.MovieClip(_content).frames = pi.frames;
+			
 			_contentSourceWidth = pi.width;
 			_contentSourceHeight = pi.height;
+			
+			fairygui.display.MovieClip(_content).interval = pi.interval;
+			fairygui.display.MovieClip(_content).frames = pi.frames;
+			fairygui.display.MovieClip(_content).boundsRect = new Rectangle(0,0,_contentSourceWidth,_contentSourceHeight);
+
 			updateLayout();
 		}
 		

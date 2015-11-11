@@ -5,6 +5,7 @@ package
 	import flash.events.TextEvent;
 	
 	import fairygui.Controller;
+	import fairygui.DragDropManager;
 	import fairygui.GButton;
 	import fairygui.GComponent;
 	import fairygui.GObject;
@@ -14,6 +15,7 @@ package
 	import fairygui.UIPackage;
 	import fairygui.Window;
 	import fairygui.event.DragEvent;
+	import fairygui.event.DropEvent;
 
 	public class MainPanel
 	{
@@ -184,7 +186,7 @@ package
 				//取消对原目标的拖动，换成一个替代品
 				evt.preventDefault();
 				
-				DragManager.inst.startDrag(btn1, btn1.icon, btn1.icon);
+				DragDropManager.inst.startDrag(btn1, btn1.icon, btn1.icon);
 			});
 			
 			var btn2:GButton = obj.getChild("n2").asButton;

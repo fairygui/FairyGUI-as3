@@ -361,6 +361,12 @@ package fairygui
 			}
 		}
 		
+		public function get textWidth():int
+		{
+			this.ensureSizeCorrect();
+			return Math.ceil(_textWidth/GRoot.contentScaleFactor);
+		}
+		
 		override public function ensureSizeCorrect():void
 		{
 			if(_sizeDirty && _requireRender)

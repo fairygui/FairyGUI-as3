@@ -1,0 +1,7 @@
+<component size="32,32">
+  <displayList>
+    <image id="n0" name="n0" src="v5fb7j" xy="3,1">
+      <relation target="" sidePair="center-center,middle-middle"/>
+    </image>
+  </displayList>
+</component>

@@ -1,4 +1,4 @@
-package
+package fairygui.event
 {
 	import flash.events.Event;
 	

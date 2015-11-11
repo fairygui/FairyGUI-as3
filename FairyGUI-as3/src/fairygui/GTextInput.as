@@ -15,6 +15,7 @@ package fairygui
 		public function GTextInput()
 		{
 			super();
+			this.focusable = true;
 			
 			_textField.addEventListener(KeyboardEvent.KEY_DOWN, __textChanged);
 			_textField.addEventListener(Event.CHANGE, __textChanged);

@@ -1032,27 +1032,11 @@ package fairygui
 				time = 0.001;
 			var yVelocity:Number = (_maskContentHolder.y - _y2) / time;
 			var xVelocity:Number = (_maskContentHolder.x - _x2) / time;
-			
-			var minDuration:Number  =  _bouncebackEffect?.3:0;
-			var maxDuration:Number = 0.5;
-			var overShoot:Number =  _bouncebackEffect?1:0;
-			
+			var duration:Number = 0.3;
 			var xMin:Number = -_xOverlap;
 			var yMin:Number = -_yOverlap;
 			var xMax:Number = 0;
-			var yMax:Number = 0;
-			
-			var duration:Number = 0;
-			
-			if(_hScroll)
-				duration = ThrowTween.calculateDuration(_maskContentHolder.x, xMin, xMax, xVelocity, overShoot, duration);
-			if(_vScroll)
-				duration = ThrowTween.calculateDuration(_maskContentHolder.y, yMin, yMax, yVelocity, overShoot, duration);
-			
-			if (duration > maxDuration)
-				duration = maxDuration;
-			else if (duration < minDuration)
-				duration = minDuration;
+			var yMax:Number = 0;	
 			
 			_throwTween.start.x = _maskContentHolder.x;
 			_throwTween.start.y = _maskContentHolder.y;
@@ -1221,7 +1205,6 @@ class ThrowTween
 	public var change1:Point;
 	public var change2:Point;
 	
-	private static var resistance:Number = 300;
 	private static var checkpoint:Number = 0.05;
 	
 	public function ThrowTween()
@@ -1237,45 +1220,9 @@ class ThrowTween
 		obj.y = int(start.y + change1.y * value + change2.y * value * value);
 	}
 	
-	static public function calculateDuration(targetValue:Number, min:Number, max:Number, velocity:Number, 
-		overshootTolerance:Number, duration:Number):Number
-	{
-		var curDuration:Number = (velocity * resistance > 0) ? velocity / resistance : velocity / -resistance;
-		var curClippedDuration:Number = 0;
-		var clippedDuration:Number = 9999999999;
-		
-		var end:Number = targetValue + calculateChange(velocity, curDuration);
-		if (end > max)
-		{
-			curClippedDuration = calculateDuration2(targetValue, max, velocity);
-			if (curClippedDuration + overshootTolerance < clippedDuration)
-				clippedDuration = curClippedDuration + overshootTolerance;
-		}
-		else if (end < min)
-		{
-			curClippedDuration = calculateDuration2(targetValue, min, velocity);
-			if (curClippedDuration + overshootTolerance < clippedDuration)
-				clippedDuration = curClippedDuration + overshootTolerance;
-		}
-		
-		if (curClippedDuration > duration)
-			duration = curClippedDuration;
-		if (curDuration > duration)
-			duration = curDuration;
-		if (duration > clippedDuration)
-			duration = clippedDuration;
-		
-		return duration;
-	}
-	
 	static public function calculateChange(velocity:Number, duration:Number):Number
 	{
 		return (duration * checkpoint * velocity) / easeOutCubic(checkpoint, 0, 1, 1);
-	}
-	
-	static public function calculateDuration2(start:Number, end:Number, velocity:Number):Number
-	{
-		return Math.abs((end - start) * easeOutCubic(checkpoint, 0, 1, 1) / velocity / checkpoint);
 	}
 	
 	static public function easeOutCubic(t:Number, b:Number, c:Number, d:Number):Number

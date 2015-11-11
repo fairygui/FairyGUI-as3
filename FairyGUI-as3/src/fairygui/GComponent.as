@@ -16,7 +16,7 @@ package fairygui
 	{
 		private var _boundsChanged:Boolean;
 		private var _bounds:Rectangle;
-		private var _AOTChildCount:int;
+		private var _sortingChildCount:int;
 		private var _opaque:Boolean;
 		
 		protected var _margin:Margin;
@@ -89,15 +89,15 @@ package fairygui
 					child.parent = this;
 					
 					var cnt:int = _children.length;
-					if(child.alwaysOnTop!=0)
+					if(child.sortingOrder!=0)
 					{
-						_AOTChildCount++;
-						index = getInsertPosForAOTChild(child);
+						_sortingChildCount++;
+						index = getInsertPosForSortingChild(child);
 					}
-					else if(_AOTChildCount>0)
+					else if(_sortingChildCount>0)
 					{
-						if(index > (cnt-_AOTChildCount))
-							index = cnt - _AOTChildCount;
+						if(index > (cnt-_sortingChildCount))
+							index = cnt - _sortingChildCount;
 					}
 					
 					if (index == cnt) 
@@ -117,7 +117,7 @@ package fairygui
 			}
 		}
 
-		private function getInsertPosForAOTChild(target:GObject):int
+		private function getInsertPosForSortingChild(target:GObject):int
 		{
 			var cnt:int = _children.length;
 			var i:int;
@@ -127,7 +127,7 @@ package fairygui
 				if (child == target)
 					continue;
 				
-				if (target.alwaysOnTop < child.alwaysOnTop)
+				if (target.sortingOrder < child.sortingOrder)
 					break;
 			}
 			return i;
@@ -150,8 +150,8 @@ package fairygui
 				var child:GObject = _children[index];				
 				child.parent = null;
 				
-				if(child.alwaysOnTop!=0)
-					_AOTChildCount--;
+				if(child.sortingOrder!=0)
+					_sortingChildCount--;
 				
 				_children.splice(index, 1);
 				if(child.inContainer)
@@ -248,14 +248,14 @@ package fairygui
 			if (oldIndex == -1) 
 				throw new ArgumentError("Not a child of this container");
 			
-			if(child.alwaysOnTop!=0) //no effect
+			if(child.sortingOrder!=0) //no effect
 				return;
 			
 			var cnt:int = _children.length;
-			if(_AOTChildCount>0)
+			if(_sortingChildCount>0)
 			{
-				if (index > (cnt - _AOTChildCount - 1))
-					index = cnt - _AOTChildCount - 1;
+				if (index > (cnt - _sortingChildCount - 1))
+					index = cnt - _sortingChildCount - 1;
 			}
 			
 			_setChildIndex(child, oldIndex, index);
@@ -392,14 +392,14 @@ package fairygui
 			}
 		}
 		
-		public function applyController(c:Controller):void
+		internal function applyController(c:Controller):void
 		{
 			var child:GObject;
 			for each(child in _children)
 				child.handleControllerChanged(c);
 		}
 		
-		public function applyAllControllers():void
+		internal function applyAllControllers():void
 		{
 			var cnt:int = _controllers.length;
 			for (var i:int=0; i<cnt; ++i)
@@ -615,7 +615,7 @@ package fairygui
 				_boundsChanged = false;
 		}
 		
-		public function setBounds(ax:int, ay:int, aw:int, ah:int):void
+		protected function setBounds(ax:int, ay:int, aw:int, ah:int):void
 		{
 			_boundsChanged = false;
 			_bounds.x = ax;
@@ -676,20 +676,20 @@ package fairygui
 			return resultPoint;
 		}
 		
-		internal function notifyChildAOTChanged(child:GObject, oldValue:int, newValue:int):void
+		internal function childSortingOrderChanged(child:GObject, oldValue:int, newValue:int):void
 		{
 			if (newValue == 0)
 			{
-				_AOTChildCount--;
+				_sortingChildCount--;
 				setChildIndex(child, _children.length);
 			}
 			else
 			{
 				if (oldValue == 0)
-					_AOTChildCount++;
+					_sortingChildCount++;
 				
 				var oldIndex:int = _children.indexOf(child);
-				var index:int = getInsertPosForAOTChild(child);
+				var index:int = getInsertPosForSortingChild(child);
 				if (oldIndex < index)
 					_setChildIndex(child, oldIndex, index - 1);
 				else

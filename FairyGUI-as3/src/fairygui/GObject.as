@@ -47,7 +47,7 @@ package fairygui
 		private var _scaleY:Number;
 		private var _pivotOffsetX:Number;
 		private var _pivotOffsetY:Number;
-		private var _alwaysOnTop:int;
+		private var _sortingOrder:int;
 		private var _internalVisible:int;
 		private var _focusable:Boolean;
 		private var _tooltips:String;
@@ -164,7 +164,7 @@ package fairygui
 				if(_gearXY.controller)
 					_gearXY.updateState();
 				
-				if(_parent)
+				if (parent != null && !(parent is GList))
 				{
 					_parent.setBoundsChangedFlag();
 					_dispatcher.dispatch(this, XY_CHANGED);
@@ -531,21 +531,21 @@ package fairygui
 			return _visible && _internalVisible>0 && (!_group || _group.finalVisible);
 		}
 		
-		final public function get alwaysOnTop():int
+		final public function get sortingOrder():int
 		{
-			return _alwaysOnTop;
+			return _sortingOrder;
 		}
 		
-		public function set alwaysOnTop(value:int):void
+		public function set sortingOrder(value:int):void
 		{
 			if(value<0)
 				value = 0;
-			if(_alwaysOnTop!=value)
+			if(_sortingOrder!=value)
 			{
-				var old:int = _alwaysOnTop;
-				_alwaysOnTop = value;
+				var old:int = _sortingOrder;
+				_sortingOrder = value;
 				if(_parent!=null)
-					_parent.notifyChildAOTChanged(this, old, _alwaysOnTop);
+					_parent.childSortingOrderChanged(this, old, _sortingOrder);
 			}
 		}
 		
