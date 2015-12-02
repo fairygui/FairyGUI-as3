@@ -36,7 +36,7 @@ package fairygui
 			var item:GButton = _list.addItemFromPool().asButton;
 			item.title = caption;
 			item.data = callback;
-			item.menuItemGrayed = false;
+			item.grayed = false;
 			var c:Controller = item.getController("checked");
 			if(c!=null)
 				c.selectedIndex = 0;
@@ -49,7 +49,7 @@ package fairygui
 			_list.addChildAt(item, index);
 			item.title = caption;
 			item.data = callback;
-			item.menuItemGrayed = false;
+			item.grayed = false;
 			var c:Controller = item.getController("checked");
 			if(c!=null)
 				c.selectedIndex = 0;
@@ -89,7 +89,7 @@ package fairygui
 		public function setItemGrayed(name:String, grayed:Boolean):void
 		{
 			var item:GButton = _list.getChild(name).asButton;
-			item.menuItemGrayed = grayed;
+			item.grayed = grayed;
 		}
 		
 		public function setItemCheckable(name:String, checkable:Boolean):void
@@ -175,8 +175,11 @@ package fairygui
 			if(item==null)
 				return;
 			
-			if(item.menuItemGrayed)
+			if(item.grayed)
+			{
+				_list.selectedIndex = -1;
 				return;
+			}
 			
 			var c:Controller = item.getController("checked");
 			if(c!=null && c.selectedIndex!=0)

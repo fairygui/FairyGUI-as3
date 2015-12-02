@@ -28,7 +28,7 @@ package fairygui
 		private var _buttonController:Controller;
 		private var _changeStateOnClick:Boolean;
 		private var _linkedPopup:GObject;
-		private var _menuItemGrayed:Boolean;
+		private var _hasDisabledPage:Boolean;
 
 		private var _over:Boolean;
 		
@@ -36,6 +36,8 @@ package fairygui
 		public static const DOWN:String = "down";
 		public static const OVER:String = "over";
 		public static const SELECTED_OVER:String = "selectedOver";
+		public static const DISABLED:String = "disabled";
+		public static const SELECTED_DISABLED:String = "selectedDisabled";
 		
 		public function GButton()
 		{
@@ -159,24 +161,7 @@ package fairygui
 		{
 			_soundVolumeScale = value;
 		}
-		
-		final public function get menuItemGrayed():Boolean
-		{
-			return _menuItemGrayed;
-		}
-		
-		public function set menuItemGrayed(val:Boolean):void
-		{
-			if(_menuItemGrayed!=val)
-			{
-				_menuItemGrayed = val;
-				if(_titleObject)
-					_titleObject.grayed = _menuItemGrayed;
-				if(_iconObject)
-					_iconObject.grayed = _menuItemGrayed;
-			}				
-		}
-		
+
 		public function set selected(val:Boolean):void
 		{
 			if(_mode==ButtonMode.Common)
@@ -185,10 +170,20 @@ package fairygui
 			if(_selected!=val)
 			{
 				_selected = val;
-				if(_selected)
-					setState(_over?SELECTED_OVER:DOWN);
+				if(this.grayed && _buttonController.hasPage(DISABLED))
+				{
+					if(_selected)
+						setState(SELECTED_DISABLED);
+					else
+						setState(DISABLED);
+				}
 				else
-					setState(_over?OVER:UP);
+				{
+					if(_selected)
+						setState(_over?SELECTED_OVER:DOWN);
+					else
+						setState(_over?OVER:UP);
+				}
 				if(_selectedTitle && _titleObject)
 					_titleObject.text = _selected?_selectedTitle:_title;
 				if(_selectedIcon)
@@ -310,6 +305,28 @@ package fairygui
 				this.selected = _pageOption.id==c.selectedPageId;
 		}
 		
+		override protected function handleGrayChanged():void
+		{
+			if(_buttonController.hasPage(DISABLED))
+			{
+				if(this.grayed) {
+					if(_selected)
+						setState(SELECTED_DISABLED);
+					else
+						setState(DISABLED);
+				}
+				else
+				{
+					if(_selected)
+						setState(DOWN);
+					else
+						setState(UP);
+				}
+			}
+			else
+				super.handleGrayChanged();
+		}
+		
 		override protected function constructFromXML(xml:XML):void
 		{
 			super.constructFromXML(xml);
@@ -383,11 +400,14 @@ package fairygui
 		
 		private function __rollover(evt:Event):void
 		{
-			if(_menuItemGrayed)
+			if(!_buttonController.hasPage(OVER))
 				return;
 			
 			_over = true;
 			if(this.isDown)
+				return;
+			
+			if(this.grayed && _buttonController.hasPage(DISABLED))
 				return;
 			
 			setState(_selected?SELECTED_OVER:OVER);
@@ -395,11 +415,14 @@ package fairygui
 		
 		private function __rollout(evt:Event):void
 		{
-			if(_menuItemGrayed)
+			if(!_buttonController.hasPage(OVER))
 				return;
 			
 			_over = false;
 			if(this.isDown)
+				return;
+			
+			if(this.grayed && _buttonController.hasPage(DISABLED))
 				return;
 
 			setState(_selected?DOWN:UP);
@@ -408,7 +431,12 @@ package fairygui
 		private function __mousedown(evt:Event):void
 		{
 			if(_mode==ButtonMode.Common)
-				setState(DOWN);
+			{
+				if(this.grayed && _buttonController.hasPage(DISABLED))
+					setState(SELECTED_DISABLED);
+				else
+					setState(DOWN);
+			}
 			
 			if(_linkedPopup!=null)
 			{
@@ -425,10 +453,15 @@ package fairygui
 		
 		private function __mouseup(evt:Event):void
 		{
-			if (_over)
-				setState(_selected?SELECTED_OVER:OVER);
-			else
-				setState(_selected?DOWN:UP);
+			if(_mode==ButtonMode.Common)
+			{
+				if(this.grayed && _buttonController.hasPage(DISABLED))
+					setState(DISABLED);
+				else if (_over)
+					setState(OVER);
+				else
+					setState(UP);
+			}
 		}
 		
 		private function __click(evt:Event):void
@@ -444,7 +477,7 @@ package fairygui
 				}
 			}
 			
-			if(!_changeStateOnClick || _menuItemGrayed)
+			if(!_changeStateOnClick)
 				return;
 			
 			if(_mode==ButtonMode.Check)

@@ -205,6 +205,11 @@ package fairygui
 				_parent.applyController(this);
 		}
 		
+		public function hasPage(aName:String):Boolean
+		{
+			return _pageNames.indexOf(aName)!=-1;
+		}
+		
 		public function getPageIndexById(aId:String):int
 		{
 			return _pageIds.indexOf(aId);
@@ -212,12 +217,20 @@ package fairygui
 		
 		public function getPageIdByName(aName:String):String
 		{
-			return _pageIds[_pageNames.indexOf(aName)];
+			var i:int = _pageNames.indexOf(aName);
+			if(i!=-1)
+				return _pageIds[i];
+			else
+				return null;
 		}
 		
 		public function getPageNameById(aId:String):String
 		{
-			return _pageNames[_pageIds.indexOf(aId)];
+			var i:int = _pageIds.indexOf(aId);
+			if(i!=-1)
+				return _pageNames[i];
+			else
+				return null;
 		}
 		
 		public function getPageId(index:int):String
