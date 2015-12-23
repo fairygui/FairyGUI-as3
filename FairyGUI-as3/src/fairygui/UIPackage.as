@@ -69,6 +69,7 @@ package fairygui
 			delete _packageInstById[pkg.id];
 			if(pkg._customId!=null)
 				delete _packageInstById[pkg._customId];
+			delete _packageInstByName[pkg.name];
 		}
 		
 		public static function createObject(pkgName:String, resName:String, userClass:Object=null):GObject
