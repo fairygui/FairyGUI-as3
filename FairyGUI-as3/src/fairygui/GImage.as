@@ -170,15 +170,10 @@ package fairygui
 		{
 			super.handleSizeChanged();
 			
-			if(_packageItem.scale9Grid!=null || _packageItem.scaleByTile)
+			if(_packageItem.scale9Grid==null && !_packageItem.scaleByTile)
 			{
-				_content.scaleX = GRoot.contentScaleFactor;
-				_content.scaleY = GRoot.contentScaleFactor;
-			}
-			else
-			{
-				_content.scaleX = this.width/_sourceWidth*this.scaleX*GRoot.contentScaleFactor;
-				_content.scaleY = this.height/_sourceHeight*this.scaleY*GRoot.contentScaleFactor;
+				_content.scaleX = this.width/_sourceWidth*this.scaleX;
+				_content.scaleY = this.height/_sourceHeight*this.scaleY;
 			}
 			updateBitmap();
 		}

@@ -445,8 +445,8 @@ package fairygui
 		
 		protected function updateOpaque():void
 		{
-			var w:Number = this.width*GRoot.contentScaleFactor;
-			var h:Number = this.height*GRoot.contentScaleFactor;
+			var w:Number = this.width;
+			var h:Number = this.height;
 			if(w==0)
 				w = 1;
 			if(h==0)
@@ -462,10 +462,10 @@ package fairygui
 		
 		protected function updateMask():void
 		{
-			var left:Number = _margin.left * GRoot.contentScaleFactor;
-			var top:Number = _margin.top * GRoot.contentScaleFactor;
-			var w:Number = (this.width - (_margin.left + _margin.right)) * GRoot.contentScaleFactor;
-			var h:Number = (this.height - (_margin.top + _margin.bottom)) * GRoot.contentScaleFactor;
+			var left:Number = _margin.left;
+			var top:Number = _margin.top;
+			var w:Number = this.width - (_margin.left + _margin.right);
+			var h:Number = this.height - (_margin.top + _margin.bottom);
 			if(w<=0)
 				w = 1;
 			if(h<=0)
@@ -495,8 +495,8 @@ package fairygui
 				updateMask();
 				
 				_container.mask = _mask;
-				_container.x = _margin.left*GRoot.contentScaleFactor;
-				_container.y = _margin.top*GRoot.contentScaleFactor;
+				_container.x = _margin.left;
+				_container.y = _margin.top;
 			}
 			else if(overflow==OverflowType.Scroll)
 			{
@@ -508,8 +508,8 @@ package fairygui
 			{
 				_container = new Sprite();
 				_rootContainer.addChild(_container);
-				_container.x = _margin.left*GRoot.contentScaleFactor;
-				_container.y = _margin.top*GRoot.contentScaleFactor;
+				_container.x = _margin.left;
+				_container.y = _margin.top;
 			}
 			
 			setBoundsChangedFlag();

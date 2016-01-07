@@ -91,8 +91,8 @@ package fairygui
 		{
 			if(_content)
 			{
-				_container.scaleX = this.width/_sourceWidth*this.scaleX*GRoot.contentScaleFactor;
-				_container.scaleY = this.height/_sourceHeight*this.scaleY*GRoot.contentScaleFactor;
+				_container.scaleX = this.width/_sourceWidth*this.scaleX;
+				_container.scaleY = this.height/_sourceHeight*this.scaleY;
 			}
 		}
 

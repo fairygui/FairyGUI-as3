@@ -46,7 +46,7 @@ package fairygui
 			_sourceData = sourceData;
 			_agent.url = icon;
 			GRoot.inst.addChild(_agent);
-			var pt:Point = source.localToGlobal();
+			var pt:Point = source.localToRoot();
 			_agent.setXY(pt.x, pt.y);
 			_agent.startDrag(null, touchPointId);
 		}

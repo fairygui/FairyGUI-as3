@@ -65,8 +65,6 @@ package fairygui
 		override protected function createDisplayObject():void
 		{
 			_container = new UISprite(this);
-			_container.scaleX = GRoot.contentScaleFactor;
-			_container.scaleY = GRoot.contentScaleFactor;
 			setDisplayObject(_container);
 		}
 		
@@ -517,8 +515,8 @@ package fairygui
 			if(!_updatingLayout)
 				updateLayout();
 			
-			_container.scaleX = this.scaleX * GRoot.contentScaleFactor;
-			_container.scaleY = this.scaleY * GRoot.contentScaleFactor;
+			_container.scaleX = this.scaleX;
+			_container.scaleY = this.scaleY;
 		}
 		
 		private function resizeImage():void

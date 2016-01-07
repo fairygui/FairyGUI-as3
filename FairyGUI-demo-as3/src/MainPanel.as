@@ -102,20 +102,25 @@ package
 		private function playButton():void
 		{
 			var obj:GComponent = _demoObjects["Button"];
-			obj.getChild("n34").addClickListener(function():void {
-				trace("click button");
-			});
+			obj.getChild("n34").addClickListener(__clickButton);
+		}
+		
+		private function __clickButton(evt:Event):void
+		{
+			trace("click button");
 		}
 		
 		//------------------------------
 		private function playText():void
 		{
 			var obj:GComponent = _demoObjects["Text"];
-			obj.getChild("n12").asRichTextField.addEventListener(TextEvent.LINK, function(evt:TextEvent):void
-			{
-				var obj:GRichTextField = evt.currentTarget as GRichTextField;
-				obj.text = "[img]ui://9leh0eyft9fj5f[/img][color=#FF0000]你点击了链接[/color]：" + evt.text;
-			});
+			obj.getChild("n12").asRichTextField.addEventListener(TextEvent.LINK, __clickLink);
+		}
+		
+		private function __clickLink(evt:TextEvent):void
+		{
+			var obj:GRichTextField = evt.currentTarget as GRichTextField;
+			obj.text = "[img]ui://9leh0eyft9fj5f[/img][color=#FF0000]你点击了链接[/color]：" + evt.text;
 		}
 		
 		//------------------------------
@@ -125,10 +130,14 @@ package
 			obj.getChild("n2").asCom.getTransition("t0").play(null, null, int.MAX_VALUE);
 			obj.getChild("n3").asCom.getTransition("peng").play(null, null, int.MAX_VALUE);
 			
-			obj.addEventListener(Event.REMOVED_FROM_STAGE, function():void {
-				obj.getChild("n2").asCom.getTransition("t0").stop();
-				obj.getChild("n3").asCom.getTransition("peng").stop();
-			});
+			obj.addEventListener(Event.REMOVED_FROM_STAGE, __removeFromStage);
+		}
+		
+		private function __removeFromStage(evt:Event):void
+		{
+			var obj:GComponent = _demoObjects["Transition"];
+			obj.getChild("n2").asCom.getTransition("t0").stop();
+			obj.getChild("n3").asCom.getTransition("peng").stop();
 		}
 		
 		//------------------------------
@@ -137,17 +146,22 @@ package
 		private function playWindow():void
 		{
 			var obj:GComponent = _demoObjects["Window"];
-			obj.getChild("n0").addClickListener(function():void {
-				if(_winA==null)
-					_winA = new WindowA();
-				_winA.show();
-			});
-			
-			obj.getChild("n1").addClickListener(function():void {
-				if(_winB==null)
-					_winB = new WindowB();
-				_winB.show();
-			});
+			obj.getChild("n0").addClickListener(__showWinA);			
+			obj.getChild("n1").addClickListener(__showWinB);
+		}
+		
+		private function __showWinA(evt:Event):void
+		{
+			if(_winA==null)
+				_winA = new WindowA();
+			_winA.show();
+		}
+		
+		private function __showWinB(evt:Event):void
+		{
+			if(_winB==null)
+				_winB = new WindowB();
+			_winB.show();
 		}
 		
 		//------------------------------
@@ -165,13 +179,18 @@ package
 			
 			var obj:GComponent = _demoObjects["PopupMenu"];
 			var btn:GObject = obj.getChild("n0");
-			btn.addClickListener(function():void {
-				_pm.show(btn, true);
-			});
-			
-			obj.addEventListener(MouseEvent.RIGHT_CLICK, function():void {
-				_pm.show();
-			});
+			btn.addClickListener(__clickMenuBtn);
+			obj.addEventListener(MouseEvent.RIGHT_CLICK, __rightClick);
+		}
+		
+		private function __clickMenuBtn(evt:Event):void
+		{
+			_pm.show(GObject(evt.currentTarget), true);
+		}
+		
+		private function __rightClick(evt:MouseEvent):void
+		{
+			_pm.show();
 		}
 		
 		//------------------------------
@@ -182,18 +201,25 @@ package
 			
 			var btn1:GButton = obj.getChild("n1").asButton;
 			btn1.draggable = true;
-			btn1.addEventListener(DragEvent.DRAG_START, function(evt:DragEvent):void {
-				//取消对原目标的拖动，换成一个替代品
-				evt.preventDefault();
-				
-				DragDropManager.inst.startDrag(btn1, btn1.icon, btn1.icon);
-			});
+			btn1.addEventListener(DragEvent.DRAG_START,__dragStart);
 			
 			var btn2:GButton = obj.getChild("n2").asButton;
 			btn2.icon = null;
-			btn2.addEventListener(DropEvent.DROP, function(evt:DropEvent):void {
-				btn2.icon = String(evt.source);
-			});
+			btn2.addEventListener(DropEvent.DROP,__drop);
+		}
+		
+		private function __dragStart(evt:DragEvent):void
+		{
+			//取消对原目标的拖动，换成一个替代品
+			evt.preventDefault();
+			
+			var btn:GButton = GButton(evt.currentTarget);
+			DragDropManager.inst.startDrag(btn, btn.icon, btn.icon, evt.touchPointID);
+		}
+		
+		private function __drop(evt:DropEvent):void
+		{
+			GButton(evt.currentTarget).icon = String(evt.source);
 		}
 		
 	}

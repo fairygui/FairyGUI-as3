@@ -174,10 +174,10 @@ package fairygui
 			_margin.bottom = margin.bottom;
 			
 			if(_displayOnLeft && _vtScrollBar)
-				_maskHolder.x = int((_margin.left + _vtScrollBar.width)*GRoot.contentScaleFactor);
+				_maskHolder.x = int(_margin.left + _vtScrollBar.width);
 			else
-				_maskHolder.x = int(_margin.left*GRoot.contentScaleFactor);
-			_maskHolder.y = int(_margin.top*GRoot.contentScaleFactor);
+				_maskHolder.x = _margin.left;
+			_maskHolder.y = _margin.top;
 			
 			_contentWidth = 0;
 			_contentHeight = 0;
@@ -620,11 +620,11 @@ package fairygui
 			g.clear();
 			g.lineStyle(0,0,0);
 			g.beginFill(0, 0);
-			g.drawRect(0,0, _maskWidth*GRoot.contentScaleFactor, _maskHeight*GRoot.contentScaleFactor);
+			g.drawRect(0,0, _maskWidth, _maskHeight);
 			g.endFill();			
 
-			_xOverlap = Math.ceil(Math.max(0, _contentWidth - _maskWidth)*GRoot.contentScaleFactor);
-			_yOverlap = Math.ceil(Math.max(0, _contentHeight - _maskHeight)*GRoot.contentScaleFactor);
+			_xOverlap = Math.ceil(Math.max(0, _contentWidth - _maskWidth));
+			_yOverlap = Math.ceil(Math.max(0, _contentHeight - _maskHeight));
 			
 			switch(_scrollType)
 			{
@@ -724,8 +724,8 @@ package fairygui
 					contentYLoc = _yPerc * (_contentHeight - _maskHeight);
 				}
 			}
-			contentXLoc = int(contentXLoc*GRoot.contentScaleFactor);
-			contentYLoc = int(contentYLoc*GRoot.contentScaleFactor);
+			contentXLoc = int(contentXLoc);
+			contentYLoc = int(contentYLoc);
 			
 			if(_aniFlag)
 			{
@@ -806,7 +806,7 @@ package fairygui
 				return 0;
 			
 			var diff:Number = _contentHeight - _maskHeight;
-			var my:Number = _maskContentHolder.y/GRoot.contentScaleFactor;
+			var my:Number = _maskContentHolder.y;
 			var currY: Number;
 			if (my > 0) 
 				currY = 0;
@@ -824,7 +824,7 @@ package fairygui
 				return 0;
 			
 			var diff:Number = _contentWidth - _maskWidth;
-			var mx:Number = _maskContentHolder.x/GRoot.contentScaleFactor;
+			var mx:Number = _maskContentHolder.x;
 			var currX: Number;
 			if (mx > 0)
 				currX = 0;
@@ -1068,9 +1068,9 @@ package fairygui
 			{
 				endX = -endX;
 				endY = -endY;
-				var pt:Point = _owner.findObjectNear(endX/GRoot.contentScaleFactor, endY/GRoot.contentScaleFactor, sHelperPoint);
-				endX = -pt.x*GRoot.contentScaleFactor;
-				endY = -pt.y*GRoot.contentScaleFactor;
+				var pt:Point = _owner.findObjectNear(endX, endY, sHelperPoint);
+				endX = -pt.x;
+				endY = -pt.y;
 				change1.x = endX - _maskContentHolder.x;
 				change1.y = endY - _maskContentHolder.y;
 			}

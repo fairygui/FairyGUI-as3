@@ -79,26 +79,24 @@ package fairygui
 			
 			_graphics.clear();
 			
-			var w:int = Math.ceil(this.width*this.scaleX*GRoot.contentScaleFactor);
-			var h:int = Math.ceil(this.height*this.scaleY*GRoot.contentScaleFactor);
+			var w:int = Math.ceil(this.width*this.scaleX);
+			var h:int = Math.ceil(this.height*this.scaleY);
 			if(w==0 || h==0)
 				return;
 			
-			var lineSize:int = Math.ceil(Math.min(_lineSize*GRoot.contentScaleFactor, _lineSize*GRoot.contentScaleFactor));
-
-			if(lineSize==0)
+			if(_lineSize==0)
 				_graphics.lineStyle(0,0,0,true,LineScaleMode.NONE);
 			else
-				_graphics.lineStyle(lineSize, _lineColor, _lineAlpha, true, LineScaleMode.NONE);
+				_graphics.lineStyle(_lineSize, _lineColor, _lineAlpha, true, LineScaleMode.NONE);
 			
 			//flash 画线的方法有点特殊，这里的处理保证了当lineSize是1时，图形的大小是正确的。
 			//如果lineSize大于1，则无法保证，线条会在元件区域外显示
 			if(_lineSize==1) 
 			{
 				if(w>0)
-					w-=lineSize;
+					w-=_lineSize;
 				if(h>0)
-					h-=lineSize;
+					h-=_lineSize;
 			}
 			_graphics.beginFill(_fillColor, _fillAlpha);
 			if(_type==1)

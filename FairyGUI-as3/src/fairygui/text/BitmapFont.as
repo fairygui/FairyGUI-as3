@@ -7,8 +7,6 @@ package fairygui.text
 	import flash.geom.Point;
 	import flash.geom.Rectangle;
 	
-	import fairygui.GRoot;
-	
 	public class BitmapFont
 	{
 		public var id:String;
@@ -47,7 +45,7 @@ package fairygui.text
 		
 		public function draw(target:BitmapData, glyph:BMGlyph, charPos:Point, color:uint):void
 		{
-			charPos.x += Math.ceil(glyph.offsetX*GRoot.contentScaleFactor);
+			charPos.x += glyph.offsetX;
 			
 			if(ttf)
 			{
@@ -71,12 +69,11 @@ package fairygui.text
 						sHelperBmd.colorTransform(sHelperRect, sTransform);
 						
 						sHelperMat.identity();
-						sHelperMat.scale(GRoot.contentScaleFactor, GRoot.contentScaleFactor);
 						sHelperMat.translate(charPos.x, charPos.y);
 						sHelperRect.x = charPos.x;
 						sHelperRect.y = charPos.y;
-						sHelperRect.width = int(glyph.width*GRoot.contentScaleFactor);
-						sHelperRect.height = int(glyph.height*GRoot.contentScaleFactor);
+						sHelperRect.width = glyph.width;
+						sHelperRect.height = glyph.height;
 						target.draw(sHelperBmd, sHelperMat, null, null, sHelperRect, true);
 					}
 					else
@@ -94,12 +91,11 @@ package fairygui.text
 						sHelperBmd.copyChannel(atlas, sHelperRect, sHelperPoint, glyph.channel, BitmapDataChannel.ALPHA);
 						
 						sHelperMat.identity();
-						sHelperMat.scale(GRoot.contentScaleFactor, GRoot.contentScaleFactor);
 						sHelperMat.translate(charPos.x, charPos.y);
 						sHelperRect.x = charPos.x;
 						sHelperRect.y = charPos.y;
-						sHelperRect.width = int(glyph.width*GRoot.contentScaleFactor);
-						sHelperRect.height = int(glyph.height*GRoot.contentScaleFactor);
+						sHelperRect.width = glyph.width;
+						sHelperRect.height = glyph.height;
 						target.draw(sHelperBmd, sHelperMat, null, null, sHelperRect, true);
 					}
 				}
@@ -110,7 +106,6 @@ package fairygui.text
 				if(bmd!=null)
 				{
 					sHelperMat.identity();
-					sHelperMat.scale(GRoot.contentScaleFactor, GRoot.contentScaleFactor);
 					sHelperMat.translate(charPos.x, charPos.y);
 					target.draw(bmd, sHelperMat, null, null, null, true);
 				}

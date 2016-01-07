@@ -364,7 +364,7 @@ package fairygui
 		public function get textWidth():int
 		{
 			this.ensureSizeCorrect();
-			return Math.ceil(_textWidth/GRoot.contentScaleFactor);
+			return _textWidth;
 		}
 		
 		override public function ensureSizeCorrect():void
@@ -388,11 +388,7 @@ package fairygui
 		
 		protected function updateTextFormat():void
 		{
-			if(GRoot.contentScaleFactor==1)
-				_textFormat.size = _fontSize;
-			else
-				_textFormat.size = int(_fontSize*GRoot.contentScaleFactor)-1;
-			
+			_textFormat.size = _fontSize;
 			if(ToolSet.startsWith(_font, "ui://"))
 			{
 				_bitmapFont = UIPackage.getBitmapFontByURL(_font);
@@ -422,10 +418,10 @@ package fairygui
 			else
 				_textFormat.color = _color;
 			_textFormat.align = AlignType.toString(_align);
-			_textFormat.leading = int((_leading-_fontAdjustment)*GRoot.contentScaleFactor);
+			_textFormat.leading = _leading-_fontAdjustment;
 			if(_textFormat.leading<0)
 				_textFormat.leading = 0;
-			_textFormat.letterSpacing = int(_letterSpacing*GRoot.contentScaleFactor);
+			_textFormat.letterSpacing = _letterSpacing;
 			_textFormat.bold = _bold;
 			_textFormat.underline = _underline;
 			_textFormat.italic = _italic;
@@ -475,8 +471,8 @@ package fairygui
 				renderTextField.autoSize = TextFieldAutoSize.NONE;
 				renderTextField.wordWrap = !_singleLine;
 			}
-			renderTextField.width = Math.ceil(this.width*GRoot.contentScaleFactor);
-			renderTextField.height = Math.max(Math.ceil(this.height*GRoot.contentScaleFactor), int(_textFormat.size));
+			renderTextField.width = this.width;
+			renderTextField.height = Math.max(this.height, int(_textFormat.size));
 			renderTextField.multiline = !_singleLine;
 			renderTextField.antiAliasType = AntiAliasType.ADVANCED;
 			renderTextField.filters = _textFilters;
@@ -502,24 +498,24 @@ package fairygui
 			
 			var w:int, h:int;
 			if(_widthAutoSize)
-				w = _textWidth/GRoot.contentScaleFactor;
+				w = _textWidth;
 			else
 				w = this.width;
 
 			if(_heightAutoSize)
 			{
-				h = _textHeight/GRoot.contentScaleFactor;
+				h = _textHeight;
 				if(!_widthAutoSize)
 					renderTextField.height = _textHeight + _fontAdjustment+3;
 			}
 			else
 			{
 				h = this.height;
-				var h2:int = Math.ceil(h*GRoot.contentScaleFactor);
+				var h2:int = h;
 				if(h2>0 && h2<_minHeight)
 				{
 					h2 = _minHeight;
-					h = h2/GRoot.contentScaleFactor;
+					h = h2;
 				}
 				if(_textHeight>h2)
 					_textHeight = h2;
@@ -573,9 +569,9 @@ package fairygui
 			else
 				LineInfo.returnList(_lines);
 			
-			var letterSpacing:int = _letterSpacing * GRoot.contentScaleFactor;
-			var lineSpacing:int = _leading * GRoot.contentScaleFactor - 1;
-			var rectWidth:int = (this.width - GUTTER_X * 2)*GRoot.contentScaleFactor;
+			var letterSpacing:int = _letterSpacing;
+			var lineSpacing:int = _leading - 1;
+			var rectWidth:int = this.width - GUTTER_X * 2;
 			var lineWidth:int = 0, lineHeight:int = 0, lineTextHeight:int = 0;
 			var glyphWidth:int = 0, glyphHeight:int = 0;
 			var wordChars:int = 0, wordStart:int = 0, wordEnd:int = 0;
@@ -648,13 +644,13 @@ package fairygui
 					var glyph:BMGlyph = _bitmapFont.getGlyph(ch);				
 					if(glyph)
 					{
-						glyphWidth = Math.ceil(glyph.advance*GRoot.contentScaleFactor);
-						glyphHeight = Math.ceil(glyph.lineHeight*GRoot.contentScaleFactor);
+						glyphWidth = glyph.advance;
+						glyphHeight = glyph.lineHeight;
 					}
 					else if(ch==" ")
 					{
-						glyphWidth = Math.ceil(_bitmapFont.lineHeight*GRoot.contentScaleFactor/2);
-						glyphHeight = Math.ceil(_bitmapFont.lineHeight*GRoot.contentScaleFactor);
+						glyphWidth = Math.ceil(_bitmapFont.lineHeight/2);
+						glyphHeight = _bitmapFont.lineHeight;
 					}
 					else
 					{
@@ -757,7 +753,7 @@ package fairygui
 					w = textWidth;
 			}
 			else
-				w = this.width*GRoot.contentScaleFactor;
+				w = this.width;
 			
 			if(_heightAutoSize)
 			{
@@ -767,12 +763,12 @@ package fairygui
 					h = textHeight;
 			}
 			else
-				h = this.height*GRoot.contentScaleFactor;
+				h = this.height;
 			
 			if(updateBounds)
 			{
 				_updatingSize = true;
-				this.setSize(w/GRoot.contentScaleFactor,h/GRoot.contentScaleFactor);
+				this.setSize(w,h);
 				_updatingSize = false;
 				
 				doAlign();
@@ -816,11 +812,11 @@ package fairygui
 						sHelperPoint.y = line.y + charIndent;
 						_bitmapFont.draw(_bitmapData, glyph, sHelperPoint, _color);
 						
-						charX += letterSpacing + Math.ceil(glyph.advance*GRoot.contentScaleFactor);
+						charX += letterSpacing + glyph.advance;
 					}
 					else if(ch==" ")
 					{
-						charX += letterSpacing + Math.ceil(_bitmapFont.lineHeight*GRoot.contentScaleFactor/2);
+						charX += letterSpacing + Math.ceil(_bitmapFont.lineHeight/2);
 					}
 					else
 					{
@@ -832,8 +828,8 @@ package fairygui
 		
 		override protected function handleXYChanged():void
 		{
-			displayObject.x = this.x*GRoot.contentScaleFactor;
-			displayObject.y = this.y*GRoot.contentScaleFactor+_yOffset;
+			displayObject.x = this.x;
+			displayObject.y = this.y+_yOffset;
 		}
 		
 		override protected function handleSizeChanged():void
@@ -859,7 +855,7 @@ package fairygui
 				_yOffset = -_fontAdjustment;
 			else
 			{
-				var dh:Number = this.height*GRoot.contentScaleFactor-_textHeight;
+				var dh:Number = this.height-_textHeight;
 				if(dh<0)
 					dh = 0;
 				if(_verticalAlign==VertAlignType.Middle)
@@ -867,7 +863,7 @@ package fairygui
 				else
 					_yOffset = int(dh)-_fontAdjustment;
 			}
-			displayObject.y = this.y*GRoot.contentScaleFactor+_yOffset;
+			displayObject.y = this.y+_yOffset;
 		}
 		
 		override public function setup_beforeAdd(xml:XML):void

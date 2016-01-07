@@ -100,15 +100,17 @@ package fairygui
 			
 			evt.stopPropagation();
 			
-			_dragOffset.x = evt.stageX/GRoot.contentScaleFactor-_grip.x;
-			_dragOffset.y = evt.stageY/GRoot.contentScaleFactor-_grip.y;
+			_dragOffset = this.globalToLocal(evt.stageX, evt.stageY);
+			_dragOffset.x -= _grip.x;
+			_dragOffset.y -= _grip.y;
 		}
 		
 		private function __gripDragging(evt:GTouchEvent):void
 		{
+			var pt:Point = this.globalToLocal(evt.stageX, evt.stageY);
 			if(_vertical)
 			{
-				var curY:Number = evt.stageY/GRoot.contentScaleFactor-_dragOffset.y;
+				var curY:Number = pt.y-_dragOffset.y;
 				var diff:Number = _bar.height-_grip.height;
 				if(diff==0)
 					_target.setPercY(0, false);
@@ -117,7 +119,7 @@ package fairygui
 			}
 			else
 			{
-				var curX:Number = evt.stageX/GRoot.contentScaleFactor-_dragOffset.x;
+				var curX:Number = pt.x-_dragOffset.x;
 				diff = _bar.width-_grip.width;
 				if(diff==0)
 					_target.setPercX(0, false);
@@ -146,18 +148,19 @@ package fairygui
 				_target.scrollRight();
 		}
 		
-		private function __barMouseDown(evt:Event):void
+		private function __barMouseDown(evt:GTouchEvent):void
 		{
+			var pt:Point = _grip.globalToLocal(evt.stageX, evt.stageY);
 			if(_vertical)
 			{
-				if(_grip.displayObject.mouseY<0)
+				if(pt.y<0)
 					_target.scrollUp(4);
 				else
 					_target.scrollDown(4);
 			}
 			else
 			{
-				if(_grip.displayObject.mouseX<0)
+				if(pt.x<0)
 					_target.scrollLeft(4);
 				else
 					_target.scrollRight(4);

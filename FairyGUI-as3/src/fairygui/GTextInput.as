@@ -72,14 +72,14 @@ package fairygui
 		{
 			super.updateTextFormat();
 			
-			_textField.width = this.width*GRoot.contentScaleFactor;
-			_textField.height = (this.height+_fontAdjustment)*GRoot.contentScaleFactor;
+			_textField.width = this.width;
+			_textField.height = this.height+_fontAdjustment;
 			_textField.defaultTextFormat = _textFormat;
 			_textField.displayAsPassword = this.displayAsPassword;
 			_textField.wordWrap = !_singleLine;
 			_textField.multiline = !_singleLine;
 			_yOffset = -_fontAdjustment;
-			_textField.y = this.y*GRoot.contentScaleFactor+_yOffset;
+			_textField.y = this.y+_yOffset;
 		}
 		
 		override protected function render():void
@@ -95,8 +95,8 @@ package fairygui
 		
 		override protected function handleSizeChanged():void
 		{
-			_textField.width = this.width*GRoot.contentScaleFactor;
-			_textField.height = this.height*GRoot.contentScaleFactor+_fontAdjustment;
+			_textField.width = this.width;
+			_textField.height = this.height+_fontAdjustment;
 		}
 		
 		private function __textChanged(evt:Event):void

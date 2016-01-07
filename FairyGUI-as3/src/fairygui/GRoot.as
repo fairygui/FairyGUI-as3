@@ -96,6 +96,8 @@ package fairygui
 			else
 				contentScaleFactor = 1;
 			this.setSize(Math.round(w/contentScaleFactor),Math.round(h/contentScaleFactor));
+			this.scaleX = contentScaleFactor;
+			this.scaleY = contentScaleFactor;
 		}
 		
 		public function enableFocusManagement():void
@@ -261,13 +263,13 @@ package fairygui
 			var sizeW:int, sizeH:int;
 			if(target)
 			{
-				pos = target.localToGlobal();
+				pos = target.localToRoot();
 				sizeW = target.width;
 				sizeH = target.height;
 			}
 			else
 			{
-				pos = new Point(nativeStage.mouseX/contentScaleFactor, nativeStage.mouseY/contentScaleFactor);
+				pos = this.globalToLocal(nativeStage.mouseX, nativeStage.mouseY);
 			}
 			var xx:Number, yy:Number;
 			xx = pos.x;
@@ -359,15 +361,18 @@ package fairygui
 			var yy:int;
 			if(position==null)
 			{
-				xx = (_nativeStage.mouseX+10)/contentScaleFactor;
-				yy = (_nativeStage.mouseY+20)/contentScaleFactor;
+				xx = _nativeStage.mouseX+10;
+				yy = _nativeStage.mouseY+20;
 			}
 			else
 			{
 				xx = position.x;
 				yy = position.y;
 			}
-
+			var pt:Point = this.globalToLocal(xx, yy);
+			xx = pt.x;
+			yy = pt.y;
+			
 			if(xx+_tooltipWin.width>this.width)
 			{
 				xx = xx - _tooltipWin.width - 1;

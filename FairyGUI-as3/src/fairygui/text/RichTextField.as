@@ -11,7 +11,6 @@ package fairygui.text
 	import flash.text.TextFormat;
 	import flash.text.TextLineMetrics;
 	
-	import fairygui.GRoot;
 	import fairygui.PackageItem;
 	import fairygui.UIPackage;
 	import fairygui.utils.CharSize;
@@ -364,13 +363,13 @@ package fairygui.text
 						}
 					}
 					if(e.width==0)
-						e.realWidth = imageWidth*GRoot.contentScaleFactor;
+						e.realWidth = imageWidth;
 					else
-						e.realWidth = e.width*GRoot.contentScaleFactor;
+						e.realWidth = e.width;
 					if(e.height==0)
-						e.realHeight = imageHeight*GRoot.contentScaleFactor;
+						e.realHeight = imageHeight;
 					else
-						e.realHeight = e.height*GRoot.contentScaleFactor;
+						e.realHeight = e.height;
 					e.realWidth += 4;
 					e.textformat.font = PLACEHOLDER_FONT;
 					e.textformat.size = e.realHeight + 2;
