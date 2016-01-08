@@ -915,7 +915,7 @@ package fairygui
 			_dragBounds = value;
 		}
 		
-		public function startDrag(bounds:Rectangle=null, touchPointID:int=-1):void
+		public function startDrag(touchPointID:int=-1):void
 		{
 			if (_displayObject.stage==null)
 				return;

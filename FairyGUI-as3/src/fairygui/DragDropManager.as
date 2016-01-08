@@ -48,7 +48,7 @@ package fairygui
 			GRoot.inst.addChild(_agent);
 			var pt:Point = source.localToRoot();
 			_agent.setXY(pt.x, pt.y);
-			_agent.startDrag(null, touchPointId);
+			_agent.startDrag(touchPointId);
 		}
 		
 		public function cancel():void
