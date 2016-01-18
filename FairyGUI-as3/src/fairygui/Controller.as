@@ -16,6 +16,7 @@ package fairygui
 		private var _playingTransition:Transition;
 		
 		internal var _parent:GComponent;
+		internal var _autoRadioGroupDepth:Boolean;
 		
 		private static var _nextPageId:uint;
 		
@@ -272,6 +273,8 @@ package fairygui
 		public function setup(xml:XML):void
 		{
 			_name = xml.@name;
+			_autoRadioGroupDepth = xml.@autoRadioGroupDepth=="true";
+			
 			var i:int;
 			var k:int;
 			var str:String = xml.@pages;

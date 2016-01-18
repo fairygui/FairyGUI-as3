@@ -408,6 +408,30 @@ package fairygui
 			}
 		}
 		
+		internal function adjustRadioGroupDepth(obj:GObject, c:Controller):void
+		{
+			var cnt:int = _children.length;
+			var i:int;
+			var child:GObject;
+			var myIndex:int = -1, maxIndex:int = -1;
+			for(i=0;i<cnt;i++)
+			{
+				child = _children[i];
+				if(child==obj)
+				{
+					myIndex = i;
+				}
+				else if((child is GButton) 
+					&& GButton(child).relatedController==c)
+				{
+					if(i>maxIndex)
+						maxIndex = i;
+				}
+			}
+			if(myIndex<maxIndex)
+				this.swapChildrenAt(myIndex, maxIndex);
+		}
+		
 		public function getTransition(transName:String):Transition
 		{
 			var cnt:int = _transitions.length;

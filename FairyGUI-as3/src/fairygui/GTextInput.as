@@ -1,16 +1,19 @@
 package fairygui
 {
 	import flash.events.Event;
+	import flash.events.FocusEvent;
 	import flash.events.KeyboardEvent;
 	import flash.text.TextField;
 	import flash.text.TextFieldType;
 	
 	import fairygui.display.UITextField;
+	import fairygui.utils.ToolSet;
 
 	public class GTextInput extends GTextField
 	{
 		protected var _textField:TextField;
 		private var _changed:Boolean;
+		private var _promptText:String;
 		
 		public function GTextInput()
 		{
@@ -19,8 +22,10 @@ package fairygui
 			
 			_textField.addEventListener(KeyboardEvent.KEY_DOWN, __textChanged);
 			_textField.addEventListener(Event.CHANGE, __textChanged);
+			_textField.addEventListener(FocusEvent.FOCUS_IN, __focusIn);
+			_textField.addEventListener(FocusEvent.FOCUS_OUT, __focusOut);
 		}
-		
+
 		public function set maxLength(val:int):void
 		{
 			_textField.maxChars = val;
@@ -50,6 +55,17 @@ package fairygui
 			return _textField.type == TextFieldType.INPUT;
 		}
 		
+		public function get promptText():String
+		{
+			return _promptText;
+		}
+		
+		public function set promptText(value:String):void
+		{
+			_promptText = value;
+			renderNow();
+		}
+		
 		override protected function createDisplayObject():void
 		{ 
 			_textField = new UITextField(this);
@@ -75,7 +91,6 @@ package fairygui
 			_textField.width = this.width;
 			_textField.height = this.height+_fontAdjustment;
 			_textField.defaultTextFormat = _textFormat;
-			_textField.displayAsPassword = this.displayAsPassword;
 			_textField.wordWrap = !_singleLine;
 			_textField.multiline = !_singleLine;
 			_yOffset = -_fontAdjustment;
@@ -89,7 +104,16 @@ package fairygui
 		
 		override protected function renderNow(updateBounds:Boolean=true):void
 		{
-			_textField.text = _text;
+			if(!_text && _promptText)
+			{
+				_textField.displayAsPassword = false;
+				_textField.htmlText = ToolSet.parseUBB(ToolSet.encodeHTML(_promptText));
+			}
+			else
+			{
+				_textField.displayAsPassword = _displayAsPassword;
+				_textField.text = _text;
+			}
 			_changed = false;
 		}
 		
@@ -99,9 +123,46 @@ package fairygui
 			_textField.height = this.height+_fontAdjustment;
 		}
 		
+		override public function setup_beforeAdd(xml:XML):void
+		{
+			super.setup_beforeAdd(xml);
+			
+			_promptText = xml.@prompt;
+		}
+		
+		override public function setup_afterAdd(xml:XML):void
+		{
+			super.setup_afterAdd(xml);
+			
+			if(!_text && _promptText)
+			{
+				_textField.displayAsPassword = false;
+				_textField.htmlText = ToolSet.parseUBB(ToolSet.encodeHTML(_promptText));
+			}
+		}
+		
 		private function __textChanged(evt:Event):void
 		{
 			_changed = true;
+		}
+		
+		private function __focusIn(evt:Event):void
+		{
+			if(!_text && _promptText)
+			{
+				_textField.displayAsPassword = _displayAsPassword;
+				_textField.text = "";
+			}
+		}
+		
+		private function __focusOut(evt:Event):void
+		{
+			_text = _textField.text;
+			if(!_text && _promptText)
+			{
+				_textField.displayAsPassword = false;
+				_textField.htmlText = ToolSet.parseUBB(ToolSet.encodeHTML(_promptText));
+			}
 		}
 	}
 }

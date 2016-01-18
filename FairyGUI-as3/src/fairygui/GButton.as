@@ -201,7 +201,11 @@ package fairygui
 					&& !_parent._buildingDisplayList)
 				{
 					if(_selected)
+					{
 						_relatedController.selectedPageId = _pageOption.id;
+						if(_relatedController._autoRadioGroupDepth)
+							_parent.adjustRadioGroupDepth(this, _relatedController);
+					}
 					else if(_mode==ButtonMode.Check && _relatedController.selectedPageId==_pageOption.id)
 						_relatedController.oppositePageId = _pageOption.id;
 				}

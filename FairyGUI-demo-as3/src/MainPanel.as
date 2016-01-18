@@ -115,12 +115,19 @@ package
 		{
 			var obj:GComponent = _demoObjects["Text"];
 			obj.getChild("n12").asRichTextField.addEventListener(TextEvent.LINK, __clickLink);
+			obj.getChild("n22").addClickListener(__clickGetInput);
 		}
 		
 		private function __clickLink(evt:TextEvent):void
 		{
 			var obj:GRichTextField = evt.currentTarget as GRichTextField;
 			obj.text = "[img]ui://9leh0eyft9fj5f[/img][color=#FF0000]你点击了链接[/color]：" + evt.text;
+		}
+		
+		private function __clickGetInput(evt:Event):void
+		{
+			var obj:GComponent = _demoObjects["Text"];
+			obj.getChild("n21").text = obj.getChild("n19").text;
 		}
 		
 		//------------------------------

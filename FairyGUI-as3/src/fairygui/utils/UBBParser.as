@@ -19,18 +19,16 @@ package fairygui.utils
 		public function UBBParser()
 		{
 			_handlers = {};
-			_handlers["URL"] = onTag_URL;
-			_handlers["IMG"] = onTag_IMG;
-			_handlers["B"] = onTag_Simple;
-			_handlers["I"] = onTag_Simple;
-			_handlers["U"] = onTag_Simple;
-			_handlers["SUP"] = onTag_Simple;
-			_handlers["SUB"] = onTag_Simple;
-			_handlers["COLOR"] = onTag_COLOR;
-			_handlers["FONT"] = onTag_FONT;
-			_handlers["SIZE"] = onTag_SIZE;
-			_handlers["MOVE"] = onTag_MOVE;
-			_handlers["FLY"] = onTag_FLY;
+			_handlers["url"] = onTag_URL;
+			_handlers["img"] = onTag_IMG;
+			_handlers["b"] = onTag_Simple;
+			_handlers["i"] = onTag_Simple;
+			_handlers["u"] = onTag_Simple;
+			_handlers["sup"] = onTag_Simple;
+			_handlers["sub"] = onTag_Simple;
+			_handlers["color"] = onTag_COLOR;
+			_handlers["font"] = onTag_FONT;
+			_handlers["size"] = onTag_SIZE;
 		}
 		
 		protected function onTag_URL(tagName:String, end:Boolean, attr:String):String {
@@ -96,21 +94,7 @@ package fairygui.utils
 			else
 				return "</font>";
 		}
-		
-		protected function onTag_MOVE(tagName:String, end:Boolean, attr:String):String {
-			if(!end)
-				return "<marquee scrollamount=\"3\">"
-			else
-				return "</marquee>";
-		}
-		
-		protected function onTag_FLY(tagName:String, end:Boolean, attr:String):String {
-			if(!end)
-				return "<marquee behavior=\"alternate\" scrollamount=\"3\">";
-			else
-				return "</marquee>";
-		}
-		
+
 		protected function getTagText(remove:Boolean=false):String {
 			var pos:int = _text.indexOf("[", _readPos);
 			if(pos==-1)
@@ -146,7 +130,7 @@ package fairygui.utils
 					attr = tag.substring(pos3+1);
 					tag = tag.substring(0, pos3);
 				}
-				tag = tag.toUpperCase();
+				tag = tag.toLowerCase();
 				func = _handlers[tag];
 				if(func!=null) {
 					repl = func(tag, end, attr);
