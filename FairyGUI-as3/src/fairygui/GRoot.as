@@ -17,7 +17,7 @@ package fairygui
 	import fairygui.event.FocusChangeEvent;
 	import fairygui.utils.ToolSet;
 	
-	[Event(name = "___focusChanged", type = "fairygui.event.FocusChangeEvent")]
+	[Event(name = "focusChanged", type = "fairygui.event.FocusChangeEvent")]
 	public class GRoot extends GComponent
 	{
 		private var _nativeStage:Stage;

@@ -67,7 +67,7 @@ package fairygui
 		private var _hzScrollBar:GScrollBar;
 		private var _vtScrollBar:GScrollBar;
 		
-		public static const SCROLL:String = "___scroll";
+		public static const SCROLL:String = "scrollEvent";
 		
 		private static var sHelperPoint:Point = new Point();
 		

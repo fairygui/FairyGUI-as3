@@ -4,7 +4,7 @@ package fairygui
 	
 	import fairygui.event.StateChangeEvent;
 	
-	[Event(name = "___stateChanged", type = "fairygui.event.StateChangeEvent")]
+	[Event(name = "stateChanged", type = "fairygui.event.StateChangeEvent")]
 	public class Controller extends EventDispatcher
 	{
 		private var _name:String;

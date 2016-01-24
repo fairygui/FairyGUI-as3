@@ -16,7 +16,6 @@ package fairygui
 	import fairygui.text.BitmapFont;
 	import fairygui.utils.GTimers;
 	import fairygui.utils.ToolSet;
-	import fairygui.utils.ZipReader;
 	
 	public class UIPackage
 	{
@@ -26,9 +25,9 @@ package fairygui
 		private var _items:Vector.<PackageItem>;
 		private var _itemsById:Object;
 		private var _itemsByName:Object;
-		private var _desc:ZipReader;
-		private var _files:ZipReader;
 		private var _customId:String;
+		
+		private var _reader:IUIPackageReader;
 		
 		internal static var _constructing:int;
 		
@@ -56,7 +55,17 @@ package fairygui
 		public static function addPackage(desc:ByteArray, res:ByteArray):UIPackage
 		{
 			var pkg:UIPackage = new UIPackage();
-			pkg.create(desc, res);
+			var reader:ZipUIPackageReader = new ZipUIPackageReader(desc, res);
+			pkg.create(reader);
+			_packageInstById[pkg.id] = pkg;
+			_packageInstByName[pkg.name] = pkg;
+			return pkg;
+		}
+		
+		public static function addPackage2(reader:IUIPackageReader):UIPackage
+		{
+			var pkg:UIPackage = new UIPackage();
+			pkg.create(reader);
 			_packageInstById[pkg.id] = pkg;
 			_packageInstByName[pkg.name] = pkg;
 			return pkg;
@@ -87,7 +96,7 @@ package fairygui
 			if(pi)
 				return pi.owner.createObject2(pi, userClass);
 			else
-				return null;	
+				return null;
 		}
 		
 		public static function getItemURL(pkgName:String, resName:String):String
@@ -164,16 +173,11 @@ package fairygui
 			}
 		}
 		
-		private function create(desc:ByteArray, res:ByteArray):void
+		private function create(reader:IUIPackageReader):void
 		{
-			_desc = new ZipReader(desc);
-			if(res && res.length)
-				_files = new ZipReader(res);
-			else
-				_files = _desc;
+			_reader = reader;
 
-			var ba:ByteArray = _desc.getEntryData("package.xml");
-			var str:String = ba.readUTFBytes(ba.length);
+			var str:String = _reader.readDescFile("package.xml");
 			
 			var ignoreWhitespace:Boolean = XML.ignoreWhitespace;
 			XML.ignoreWhitespace = true;
@@ -359,23 +363,14 @@ package fairygui
 		{
 			var ignoreWhitespace:Boolean = XML.ignoreWhitespace;
 			XML.ignoreWhitespace = true;
-			var ret:XML = new XML(getDesc(file));
+			var ret:XML = new XML(_reader.readDescFile(file));
 			XML.ignoreWhitespace = ignoreWhitespace;
 			return ret;
 		}
 		
-		private function getDesc(file:String):String
-		{
-			var ba:ByteArray = _desc.getEntryData(file);				
-			var str:String = ba.readUTFBytes(ba.length);
-			ba.clear();
-			
-			return str;
-		}
-		
 		public function getItemRaw(item:PackageItem):ByteArray
 		{
-			return _files.getEntryData(item.file);
+			return _reader.readResFile(item.file);
 		}
 		
 		public function getImage(resName:String):BitmapData
@@ -559,7 +554,7 @@ package fairygui
 		
 		private function loadImage(pi:PackageItem):void
 		{
-			var ba:ByteArray = _files.getEntryData(pi.file);
+			var ba:ByteArray = _reader.readResFile(pi.file);
 			var loader:PackageItemLoader = new PackageItemLoader();
 			loader.contentLoaderInfo.addEventListener(Event.COMPLETE, __imageLoaded);
 			loader.loadBytes(ba);
@@ -585,7 +580,7 @@ package fairygui
 		
 		private function loadSwf(pi:PackageItem):void
 		{
-			var ba:ByteArray = _files.getEntryData(pi.file);
+			var ba:ByteArray = _reader.readResFile(pi.file);
 			var loader:PackageItemLoader = new PackageItemLoader();
 			loader.contentLoaderInfo.addEventListener(Event.COMPLETE, __swfLoaded);
 			var context:LoaderContext = new LoaderContext();
@@ -648,7 +643,7 @@ package fairygui
 				item.frames[i] = frame;
 				
 				str = item.id + "_" + i + ".png";
-				var ba:ByteArray = _files.getEntryData(str);
+				var ba:ByteArray = _reader.readResFile(str);
 				if(ba)
 				{
 					var loader:FrameLoader = new FrameLoader();
@@ -683,7 +678,7 @@ package fairygui
 		private function loadSound(item:PackageItem):void
 		{
 			var sound:Sound = new Sound();
-			var ba:ByteArray = _files.getEntryData(item.file);
+			var ba:ByteArray = _reader.readResFile(item.file);
 			sound.loadCompressedDataFromByteArray(ba, ba.length);
 			item.sound = sound;
 			item.loaded = true;
@@ -693,7 +688,7 @@ package fairygui
 		{
 			var font:BitmapFont = new BitmapFont();
 			font.id = "ui://"+this.id+item.id;
-			var str:String = getDesc(item.id + ".fnt");
+			var str:String = _reader.readDescFile(item.id + ".fnt");
 			
 			var lines:Array = str.split("\n");
 			var lineCount:int = lines.length;
@@ -780,7 +775,7 @@ package fairygui
 					ttf = kv.face!=null;
 					if(ttf)
 					{
-						var ba:ByteArray = _files.getEntryData(item.id+".png");
+						var ba:ByteArray = _reader.readResFile(item.id+".png");
 						var loader:PackageItemLoader = new PackageItemLoader();
 						loader.contentLoaderInfo.addEventListener(Event.COMPLETE, __fontAtlasLoaded);
 						loader.loadBytes(ba);

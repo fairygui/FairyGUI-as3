@@ -5,7 +5,7 @@ package fairygui
 	import fairygui.event.GTouchEvent;
 	import fairygui.event.StateChangeEvent;
 	
-	[Event(name = "___stateChanged", type = "fairygui.event.StateChangeEvent")]
+	[Event(name = "stateChanged", type = "fairygui.event.StateChangeEvent")]
 	public class GSlider extends GComponent
 	{
 		private var _max:int;

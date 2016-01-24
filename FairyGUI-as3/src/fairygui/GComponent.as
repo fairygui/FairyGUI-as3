@@ -4,14 +4,14 @@ package fairygui
 	import flash.display.Graphics;
 	import flash.display.Shape;
 	import flash.display.Sprite;
-	import flash.events.Event;
 	import flash.geom.Point;
 	import flash.geom.Rectangle;
 	
 	import fairygui.display.UISprite;
 	import fairygui.utils.GTimers;
 
-	[Event(name = "___scroll", type = "flash.events.Event")]
+	[Event(name = "scrollEvent", type = "flash.events.Event")]
+	[Event(name = "dropEvent", type = "fairygui.event.DropEvent")]
 	public class GComponent extends GObject
 	{
 		private var _boundsChanged:Boolean;
