@@ -320,6 +320,11 @@ package fairygui
 			applyController(controller);
 		}
 		
+		public function getControllerAt(index:int):Controller
+		{
+			return _controllers[index];
+		}
+		
 		public function getController(name:String):Controller
 		{
 			var cnt:int = _controllers.length;
@@ -430,6 +435,11 @@ package fairygui
 			}
 			if(myIndex<maxIndex)
 				this.swapChildrenAt(myIndex, maxIndex);
+		}
+		
+		public function getTransitionAt(index:int):Transition
+		{
+			return _transitions[index];
 		}
 		
 		public function getTransition(transName:String):Transition
