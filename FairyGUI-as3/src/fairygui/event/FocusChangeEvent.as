@@ -6,7 +6,7 @@ package fairygui.event
 	
 	public class FocusChangeEvent extends Event 
 	{
-		public static const CHANGED:String = "___focusChanged";
+		public static const CHANGED:String = "focusChanged";
 		
 		private var _oldFocusedObject:GObject;
 		private var _newFocusedObject:GObject;

@@ -43,9 +43,9 @@ package fairygui.text
 		private static var sHelperMat:Matrix = new Matrix();
 		private static var sHelperBmd:BitmapData = new BitmapData(200,200,true,0);
 		
-		public function draw(target:BitmapData, glyph:BMGlyph, charPos:Point, color:uint):void
+		public function draw(target:BitmapData, glyph:BMGlyph, charPosX:Number, charPosY:Number, color:uint):void
 		{
-			charPos.x += glyph.offsetX;
+			charPosX += glyph.offsetX;
 			
 			if(ttf)
 			{
@@ -69,9 +69,9 @@ package fairygui.text
 						sHelperBmd.colorTransform(sHelperRect, sTransform);
 						
 						sHelperMat.identity();
-						sHelperMat.translate(charPos.x, charPos.y);
-						sHelperRect.x = charPos.x;
-						sHelperRect.y = charPos.y;
+						sHelperMat.translate(charPosX, charPosY);
+						sHelperRect.x = charPosX;
+						sHelperRect.y = charPosY;
 						sHelperRect.width = glyph.width;
 						sHelperRect.height = glyph.height;
 						target.draw(sHelperBmd, sHelperMat, null, null, sHelperRect, true);
@@ -91,9 +91,9 @@ package fairygui.text
 						sHelperBmd.copyChannel(atlas, sHelperRect, sHelperPoint, glyph.channel, BitmapDataChannel.ALPHA);
 						
 						sHelperMat.identity();
-						sHelperMat.translate(charPos.x, charPos.y);
-						sHelperRect.x = charPos.x;
-						sHelperRect.y = charPos.y;
+						sHelperMat.translate(charPosX, charPosY);
+						sHelperRect.x = charPosX;
+						sHelperRect.y = charPosY;
 						sHelperRect.width = glyph.width;
 						sHelperRect.height = glyph.height;
 						target.draw(sHelperBmd, sHelperMat, null, null, sHelperRect, true);
@@ -106,7 +106,7 @@ package fairygui.text
 				if(bmd!=null)
 				{
 					sHelperMat.identity();
-					sHelperMat.translate(charPos.x, charPos.y);
+					sHelperMat.translate(charPosX, charPosY);
 					target.draw(bmd, sHelperMat, null, null, null, true);
 				}
 			}

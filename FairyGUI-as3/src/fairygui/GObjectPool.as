@@ -55,7 +55,10 @@ package fairygui
 			
 			var child:GObject = UIPackage.createObjectFromURL(url);
 			if(!child)
-				throw new Error(url + " not exists");
+			{
+				trace("FairyGUI: getObject failed - " + url + " not exists");
+				return null;
+			}
 			
 			if(_initCallback!=null)
 				_initCallback(child);

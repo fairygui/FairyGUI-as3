@@ -990,16 +990,20 @@ package fairygui
 				if(!url)
 					continue;
 				
-				var obj:GObject = addChild(getFromPool(url));
-				if(obj is GButton)
+				var obj:GObject = getFromPool(url);
+				if(obj!=null)
 				{
-					GButton(obj).title = String(cxml.@title);
-					GButton(obj).icon = String(cxml.@icon);
-				}
-				else if(obj is GLabel)
-				{
-					GLabel(obj).title = String(cxml.@title);
-					GLabel(obj).icon = String(cxml.@icon);
+					addChild(obj);
+					if(obj is GButton)
+					{
+						GButton(obj).title = String(cxml.@title);
+						GButton(obj).icon = String(cxml.@icon);
+					}
+					else if(obj is GLabel)
+					{
+						GLabel(obj).title = String(cxml.@title);
+						GLabel(obj).icon = String(cxml.@icon);
+					}
 				}
 			}
 		}

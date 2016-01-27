@@ -4,7 +4,7 @@ package fairygui.event
 	
 	public class StateChangeEvent extends Event 
 	{
-		public static const CHANGED:String = "___stateChanged";
+		public static const CHANGED:String = "stateChanged";
 
 		public function StateChangeEvent(type:String) 
 		{

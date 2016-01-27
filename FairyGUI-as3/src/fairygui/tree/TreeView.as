@@ -6,7 +6,6 @@ package fairygui.tree
 	import fairygui.GComponent;
 	import fairygui.GList;
 	import fairygui.GObject;
-	import fairygui.ListSelectionMode;
 	import fairygui.event.ItemEvent;
 	
 	public class TreeView
@@ -19,7 +18,6 @@ package fairygui.tree
 		public function TreeView(list:GList)
 		{
 			_list = list;
-			_list.selectionMode = ListSelectionMode.Multiple;
 			_list.addEventListener(ItemEvent.CLICK, __clickItem);
 			
 			_root = new TreeNode(true);
@@ -157,8 +155,8 @@ package fairygui.tree
 			if(indentObj!=null)
 				indentObj.width = (node.level-1)*_indent;
 			
-			var expandButton:GButton = node.cell.getChild("expandButton").asButton;
-			if(expandButton!=null)
+			var expandButton:GButton = GButton(node.cell.getChild("expandButton"));
+			if(expandButton)
 			{
 				if(node.isFolder)
 				{
@@ -223,8 +221,9 @@ package fairygui.tree
 			{
 				_listener.treeNodeRender(node, node.cell);
 				
-				var expandButton:GButton = node.cell.getChild("expandButton").asButton;
-				expandButton.selected = true;
+				var expandButton:GButton = GButton(node.cell.getChild("expandButton"));
+				if(expandButton)
+					expandButton.selected = true;
 			}
 
 			if(node.cell.parent!=null)
@@ -240,8 +239,9 @@ package fairygui.tree
 			{
 				_listener.treeNodeRender(node, node.cell);
 				
-				var expandButton:GButton = node.cell.getChild("expandButton").asButton;
-				expandButton.selected = false;
+				var expandButton:GButton = GButton(node.cell.getChild("expandButton"));
+				if(expandButton)
+					expandButton.selected = false;
 			}
 			
 			if(node.cell.parent!=null)
@@ -342,21 +342,17 @@ package fairygui.tree
 		
 		private function __clickItem(evt:ItemEvent):void
 		{
-			var node:TreeNode = TreeNode(evt.itemObject.data);
-			if(evt.clickCount==2 && node.isFolder)
-			{
-				if(_list.scrollPane!=null)
-				{
-					var posY:Number = _list.scrollPane.posY;
-					node.expanded = !node.expanded;
-					_list.scrollPane.posY = posY;
-					_list.scrollPane.scrollToView(node.cell);
-				}
-				else
-					node.expanded = !node.expanded;
-			}
+			if(_list.scrollPane!=null)
+				var posY:Number = _list.scrollPane.posY;
 			
+			var node:TreeNode = TreeNode(evt.itemObject.data);			
 			_listener.treeNodeClick(node, evt);
+			
+			if(_list.scrollPane!=null)
+			{
+				_list.scrollPane.posY = posY;
+				_list.scrollPane.scrollToView(node.cell);
+			}
 		}
 	}
 }

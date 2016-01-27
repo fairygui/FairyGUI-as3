@@ -1,15 +1,13 @@
 package fairygui
 {
-	import flash.display.Bitmap;
 	import flash.display.BitmapData;
 	import flash.filters.DropShadowFilter;
-	import flash.geom.Point;
 	import flash.text.AntiAliasType;
-	import flash.text.TextField;
 	import flash.text.TextFieldAutoSize;
 	import flash.text.TextFormat;
 	
 	import fairygui.display.UIImage;
+	import fairygui.display.UITextField;
 	import fairygui.text.BMGlyph;
 	import fairygui.text.BitmapFont;
 	import fairygui.utils.CharSize;
@@ -42,7 +40,8 @@ package fairygui
 		
 		protected var _gearColor:GearColor;
 		
-		protected var _bitmap:Bitmap;
+		protected var _textField:UITextField;
+		protected var _bitmap:UIImage;
 		protected var _bitmapData:BitmapData;
 
 		protected var _updatingSize:Boolean;
@@ -56,9 +55,6 @@ package fairygui
 		
 		protected var _bitmapFont:BitmapFont;
 		protected var _lines:Vector.<LineInfo>;
-		
-		private static var renderTextField:TextField = new TextField();
-		private static var sHelperPoint:Point = new Point();
 		
 		private static const GUTTER_X:int = 2;
 		private static const GUTTER_Y:int = 2;
@@ -84,8 +80,22 @@ package fairygui
 		
 		override protected function createDisplayObject():void
 		{ 
-			_bitmap = new UIImage(this);
-			setDisplayObject(_bitmap); 
+			_textField = new UITextField(this);
+			_textField.mouseEnabled = false;
+			_textField.selectable = false;
+			setDisplayObject(_textField); 
+		}
+		
+		private function switchBitmapMode(val:Boolean):void
+		{
+			if(val && this.displayObject==_textField)
+			{
+				if(_bitmap==null)
+					_bitmap = new UIImage(this);
+				switchDisplayObject(_bitmap);
+			}
+			else if(!val && this.displayObject==_bitmap)
+				switchDisplayObject(_textField);
 		}
 		
 		override public function dispose():void
@@ -459,35 +469,35 @@ package fairygui
 				return;
 			}
 			
-			renderTextField.defaultTextFormat = _textFormat;
-			renderTextField.selectable = false;
+			switchBitmapMode(false);
+			_textField.defaultTextFormat = _textFormat;
 			if(_widthAutoSize)
 			{
-				renderTextField.autoSize = TextFieldAutoSize.LEFT;
-				renderTextField.wordWrap = false;
+				_textField.autoSize = TextFieldAutoSize.LEFT;
+				_textField.wordWrap = false;
 			}
 			else
 			{
-				renderTextField.autoSize = TextFieldAutoSize.NONE;
-				renderTextField.wordWrap = !_singleLine;
+				_textField.autoSize = TextFieldAutoSize.NONE;
+				_textField.wordWrap = !_singleLine;
 			}
-			renderTextField.width = this.width;
-			renderTextField.height = Math.max(this.height, int(_textFormat.size));
-			renderTextField.multiline = !_singleLine;
-			renderTextField.antiAliasType = AntiAliasType.ADVANCED;
-			renderTextField.filters = _textFilters;
+			_textField.width = this.width;
+			_textField.height = Math.max(this.height, int(_textFormat.size));
+			_textField.multiline = !_singleLine;
+			_textField.antiAliasType = AntiAliasType.ADVANCED;
+			_textField.filters = _textFilters;
 			
 			if(_ubbEnabled)
-				renderTextField.htmlText = ToolSet.parseUBB(ToolSet.encodeHTML(_text));
+				_textField.htmlText = ToolSet.parseUBB(ToolSet.encodeHTML(_text));
 			else
-				renderTextField.text = _text;
+				_textField.text = _text;
 			
-			var renderSingleLine:Boolean = renderTextField.numLines<=1;
+			var renderSingleLine:Boolean = _textField.numLines<=1;
 			
-			_textWidth = Math.ceil(renderTextField.textWidth);
+			_textWidth = Math.ceil(_textField.textWidth);
 			if(_textWidth>0)
 				_textWidth+=5;
-			_textHeight = Math.ceil(renderTextField.textHeight);
+			_textHeight = Math.ceil(_textField.textHeight);
 			if(_textHeight>0)
 			{
 				if(renderSingleLine)
@@ -506,7 +516,7 @@ package fairygui
 			{
 				h = _textHeight;
 				if(!_widthAutoSize)
-					renderTextField.height = _textHeight + _fontAdjustment+3;
+					_textField.height = _textHeight + _fontAdjustment+3;
 			}
 			else
 			{
@@ -519,7 +529,7 @@ package fairygui
 				}
 				if(_textHeight>h2)
 					_textHeight = h2;
-				renderTextField.height = _textHeight+_fontAdjustment+3;
+				_textField.height = _textHeight+_fontAdjustment+3;
 			}
 
 			if(updateBounds)
@@ -530,40 +540,12 @@ package fairygui
 				
 				doAlign();
 			}
-
-			if(_textWidth==0 || _textHeight==0)
-			{
-				if(_bitmapData)
-				{
-					_bitmapData.dispose();
-					_bitmapData = null;
-					_bitmap.bitmapData = null;
-				}
-			}
-			else
-			{
-				var bw:int, bh:int;
-				bw = renderTextField.width;
-				bh = _textHeight+_fontAdjustment;
-				if(_bitmapData)
-					_bitmapData.dispose();
-				
-				if(bw==0 || bh==0)
-					_bitmapData = null;
-				else
-				{
-					_bitmapData = new BitmapData(bw,bh,true,0);
-					//_bitmapData.drawWithQuality(renderTextField, null, null, null, null, false, StageQuality.MEDIUM);
-					_bitmapData.draw(renderTextField);
-				}
-				
-				_bitmap.bitmapData = _bitmapData;
-				renderTextField.text = "";
-			}
 		}
 		
 		private function renderWithBitmapFont(updateBounds:Boolean):void
 		{
+			switchBitmapMode(true);
+			
 			if(!_lines)
 				_lines = new Vector.<LineInfo>();
 			else
@@ -808,9 +790,7 @@ package fairygui
 					if (glyph != null)
 					{
 						charIndent = (line.height + line.textHeight) / 2 - glyph.lineHeight;
-						sHelperPoint.x = charX + lineIndent;
-						sHelperPoint.y = line.y + charIndent;
-						_bitmapFont.draw(_bitmapData, glyph, sHelperPoint, _color);
+						_bitmapFont.draw(_bitmapData, glyph, charX + lineIndent, line.y + charIndent, _color);
 						
 						charX += letterSpacing + glyph.advance;
 					}

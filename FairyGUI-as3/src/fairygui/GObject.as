@@ -15,8 +15,8 @@ package fairygui
 	import flash.utils.getTimer;
 	
 	import fairygui.event.DragEvent;
-	import fairygui.event.IBubbleEvent;
 	import fairygui.event.GTouchEvent;
+	import fairygui.event.IBubbleEvent;
 	import fairygui.utils.GTimers;
 	import fairygui.utils.SimpleDispatcher;
 	import fairygui.utils.ToolSet;
@@ -998,6 +998,33 @@ package fairygui
 		protected function createDisplayObject():void
 		{
 			
+		}
+		
+
+		protected function switchDisplayObject(newObj:DisplayObject):void
+		{
+			if(newObj==_displayObject)
+				return;
+			
+			var old:DisplayObject = _displayObject;
+			if(_displayObject.parent!=null)
+			{
+				var i:int = _displayObject.parent.getChildIndex(_displayObject);
+				_displayObject.parent.addChildAt(newObj, i);
+				_displayObject.parent.removeChild(_displayObject);
+			}
+			_displayObject = newObj;
+			_displayObject.x = old.x;
+			_displayObject.y = old.y;
+			_displayObject.rotation = old.rotation;
+			_displayObject.alpha = old.alpha;
+			_displayObject.visible = old.visible;
+			if((_displayObject is InteractiveObject) && (old is InteractiveObject))
+			{
+				InteractiveObject(_displayObject).mouseEnabled = InteractiveObject(old).mouseEnabled;
+				if(_displayObject is DisplayObjectContainer)
+					DisplayObjectContainer(_displayObject).mouseChildren = DisplayObjectContainer(old).mouseChildren;
+			}
 		}
 
 		protected function handleXYChanged():void

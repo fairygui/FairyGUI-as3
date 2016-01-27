@@ -3,15 +3,12 @@ package fairygui
 	import flash.events.Event;
 	import flash.events.FocusEvent;
 	import flash.events.KeyboardEvent;
-	import flash.text.TextField;
 	import flash.text.TextFieldType;
 	
-	import fairygui.display.UITextField;
 	import fairygui.utils.ToolSet;
 
 	public class GTextInput extends GTextField
 	{
-		protected var _textField:TextField;
 		private var _changed:Boolean;
 		private var _promptText:String;
 		
@@ -68,9 +65,11 @@ package fairygui
 		
 		override protected function createDisplayObject():void
 		{ 
-			_textField = new UITextField(this);
+			super.createDisplayObject();
+			
 			_textField.type = TextFieldType.INPUT;
-			setDisplayObject(_textField);
+			_textField.selectable = true;
+			_textField.mouseEnabled = true;
 		}
 		
 		override public function get text():String
@@ -144,6 +143,7 @@ package fairygui
 		private function __textChanged(evt:Event):void
 		{
 			_changed = true;
+			TextInputHistory.inst.markChanged(_textField);
 		}
 		
 		private function __focusIn(evt:Event):void
@@ -153,11 +153,15 @@ package fairygui
 				_textField.displayAsPassword = _displayAsPassword;
 				_textField.text = "";
 			}
+			TextInputHistory.inst.startRecord(_textField);
 		}
 		
 		private function __focusOut(evt:Event):void
 		{
 			_text = _textField.text;
+			TextInputHistory.inst.stopRecord(_textField);
+			_changed = false;
+			
 			if(!_text && _promptText)
 			{
 				_textField.displayAsPassword = false;
