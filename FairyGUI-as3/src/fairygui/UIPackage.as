@@ -695,8 +695,9 @@ package fairygui
 			var i:int;
 			var kv:Object = {};
 			var ttf:Boolean = false;
-			var lineHeight:int = 0;
+			var size:int = 0;
 			var xadvance:int = 0;
+			var resizable:Boolean = false;
 			
 			for(i=0;i<lineCount;i++)
 			{
@@ -752,7 +753,7 @@ package fairygui
 					}
 					
 					if(ttf)
-						bg.lineHeight = lineHeight;
+						bg.lineHeight = size;
 					else
 					{
 						if(bg.advance==0)
@@ -764,15 +765,17 @@ package fairygui
 						}
 						
 						bg.lineHeight = bg.offsetY < 0 ? bg.height : (bg.offsetY + bg.height);
-						if(bg.lineHeight < lineHeight)
-							bg.lineHeight = lineHeight;
+						if(bg.lineHeight < size)
+							bg.lineHeight = size;
 					}
 					
-					font.addChar(String.fromCharCode(kv.id), bg);
+					font.glyphs[String.fromCharCode(kv.id)] = bg;
 				}
 				else if(str=="info")
 				{
 					ttf = kv.face!=null;
+					size = kv.size;
+					resizable = kv.resizable=="true";
 					if(ttf)
 					{
 						var ba:ByteArray = _reader.readResFile(item.id+".png");
@@ -786,13 +789,18 @@ package fairygui
 				}
 				else if(str=="common")
 				{
-					lineHeight = kv.lineHeight;
+					if(size==0)
+						size = kv.lineHeight;
 					xadvance = kv.xadvance;
 				}
 			}
 			
+			if(size==0 && bg)
+				size = bg.height;
+			
 			font.ttf = ttf;
-			font.lineHeight = lineHeight;
+			font.size = size;
+			font.resizable = resizable;
 			item.bitmapFont = font;
 		}
 		

@@ -10,27 +10,17 @@ package fairygui.text
 	public class BitmapFont
 	{
 		public var id:String;
-		public var lineHeight:int;
+		public var size:int;
 		public var ttf:Boolean;
-		public var atlas:BitmapData;
-		
-		private var _dict:Object;
+		public var resizable:Boolean;
+		public var atlas:BitmapData;		
+		public var glyphs:Object;
 		
 		public function BitmapFont()
 		{
-			_dict = {};
+			glyphs = {};
 		}
-		
-		public function addChar(ch:String, glyph:BMGlyph):void
-		{
-			_dict[ch] = glyph;
-		}
-		
-		public function getGlyph(ch:String):BMGlyph
-		{
-			return _dict[ch];
-		}
-		
+
 		public function dispose():void
 		{
 			if(atlas!=null)
@@ -43,9 +33,9 @@ package fairygui.text
 		private static var sHelperMat:Matrix = new Matrix();
 		private static var sHelperBmd:BitmapData = new BitmapData(200,200,true,0);
 		
-		public function draw(target:BitmapData, glyph:BMGlyph, charPosX:Number, charPosY:Number, color:uint):void
+		public function draw(target:BitmapData, glyph:BMGlyph, charPosX:Number, charPosY:Number, color:uint, fontScale:Number):void
 		{
-			charPosX += glyph.offsetX;
+			charPosX += Math.ceil(glyph.offsetX*fontScale);
 			
 			if(ttf)
 			{
@@ -69,11 +59,12 @@ package fairygui.text
 						sHelperBmd.colorTransform(sHelperRect, sTransform);
 						
 						sHelperMat.identity();
+						sHelperMat.scale(fontScale, fontScale);
 						sHelperMat.translate(charPosX, charPosY);
 						sHelperRect.x = charPosX;
 						sHelperRect.y = charPosY;
-						sHelperRect.width = glyph.width;
-						sHelperRect.height = glyph.height;
+						sHelperRect.width = Math.ceil(glyph.width*fontScale);
+						sHelperRect.height = Math.ceil(glyph.height*fontScale);
 						target.draw(sHelperBmd, sHelperMat, null, null, sHelperRect, true);
 					}
 					else
@@ -91,11 +82,12 @@ package fairygui.text
 						sHelperBmd.copyChannel(atlas, sHelperRect, sHelperPoint, glyph.channel, BitmapDataChannel.ALPHA);
 						
 						sHelperMat.identity();
+						sHelperMat.scale(fontScale, fontScale);
 						sHelperMat.translate(charPosX, charPosY);
 						sHelperRect.x = charPosX;
 						sHelperRect.y = charPosY;
-						sHelperRect.width = glyph.width;
-						sHelperRect.height = glyph.height;
+						sHelperRect.width = Math.ceil(glyph.width*fontScale);
+						sHelperRect.height = Math.ceil(glyph.height*fontScale);
 						target.draw(sHelperBmd, sHelperMat, null, null, sHelperRect, true);
 					}
 				}
@@ -106,6 +98,7 @@ package fairygui.text
 				if(bmd!=null)
 				{
 					sHelperMat.identity();
+					sHelperMat.scale(fontScale, fontScale);
 					sHelperMat.translate(charPosX, charPosY);
 					target.draw(bmd, sHelperMat, null, null, null, true);
 				}

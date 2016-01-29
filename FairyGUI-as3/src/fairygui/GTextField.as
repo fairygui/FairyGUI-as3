@@ -563,6 +563,7 @@ package fairygui
 			var line:LineInfo;
 			var textWidth:int, textHeight:int;
 			var wordWrap:Boolean = !_widthAutoSize && !_singleLine;
+			var fontScale:Number =  _bitmapFont.resizable?_fontSize/_bitmapFont.size:1;
 			
 			var textLength:int = _text.length;
 			for (var offset:int = 0; offset < textLength; ++offset)
@@ -578,7 +579,7 @@ package fairygui
 					if (lineTextHeight == 0)
 					{
 						if (lastLineHeight == 0)
-							lastLineHeight = int(_textFormat.size);
+							lastLineHeight = Math.ceil(_fontSize*fontScale);
 						if (lineHeight == 0)
 							lineHeight = lastLineHeight;
 						lineTextHeight = lineHeight;
@@ -618,21 +619,21 @@ package fairygui
 				
 				if(ch==" ")
 				{
-					glyphWidth = _fontSize/2;
-					glyphHeight = _fontSize;
+					glyphWidth = Math.ceil(_fontSize*fontScale/2);
+					glyphHeight = Math.ceil(_fontSize*fontScale);
 				}
 				else
 				{
-					var glyph:BMGlyph = _bitmapFont.getGlyph(ch);				
+					var glyph:BMGlyph = _bitmapFont.glyphs[ch];
 					if(glyph)
 					{
-						glyphWidth = glyph.advance;
-						glyphHeight = glyph.lineHeight;
+						glyphWidth = Math.ceil(glyph.advance*fontScale);
+						glyphHeight = Math.ceil(glyph.lineHeight*fontScale);
 					}
 					else if(ch==" ")
 					{
-						glyphWidth = Math.ceil(_bitmapFont.lineHeight/2);
-						glyphHeight = _bitmapFont.lineHeight;
+						glyphWidth = Math.ceil(_bitmapFont.size*fontScale/2);
+						glyphHeight = Math.ceil(_bitmapFont.size*fontScale);
 					}
 					else
 					{
@@ -786,17 +787,17 @@ package fairygui
 				{
 					ch = line.text.charAt(j);
 					
-					glyph = _bitmapFont.getGlyph(ch);
+					glyph = _bitmapFont.glyphs[ch];
 					if (glyph != null)
 					{
-						charIndent = (line.height + line.textHeight) / 2 - glyph.lineHeight;
-						_bitmapFont.draw(_bitmapData, glyph, charX + lineIndent, line.y + charIndent, _color);
+						charIndent = (line.height + line.textHeight) / 2 - Math.ceil(glyph.lineHeight*fontScale);
+						_bitmapFont.draw(_bitmapData, glyph, charX + lineIndent, line.y + charIndent, _color, fontScale);
 						
-						charX += letterSpacing + glyph.advance;
+						charX += letterSpacing + Math.ceil(glyph.advance*fontScale);
 					}
 					else if(ch==" ")
 					{
-						charX += letterSpacing + Math.ceil(_bitmapFont.lineHeight/2);
+						charX += letterSpacing + Math.ceil(_bitmapFont.size*fontScale/2);
 					}
 					else
 					{
