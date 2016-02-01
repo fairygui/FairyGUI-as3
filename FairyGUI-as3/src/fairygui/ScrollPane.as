@@ -1075,15 +1075,30 @@ package fairygui
 				change1.y = endY - _maskContentHolder.y;
 			}
 			
-			if (xMax < endX)
-				change2.x = xMax - _maskContentHolder.x - change1.x;
-			else if (xMin > endX)
-				change2.x = xMin - _maskContentHolder.x - change1.x;
-			
-			if (yMax < endY)
-				change2.y = yMax - _maskContentHolder.y - change1.y;
-			else if (yMin > endY)
-				change2.y = yMin - _maskContentHolder.y - change1.y;
+			if(_bouncebackEffect)
+			{			
+				if (xMax < endX)
+					change2.x = xMax - _maskContentHolder.x - change1.x;
+				else if (xMin > endX)
+					change2.x = xMin - _maskContentHolder.x - change1.x;
+				
+				if (yMax < endY)
+					change2.y = yMax - _maskContentHolder.y - change1.y;
+				else if (yMin > endY)
+					change2.y = yMin - _maskContentHolder.y - change1.y;
+			}
+			else
+			{
+				if (xMax < endX)
+					change1.x = xMax - _maskContentHolder.x;
+				else if (xMin > endX)
+					change1.x = xMin - _maskContentHolder.x;
+				
+				if (yMax < endY)
+					change1.y = yMax - _maskContentHolder.y;
+				else if (yMin > endY)
+					change1.y = yMin - _maskContentHolder.y;
+			}
 			
 			_throwTween.value = 0;
 			_throwTween.change1 = change1;
