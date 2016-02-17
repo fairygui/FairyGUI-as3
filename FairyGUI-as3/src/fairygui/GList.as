@@ -932,35 +932,47 @@ package fairygui
 			else
 				overflow = OverflowType.Visible;
 			
-			var scroll:int;
-			str = xml.@scroll;
-			if(str)
-				scroll = ScrollType.parse(str);
-			else
-				scroll = ScrollType.Vertical;
-
-			var scrollBarDisplay:int;
-			str = xml.@scrollBar;
-			if(str)
-				scrollBarDisplay = ScrollBarDisplayType.parse(str);
-			else
-				scrollBarDisplay = ScrollBarDisplayType.Default;
-			var scrollBarFlags:int = parseInt(xml.@scrollBarFlags);
-			
-			var scrollBarMargin:Margin;
-			if(overflow==OverflowType.Scroll)
-			{
-				scrollBarMargin = new Margin();
-				str = xml.@scrollBarMargin;
-				if(str)
-					scrollBarMargin.parse(str);
-			}
-			
 			str = xml.@margin;
 			if(str)
 				_margin.parse(str);
 			
-			setupOverflowAndScroll(overflow, scrollBarMargin, scroll, scrollBarDisplay, scrollBarFlags);
+			if(overflow==OverflowType.Scroll)
+			{
+				var scroll:int;
+				str = xml.@scroll;
+				if(str)
+					scroll = ScrollType.parse(str);
+				else
+					scroll = ScrollType.Vertical;
+	
+				var scrollBarDisplay:int;
+				str = xml.@scrollBar;
+				if(str)
+					scrollBarDisplay = ScrollBarDisplayType.parse(str);
+				else
+					scrollBarDisplay = ScrollBarDisplayType.Default;
+				var scrollBarFlags:int = parseInt(xml.@scrollBarFlags);
+				
+				var scrollBarMargin:Margin = new Margin();
+				str = xml.@scrollBarMargin;
+				if(str)
+					scrollBarMargin.parse(str);
+				
+				var vtScrollBarRes:String;
+				var hzScrollBarRes:String;
+				str = xml.@scrollBarRes;
+				if(str)
+				{
+					var arr:Array = str.split(",");
+					vtScrollBarRes = arr[0];
+					hzScrollBarRes = arr[1];
+				}
+				
+				setupScroll(scrollBarMargin, scroll, scrollBarDisplay, scrollBarFlags, 
+					vtScrollBarRes, hzScrollBarRes);
+			}
+			else
+				setupOverflow(overflow);
 			
 			str = xml.@lineGap;
 			if(str)

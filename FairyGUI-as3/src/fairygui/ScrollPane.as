@@ -60,14 +60,11 @@ package fairygui
 		private var _isMouseMoved:Boolean;
 		private var _holdAreaPoint:Point;
 		private var _isHoldAreaDone:Boolean;
-		private var _holdArea:Number;
 		private var _aniFlag:Boolean;
 		private var _scrollBarVisible:Boolean;
 		
 		private var _hzScrollBar:GScrollBar;
 		private var _vtScrollBar:GScrollBar;
-		
-		public static const SCROLL:String = "scrollEvent";
 		
 		private static var sHelperPoint:Point = new Point();
 		
@@ -76,8 +73,10 @@ package fairygui
 								   margin:Margin,
 								   scrollBarMargin:Margin,
 								   scrollBarDisplay:int,
-								   flags:int):void
-		{	
+								   flags:int,
+								   vtScrollBarRes:String,
+								   hzScrollBarRes:String):void
+		{
 			if(_easeTypeFunc==null)
 				_easeTypeFunc = EaseLookup.find("Cubic.easeOut");
 			_throwTween = new ThrowTween();
@@ -100,10 +99,6 @@ package fairygui
 			_maskHolder.addChild(_maskContentHolder);
 			_maskHolder.addChild(_mask);
 
-			if(GRoot.touchScreen)
-				_holdArea = 20;
-			else
-				_holdArea = 5;
 			_holdAreaPoint = new Point();
 			_margin = margin;
 			_scrollBarMargin = scrollBarMargin;
@@ -128,22 +123,24 @@ package fairygui
 			{
 				if(_scrollType==ScrollType.Both || _scrollType==ScrollType.Vertical)
 				{
-					if(UIConfig.verticalScrollBar)
+					var res:String = vtScrollBarRes?vtScrollBarRes:UIConfig.verticalScrollBar;
+					if(res)
 					{
-						_vtScrollBar = UIPackage.createObjectFromURL(UIConfig.verticalScrollBar) as GScrollBar;
+						_vtScrollBar = UIPackage.createObjectFromURL(res) as GScrollBar;
 						if(!_vtScrollBar)
-							throw new Error("cannot create scrollbar from " + UIConfig.verticalScrollBar);
+							throw new Error("cannot create scrollbar from " + res);
 						_vtScrollBar.setScrollPane(this, true);
 						_container.addChild(_vtScrollBar.displayObject);
 					}
 				}
 				if(_scrollType==ScrollType.Both || _scrollType==ScrollType.Horizontal)
 				{
-					if(UIConfig.horizontalScrollBar)
+					res = hzScrollBarRes?hzScrollBarRes:UIConfig.horizontalScrollBar;
+					if(res)
 					{
-						_hzScrollBar = UIPackage.createObjectFromURL(UIConfig.horizontalScrollBar) as GScrollBar;
+						_hzScrollBar = UIPackage.createObjectFromURL(res) as GScrollBar;
 						if(!_hzScrollBar)
-							throw new Error("cannot create scrollbar from " + UIConfig.horizontalScrollBar);
+							throw new Error("cannot create scrollbar from " + res);
 						_hzScrollBar.setScrollPane(this, false);
 						_container.addChild(_hzScrollBar.displayObject);
 					}
@@ -278,6 +275,7 @@ package fairygui
 			if(sc != _xPerc)
 			{
 				_xPerc = sc;
+				_owner.dispatchEvent(new Event(Event.SCROLL));
 				posChanged(ani);
 			}
 		}
@@ -301,6 +299,7 @@ package fairygui
 			if(sc != _yPerc)
 			{
 				_yPerc = sc;
+				_owner.dispatchEvent(new Event(Event.SCROLL));
 				posChanged(ani);
 			}
 		}
@@ -434,7 +433,7 @@ package fairygui
 			_owner.ensureBoundsCorrect();
 			if(GTimers.inst.exists(refresh))
 				refresh();
-			
+
 			if(_vScroll)
 			{
 				var top:Number = (_contentHeight-_maskHeight)*_yPerc;
@@ -709,12 +708,14 @@ package fairygui
 			if(_snapToItem)
 			{
 				var pt:Point = _owner.findObjectNear(_xPerc==1?0:contentXLoc, _yPerc==1?0:contentYLoc, sHelperPoint);
+				var scrolled:Boolean = false;
 				if (_xPerc != 1 && pt.x!=contentXLoc)
 				{
 					_xPerc = pt.x / (_contentWidth - _maskWidth);
 					if(_xPerc>1)
 						_xPerc = 1;
 					contentXLoc = _xPerc * (_contentWidth - _maskWidth);
+					scrolled = true;
 				}
 				if (_yPerc != 1 && pt.y!=contentYLoc)
 				{
@@ -722,7 +723,10 @@ package fairygui
 					if(_yPerc>1)
 						_yPerc = 1;
 					contentYLoc = _yPerc * (_contentHeight - _maskHeight);
+					scrolled = true;
 				}
+				if(scrolled)
+					_owner.dispatchEvent(new Event(Event.SCROLL));
 			}
 			contentXLoc = int(contentXLoc);
 			contentYLoc = int(contentYLoc);
@@ -865,8 +869,6 @@ package fairygui
 					showScrollBar(false);
 			}
 			_tweening = 0;
-			
-			_owner.dispatchEvent(new Event(SCROLL));
 		}
 
 		private function __mouseDown(e:Event):void
@@ -893,6 +895,12 @@ package fairygui
 		
 		private function __mouseMove(e:GTouchEvent):void
 		{
+			var sensitivity:int;
+			if (GRoot.touchScreen)
+				sensitivity = UIConfig.touchScrollSensitivity;
+			else
+				sensitivity = 5;
+			
 			var diff:Number;
 			var sv:Boolean, sh:Boolean, st:Boolean;
 			
@@ -901,7 +909,7 @@ package fairygui
 				if (!_isHoldAreaDone)
 				{
 					diff = Math.abs(_holdAreaPoint.y - _container.mouseY);
-					if (diff < _holdArea)
+					if (diff < sensitivity)
 						return;
 				}
 				
@@ -912,7 +920,7 @@ package fairygui
 				if (!_isHoldAreaDone)
 				{
 					diff = Math.abs(_holdAreaPoint.x - _container.mouseX);
-					if (diff < _holdArea)
+					if (diff < sensitivity)
 						return;
 				}
 				
@@ -923,10 +931,10 @@ package fairygui
 				if (!_isHoldAreaDone)
 				{
 					diff = Math.abs(_holdAreaPoint.y - _container.mouseY);
-					if (diff < _holdArea)
+					if (diff < sensitivity)
 					{
 						diff = Math.abs(_holdAreaPoint.x - _container.mouseX);
-						if (diff < _holdArea)
+						if (diff < sensitivity)
 							return;
 					}
 				}
@@ -1008,8 +1016,7 @@ package fairygui
 			_isHoldAreaDone = true;
 			_isMouseMoved = true;
 			onScrolling();
-			
-			_owner.dispatchEvent(new Event(SCROLL));
+			_owner.dispatchEvent(new Event(Event.SCROLL));
 		}
 		
 		private function __mouseUp(e:Event):void
@@ -1190,6 +1197,7 @@ package fairygui
 			}
 			
 			onScrolling();
+			_owner.dispatchEvent(new Event(Event.SCROLL));
 		}
 		
 		private function __tweenComplete2():void
@@ -1207,6 +1215,7 @@ package fairygui
 			_isMouseMoved = false;
 			_maskHolder.mouseChildren = true;
 			onScrollEnd();
+			_owner.dispatchEvent(new Event(Event.SCROLL));
 		}
 	}
 }

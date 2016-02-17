@@ -43,6 +43,16 @@ package fairygui
 		//Resources for tooltips.
 		public static var tooltipsWin:String;
 		
+		//Max items displayed in combobox without scrolling.
 		public static var defaultComboBoxVisibleItemCount:int = 10;
+		
+		// Pixel offsets of finger to trigger scrolling.
+		public static var touchScrollSensitivity:int = 20;
+		
+		// Pixel offsets of finger to trigger dragging.
+		public static var touchDragSensitivity:int = 10;
+		
+		// Pixel offsets of mouse pointer to trigger dragging.
+		public static var clickDragSensitivity:int = 2;
 	}
 }

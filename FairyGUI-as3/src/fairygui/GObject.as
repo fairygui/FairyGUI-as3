@@ -35,8 +35,8 @@ package fairygui
 		private var _y:Number;
 		private var _width:Number;
 		private var _height:Number;
-		private var _pivotX:int;
-		private var _pivotY:int;
+		private var _pivotX:Number;
+		private var _pivotY:Number;
 		private var _alpha:Number;
 		private var _rotation:int;
 		private var _visible:Boolean;
@@ -99,6 +99,8 @@ package fairygui
 			_touchable = true;
 			_scaleX = 1;
 			_scaleY = 1;
+			_pivotX = 0;
+			_pivotY = 0;
 			_pivotOffsetX = 0;
 			_pivotOffsetY = 0;
 			
@@ -324,27 +326,27 @@ package fairygui
 			}
 		}
 		
-		final public function get pivotX():int
+		final public function get pivotX():Number
 		{
 			return _pivotX;
 		}
 		
-		final public function set pivotX(value:int):void
+		final public function set pivotX(value:Number):void
 		{
 			setPivot(value, _pivotY);
 		}
 		
-		final public function get pivotY():int
+		final public function get pivotY():Number
 		{
 			return _pivotY;
 		}
 		
-		final public function set pivotY(value:int):void
+		final public function set pivotY(value:Number):void
 		{
 			setPivot(_pivotX, value);
 		}
 		
-		final public function setPivot(xv:int, yv:int):void
+		final public function setPivot(xv:Number, yv:Number):void
 		{
 			if(_pivotX!=xv || _pivotY!=yv)
 			{
@@ -1108,7 +1110,7 @@ package fairygui
 			if(str)
 			{
 				arr = str.split(",");
-				this.setPivot(int(arr[0]), int(arr[1]));
+				this.setPivot(parseFloat(arr[0]), parseFloat(arr[1]));
 			}
 			
 			this.touchable = xml.@touchable!="false";
@@ -1147,6 +1149,7 @@ package fairygui
 		private var _touchPointId:int;
 		private var _lastClick:int;
 		private var _buttonStatus:int;
+		private var _touchDownPoint:Point;
 		private static const MTOUCH_EVENTS:Array = 
 			[GTouchEvent.BEGIN, GTouchEvent.DRAG, GTouchEvent.END, GTouchEvent.CLICK];
 		
@@ -1201,10 +1204,21 @@ package fairygui
 			if(devt.isPropagationStop)
 				evt.stopPropagation();
 			
+			if(_touchDownPoint==null)
+				_touchDownPoint = new Point();
+			
 			if(!GRoot.touchPointInput)
+			{
+				_touchDownPoint.x = MouseEvent(evt).stageX;
+				_touchDownPoint.y = MouseEvent(evt).stageY;
 				triggerDown();
+			}
 			else
+			{
+				_touchDownPoint.x = TouchEvent(evt).stageX;
+				_touchDownPoint.y = TouchEvent(evt).stageY;
 				triggerDown(TouchEvent(evt).touchPointID);
+			}
 		}
 		
 		private function __mousemove(evt:Event):void
@@ -1212,6 +1226,23 @@ package fairygui
 			if(_buttonStatus!=1
 				|| GRoot.touchPointInput && _touchPointId!=TouchEvent(evt).touchPointID)
 				return;
+			
+			if(GRoot.touchPointInput)
+			{
+				var sensitivity:int = UIConfig.touchDragSensitivity;
+				if(_touchDownPoint!=null 
+					&& Math.abs(_touchDownPoint.x - TouchEvent(evt).stageX) < sensitivity
+					&& Math.abs(_touchDownPoint.y - TouchEvent(evt).stageY) < sensitivity)
+					return;
+			}
+			else
+			{
+				sensitivity = UIConfig.clickDragSensitivity;
+				if(_touchDownPoint!=null 
+					&& Math.abs(_touchDownPoint.x - MouseEvent(evt).stageX) < sensitivity
+					&& Math.abs(_touchDownPoint.y - MouseEvent(evt).stageY) < sensitivity)
+					return;
+			}
 			
 			var devt:GTouchEvent = new GTouchEvent(GTouchEvent.DRAG);
 			devt.copyFrom(evt);

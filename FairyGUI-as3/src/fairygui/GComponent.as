@@ -10,7 +10,7 @@ package fairygui
 	import fairygui.display.UISprite;
 	import fairygui.utils.GTimers;
 
-	[Event(name = "scrollEvent", type = "flash.events.Event")]
+	[Event(name = "scroll", type = "flash.events.Event")]
 	[Event(name = "dropEvent", type = "fairygui.event.DropEvent")]
 	public class GComponent extends GObject
 	{
@@ -513,11 +513,22 @@ package fairygui
 			g.endFill();
 		}
 		
-		protected function setupOverflowAndScroll(overflow:int,
-											   scrollBarMargin:Margin,
-											   scroll:int,
-											   scrollBarDisplay:int,
-											   flags:int):void
+		protected function setupScroll(scrollBarMargin:Margin,
+										scroll:int,
+										scrollBarDisplay:int,
+										flags:int,
+										vtScrollBarRes:String,
+										hzScrollBarRes:String):void
+		{
+			_container = new Sprite();
+			_rootContainer.addChild(_container);
+			_scrollPane = new ScrollPane(this, scroll, _margin, scrollBarMargin, scrollBarDisplay, flags,
+				vtScrollBarRes, hzScrollBarRes);
+			
+			setBoundsChangedFlag();
+		}
+		
+		protected function setupOverflow(overflow:int):void
 		{
 			if(overflow==OverflowType.Hidden)
 			{
@@ -531,12 +542,6 @@ package fairygui
 				_container.mask = _mask;
 				_container.x = _margin.left;
 				_container.y = _margin.top;
-			}
-			else if(overflow==OverflowType.Scroll)
-			{
-				_container = new Sprite();
-				_rootContainer.addChild(_container);
-				_scrollPane = new ScrollPane(this, scroll, _margin, scrollBarMargin, scrollBarDisplay, flags);
 			}
 			else if(_margin.left!=0 || _margin.top!=0)
 			{
@@ -751,6 +756,8 @@ package fairygui
 			_initWidth = _sourceWidth;
 			_initHeight = _sourceHeight;
 			
+			setSize(_sourceWidth, _sourceHeight);
+			
 			var overflow:int;
 			str = xml.@overflow;
 			if(str)
@@ -758,36 +765,47 @@ package fairygui
 			else
 				overflow = OverflowType.Visible;
 			
-			var scroll:int;
-			str = xml.@scroll;
+			str = xml.@margin;
 			if(str)
-				scroll = ScrollType.parse(str);
-			else
-				scroll = ScrollType.Vertical;
+				_margin.parse(str);			
 			
-			var scrollBarDisplay:int;
-			str = xml.@scrollBar;
-			if(str)
-				scrollBarDisplay = ScrollBarDisplayType.parse(str);
-			else
-				scrollBarDisplay = ScrollBarDisplayType.Default;
-			var scrollBarFlags:int = parseInt(xml.@scrollBarFlags);
-			
-			var scrollBarMargin:Margin;
 			if(overflow==OverflowType.Scroll)
 			{
-				scrollBarMargin = new Margin();
+				var scroll:int;
+				str = xml.@scroll;
+				if(str)
+					scroll = ScrollType.parse(str);
+				else
+					scroll = ScrollType.Vertical;
+				
+				var scrollBarDisplay:int;
+				str = xml.@scrollBar;
+				if(str)
+					scrollBarDisplay = ScrollBarDisplayType.parse(str);
+				else
+					scrollBarDisplay = ScrollBarDisplayType.Default;
+				var scrollBarFlags:int = parseInt(xml.@scrollBarFlags);
+				
+				var scrollBarMargin:Margin = new Margin();
 				str = xml.@scrollBarMargin;
 				if(str)
 					scrollBarMargin.parse(str);
+				
+				var vtScrollBarRes:String;
+				var hzScrollBarRes:String;
+				str = xml.@scrollBarRes;
+				if(str)
+				{
+					arr = str.split(",");
+					vtScrollBarRes = arr[0];
+					hzScrollBarRes = arr[1];
+				}
+				
+				setupScroll(scrollBarMargin, scroll, scrollBarDisplay, scrollBarFlags, 
+					vtScrollBarRes, hzScrollBarRes);
 			}
-			
-			str = xml.@margin;
-			if(str)
-				_margin.parse(str);
-
-			setSize(_sourceWidth, _sourceHeight);
-			setupOverflowAndScroll(overflow, scrollBarMargin, scroll, scrollBarDisplay, scrollBarFlags);
+			else
+				setupOverflow(overflow);
 			
 			_buildingDisplayList = true;
 			
