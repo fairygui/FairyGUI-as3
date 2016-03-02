@@ -977,14 +977,14 @@ package fairygui
 			str = xml.@lineGap;
 			if(str)
 				_lineGap = parseInt(str);
-			else
-				_lineGap = 0;
 			
 			str = xml.@colGap;
 			if(str)
 				_columnGap = parseInt(str);
-			else
-				_columnGap = 0;
+			
+			str = xml.@selectionMode;
+			if(str)
+				_selectionMode = ListSelectionMode.parse(str);
 			
 			str = xml.@defaultItem;
 			if(str)

@@ -490,17 +490,12 @@ package fairygui
 		
 		internal function setSize(aWidth:Number, aHeight:Number):void 
 		{
-			var w:Number, h:Number;
-			w = aWidth;
-			h = aHeight;
 			if(_hzScrollBar)
 			{
-				if(!_hScrollNone)
-					h -= _hzScrollBar.height;
-				_hzScrollBar.y = h;
-				if(_vtScrollBar && !_vScrollNone)
+				_hzScrollBar.y = aHeight - _hzScrollBar.height;
+				if(_vtScrollBar)
 				{
-					_hzScrollBar.width = w - _vtScrollBar.width - _scrollBarMargin.left - _scrollBarMargin.right;
+					_hzScrollBar.width = aWidth - _vtScrollBar.width - _scrollBarMargin.left - _scrollBarMargin.right;
 					if(_displayOnLeft)
 						_hzScrollBar.x = _scrollBarMargin.left + _vtScrollBar.width;
 					else
@@ -508,24 +503,32 @@ package fairygui
 				}
 				else
 				{
-					_hzScrollBar.width = w - _scrollBarMargin.left - _scrollBarMargin.right;
+					_hzScrollBar.width = aWidth - _scrollBarMargin.left - _scrollBarMargin.right;
 					_hzScrollBar.x = _scrollBarMargin.left;
 				}
 			}
 			if(_vtScrollBar)
 			{
-				if(!_vScrollNone)
-					w -= _vtScrollBar.width;
 				if(!_displayOnLeft)
-					_vtScrollBar.x = w;
-				_vtScrollBar.height = h - _scrollBarMargin.top - _scrollBarMargin.bottom;
+					_vtScrollBar.x = aWidth - _vtScrollBar.width;
+				if(_hzScrollBar)
+					_vtScrollBar.height = aHeight - _hzScrollBar.height - _scrollBarMargin.top - _scrollBarMargin.bottom;
+				else
+					_vtScrollBar.height = aHeight - _scrollBarMargin.top - _scrollBarMargin.bottom;
 				_vtScrollBar.y = _scrollBarMargin.top;
 			}
-			w -= (_margin.left+_margin.right);
-			h -= (_margin.top+_margin.bottom);
 			
-			_maskWidth = Math.max(1, w);
-			_maskHeight = Math.max(1, h);
+			_maskWidth = aWidth;
+			_maskHeight = aHeight;
+			if(_hzScrollBar && !_hScrollNone)
+				_maskHeight -= _hzScrollBar.height;
+			if(_vtScrollBar && !_vScrollNone)
+				_maskWidth -= _vtScrollBar.width;
+			_maskWidth -= (_margin.left+_margin.right);
+			_maskHeight -= (_margin.top+_margin.bottom);
+			
+			_maskWidth = Math.max(1, _maskWidth);
+			_maskHeight = Math.max(1, _maskHeight);
 			
 			handleSizeChanged();
 			posChanged(false);

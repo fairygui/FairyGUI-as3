@@ -419,11 +419,12 @@ package fairygui
 		
 		private function __targetXYChanged(target:GObject):void
 		{
-			if (_owner.relations.handling!=null)
+			if (_owner.relations.handling!=null || _owner.group!=null && _owner.group._updating)
+			{
+				_targetX = _target.x;
+				_targetY = _target.y;
 				return;
-			
-			if(_owner.group!=null && _owner.group._updating)
-				return;
+			}
 			
 			_owner.relations.handling = target;
 			

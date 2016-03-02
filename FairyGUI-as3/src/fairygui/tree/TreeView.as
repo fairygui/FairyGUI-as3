@@ -79,7 +79,7 @@ package fairygui.tree
 			return ret;
 		}
 		
-		public function addSelection(node:TreeNode):void
+		public function addSelection(node:TreeNode, scrollItToView:Boolean=false):void
 		{
 			var parentNode:TreeNode = node.parent;
 			while(parentNode!=null && parentNode!=_root)
@@ -87,7 +87,7 @@ package fairygui.tree
 				parentNode.expanded = true;
 				parentNode = parentNode.parent;
 			}
-			_list.addSelection(_list.getChildIndex(node.cell));
+			_list.addSelection(_list.getChildIndex(node.cell), scrollItToView);
 		}
 		
 		public function getNodeCell(node:TreeNode):GComponent
