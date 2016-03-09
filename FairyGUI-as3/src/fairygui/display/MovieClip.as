@@ -120,6 +120,8 @@ package fairygui.display
 		{
 			_start = start;
 			_end = end;
+			if(_end==-1 || _end>_frameCount - 1)
+				_end = _frameCount - 1;
 			_times = times;
 			_endAt = endAt;
 			if (_endAt == -1)
