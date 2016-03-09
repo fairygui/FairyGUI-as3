@@ -72,5 +72,21 @@ package fairygui
 			}
 			_updating = false;
 		}
+		
+		override protected function updateAlpha():void
+		{
+			super.updateAlpha();
+			
+			if(this._underConstruct)
+				return;
+			
+			var cnt:int = _parent.numChildren;
+			for(var i:int =0;i<cnt;i++)
+			{
+				var child:GObject = _parent.getChildAt(i);
+				if(child.group==this)
+					child.alpha = this.alpha;
+			}
+		}
 	}
 }

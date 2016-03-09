@@ -4,7 +4,8 @@ package fairygui.utils
 	{
 		private var _elements:Array;
 		private var _enumI:int;
-		private var _dispatchingType:int;
+		
+		public var _dispatchingType:int;
 		
 		public function SimpleDispatcher():void {
 			_elements = [];

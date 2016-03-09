@@ -170,7 +170,7 @@ package fairygui
 				setDisplayObject(new UISprite(this));
 				if(_parent)
 					_parent.childStateChanged(this);
-				handleXYChanged();
+				handlePositionChanged();
 				displayObject.alpha = this.alpha;
 				displayObject.rotation = this.normalizeRotation;
 				displayObject.visible = this.visible;

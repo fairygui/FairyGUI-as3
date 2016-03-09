@@ -2,6 +2,7 @@ package fairygui.display
 {
 	import flash.display.Bitmap;
 	import flash.display.Sprite;
+	import flash.events.Event;
 	import flash.geom.Rectangle;
 	
 	import fairygui.utils.GTimers;
@@ -32,6 +33,10 @@ package fairygui.display
 			addChild(_bitmap);
 			_playState = new PlayState();
 			_playing = true;
+			setPlaySettings();
+			
+			this.addEventListener(Event.ADDED_TO_STAGE, __addedToStage);
+			this.addEventListener(Event.REMOVED_FROM_STAGE, __removedFromStage);
 		}
 		
 		public function get playState():PlayState
@@ -56,8 +61,13 @@ package fairygui.display
 				_frameCount = _frames.length;
 			else
 				_frameCount = 0;
+			
+			if(_end==-1 || _end>_frameCount - 1)
+				_end = _frameCount - 1;
+			if(_endAt==-1 || _endAt>_frameCount - 1)
+				_endAt = _frameCount - 1;
+			
 			_currentFrame = -1;
-			setPlaySettings();
 		}
 		
 		public function get frameCount():int
@@ -86,7 +96,7 @@ package fairygui.display
 			{
 				_currentFrame = value;
 				_playState.currentFrame = value;
-				setFrame(_currentFrame<frameCount?_frames[_currentFrame]:null);
+				setFrame(_currentFrame<_frameCount?_frames[_currentFrame]:null);
 			}
 		}
 		
@@ -99,7 +109,7 @@ package fairygui.display
 		{
 			_playing = value;
 
-			if (playing && frameCount != 0 && _status != 3)
+			if (_playing && this.stage!=null)
 				GTimers.inst.callBy24Fps(update);
 			else
 				GTimers.inst.remove(update);
@@ -110,25 +120,18 @@ package fairygui.display
 		{
 			_start = start;
 			_end = end;
-			if (_end == -1)
-				_end = frameCount - 1;
 			_times = times;
 			_endAt = endAt;
 			if (_endAt == -1)
 				_endAt = _end;
 			_status = 0;
 			_callback = endCallback;
-			
 			this.currentFrame = start;
-			if (playing && frameCount != 0)
-				GTimers.inst.callBy24Fps(update);
-			else
-				GTimers.inst.remove(update);
 		}
 		
 		private function update():void
 		{
-			if (playing && frameCount != 0 && _status != 3)
+			if (_playing && _frameCount != 0 && _status != 3)
 			{
 				_playState.update(this);
 				if (_currentFrame != _playState.currentFrame)
@@ -146,7 +149,6 @@ package fairygui.display
 						_status = 3;
 						
 						//play end
-						GTimers.inst.remove(update);
 						if(_callback!=null)
 						{
 							var f:Function = _callback;
@@ -191,6 +193,17 @@ package fairygui.display
 			}
 			else
 				_bitmap.bitmapData = null;
+		}
+		
+		private function __addedToStage(evt:Event):void
+		{
+			if (_playing)
+				GTimers.inst.callBy24Fps(update);
+		}
+		
+		private function __removedFromStage(evt:Event):void
+		{
+			GTimers.inst.remove(update);
 		}
 	}
 }

@@ -5,23 +5,20 @@ package fairygui
 	import flash.display.Shape;
 	import flash.display.Sprite;
 	import flash.geom.Point;
-	import flash.geom.Rectangle;
 	
 	import fairygui.display.UISprite;
 	import fairygui.utils.GTimers;
 
-	[Event(name = "scroll", type = "flash.events.Event")]
 	[Event(name = "dropEvent", type = "fairygui.event.DropEvent")]
 	public class GComponent extends GObject
 	{
-		private var _boundsChanged:Boolean;
-		private var _bounds:Rectangle;
 		private var _sortingChildCount:int;
 		private var _opaque:Boolean;
 		
 		protected var _margin:Margin;
 		protected var _trackBounds:Boolean;
 		protected var _mask:Shape;
+		protected var _boundsChanged:Boolean;
 		
 		internal var _buildingDisplayList:Boolean;
 		internal var _children:Vector.<GObject>;
@@ -33,7 +30,6 @@ package fairygui
 		
 		public function GComponent():void
 		{
-			_bounds = new Rectangle();
 			_children = new Vector.<GObject>();
 			_controllers = new Vector.<Controller>();
 			_transitions = new Vector.<Transition>();
@@ -52,9 +48,6 @@ package fairygui
 			var numChildren:int = _children.length; 
 			for (var i:int=numChildren-1; i>=0; --i)
 				_children[i].dispose();
-			
-			if (_scrollPane != null)
-				_scrollPane.dispose();
 			
 			super.dispose();
 		}
@@ -460,6 +453,33 @@ package fairygui
 			return _scrollPane;
 		}
 		
+		public function isChildInView(child:GObject):Boolean
+		{
+			if (_scrollPane != null)
+			{
+				return _scrollPane.isChildInView(child);
+			}
+			else if (_mask != null)
+			{
+				return child.x + child.width >= 0 && child.x <= this.width
+					&& child.y + child.height >= 0 && child.y <= this.height;
+			}
+			else
+				return true;
+		}
+		
+		virtual public function getFirstChildInView():int
+		{
+			var cnt:int = _children.length;
+			for (var i:int = 0; i < cnt; ++i)
+			{
+				var child:GObject = _children[i];
+				if (isChildInView(child))
+					return i;
+			}
+			return -1;
+		}
+		
 		final public function get opaque():Boolean
 		{
 			return _opaque;
@@ -558,7 +578,7 @@ package fairygui
 		{
 			if(_scrollPane)
 				_scrollPane.setSize(this.width, this.height);
-			else if(_mask)
+			if(_mask)
 				updateMask();
 			
 			if(_opaque)
@@ -648,29 +668,16 @@ package fairygui
 				aw = 0;
 				ah = 0;
 			}
-			if(ax!=_bounds.x || ay!=_bounds.y || aw!=_bounds.width || ah!=_bounds.height)
-				setBounds(ax, ay, aw, ah);
-			else
-				_boundsChanged = false;
+			
+			setBounds(ax, ay, aw, ah);
 		}
 		
 		protected function setBounds(ax:int, ay:int, aw:int, ah:int):void
 		{
 			_boundsChanged = false;
-			_bounds.x = ax;
-			_bounds.y = ay;
-			_bounds.width = aw;
-			_bounds.height = ah;
-			
+
 			if(_scrollPane)
-				_scrollPane.setContentSize(_bounds.x+_bounds.width,  _bounds.y+_bounds.height);
-		}
-		
-		public function get bounds():Rectangle
-		{
-			if(_boundsChanged)
-				updateBounds();
-			return _bounds;
+				_scrollPane.setContentSize(Math.round(ax+aw),  Math.round(ay+ah));
 		}
 		
 		public function get viewWidth():int

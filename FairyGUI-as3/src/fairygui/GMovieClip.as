@@ -60,6 +60,14 @@ package fairygui
 			}
 		}
 		
+		//从start帧开始，播放到end帧（-1表示结尾），重复times次（0表示无限循环），循环结束后，停止在endAt帧（-1表示参数end）
+		public function setPlaySettings(start:int = 0, end:int = -1, 
+										times:int = 0, endAt:int = -1, 
+										endCallback:Function = null):void
+		{
+			_movieClip.setPlaySettings(start, end, times, endAt, endCallback);	
+		}
+		
 		public function get color():uint
 		{
 			return _color;

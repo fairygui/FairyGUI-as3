@@ -159,7 +159,7 @@ package fairygui
 				_x = xv;
 				_y = yv;
 				
-				handleXYChanged();
+				handlePositionChanged();
 				if(this is GGroup)
 					GGroup(this).moveChildren(dx, dy);
 				
@@ -346,6 +346,24 @@ package fairygui
 			setPivot(_pivotX, value);
 		}
 		
+		/// <summary>
+		/// Change the x and y coordinates of the object's origin in its own coordinate space.
+		/// </summary>
+		/// <param name="xv">x value in ratio</param>
+		/// <param name="yv">y value in ratio</param>
+		final public function setPivotByRatio(xv:Number, yv:Number):void
+		{
+			if (this.sourceWidth != 0)
+				xv = this.sourceWidth * xv;
+			else
+				xv = this.width * xv;
+			if (this.sourceHeight != 0)
+				yv = this.sourceHeight * yv;
+			else
+				yv = this.width * yv;
+			setPivot(xv, yv);
+		}
+		
 		final public function setPivot(xv:Number, yv:Number):void
 		{
 			if(_pivotX!=xv || _pivotY!=yv)
@@ -392,7 +410,7 @@ package fairygui
 				_pivotOffsetY = 0;
 			}
 			if(ox!=_pivotOffsetX || oy!=_pivotOffsetY)
-				handleXYChanged();
+				handlePositionChanged();
 		}
 		
 		final public function get touchable():Boolean
@@ -484,12 +502,17 @@ package fairygui
 			if(_alpha!=value)
 			{
 				_alpha = value;
-				if(_displayObject)
-					_displayObject.alpha = _alpha;
-				
-				if(_gearLook.controller)
-					_gearLook.updateState();
+				updateAlpha();
 			}
+		}
+		
+		protected function updateAlpha():void
+		{
+			if(_displayObject)
+				_displayObject.alpha = _alpha;
+			
+			if(_gearLook.controller)
+				_gearLook.updateState();
 		}
 		
 		final public function get visible():Boolean
@@ -1029,7 +1052,7 @@ package fairygui
 			}
 		}
 
-		protected function handleXYChanged():void
+		protected function handlePositionChanged():void
 		{
 			if(_displayObject)
 			{

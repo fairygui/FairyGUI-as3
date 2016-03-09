@@ -22,6 +22,7 @@ package fairygui
 		private var _selectedIndex:int;
 		private var _buttonController:Controller;
 		private var _over:Boolean;
+		private var _popupDownward:Object;
 		
 		public function GComboBox()
 		{
@@ -30,6 +31,7 @@ package fairygui
 			_selectedIndex = -1;
 			_items = [];
 			_values = [];
+			_popupDownward = true;
 		}
 		
 		final override public function get text():String
@@ -68,6 +70,16 @@ package fairygui
 		public function set visibleItemCount(value:int):void
 		{
 			_visibleItemCount = value;
+		}
+		
+		public function get popupDownward():Object
+		{
+			return _popupDownward;
+		}
+		
+		public function set popupDownward(value:Object):void
+		{
+			_popupDownward = value;
 		}
 		
 		final public function get items():Array
@@ -249,7 +261,7 @@ package fairygui
 			
 			var r:GRoot = this.root;
 			if(r)
-				r.togglePopup(_dropdownObject, this, true);
+				r.togglePopup(_dropdownObject, this, _popupDownward);
 			if(_dropdownObject.parent)
 				setState(GButton.DOWN);
 		}

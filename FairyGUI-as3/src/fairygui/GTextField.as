@@ -83,6 +83,7 @@ package fairygui
 			_textField = new UITextField(this);
 			_textField.mouseEnabled = false;
 			_textField.selectable = false;
+			_textField.width = 10;
 			setDisplayObject(_textField); 
 		}
 		
@@ -807,7 +808,7 @@ package fairygui
 			}//line loop
 		}
 		
-		override protected function handleXYChanged():void
+		override protected function handlePositionChanged():void
 		{
 			displayObject.x = this.x;
 			displayObject.y = this.y+_yOffset;
@@ -915,6 +916,7 @@ package fairygui
 			var str:String = xml.@text;
 			if(str)
 				this.text = str;
+
 			_sizeDirty = false;
 			
 			var cxml:XML = xml.gearColor[0];

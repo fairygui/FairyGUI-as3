@@ -3,6 +3,7 @@ package fairygui.utils  {
 	import flash.events.TimerEvent;
 	import flash.utils.Dictionary;
 	import flash.utils.Timer;
+	import flash.utils.getTimer;
 	
 	public class GTimers {
 		private var _items:Object;
@@ -29,7 +30,7 @@ package fairygui.utils  {
 			_itemPool = new Vector.<TimerItem>();
 			
 			deltaTime = 1;
-			_lastTime = new Date().time;
+			_lastTime = getTimer();
 			time = _lastTime;
 			
 			_timer = new Timer(10);
@@ -99,7 +100,7 @@ package fairygui.utils  {
 		}
 		
 		private function __timer(evt:TimerEvent):void {
-			time =  new Date().time;
+			time =  getTimer();
 			workCount++;
 			
 			deltaTime = time-_lastTime;

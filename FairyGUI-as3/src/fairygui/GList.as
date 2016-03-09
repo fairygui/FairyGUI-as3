@@ -5,6 +5,7 @@ package fairygui
 	import flash.events.Event;
 	import flash.events.MouseEvent;
 	import flash.geom.Point;
+	import flash.geom.Rectangle;
 	
 	import fairygui.display.UIDisplayObject;
 	import fairygui.event.GTouchEvent;
@@ -13,7 +14,13 @@ package fairygui
 	[Event(name = "itemClick", type = "fairygui.event.ItemEvent")]
 	public class GList extends GComponent
 	{
+		/**
+		 * itemRenderer(int index, GObject item);
+		 */
+		public var itemRenderer:Function;
+		
 		private var _layout:int;
+		private var _lineItemCount:int;
 		private var _lineGap:int;
 		private var _columnGap:int;
 		private var _defaultItem:String;
@@ -22,11 +29,21 @@ package fairygui
 		private var _lastSelectedIndex:int;
 		private var _pool:GObjectPool;
 		private var _selectionHandled:Boolean;
-
+		
+		//Virtual List support
+		private var _virtual:Boolean;
+		private var _loop:Boolean;
+		private var _numItems:int;
+		private var _firstIndex:int; //the top left index
+		private var _viewCount:int; //item count in view
+		private var _curLineItemCount:int; //item count in one line
+		private var _itemSize:Point;
+		private var _virtualScrollPane:ScrollPane;
+		
 		public function GList()
 		{
 			super();
-			
+
 			_trackBounds = true;
 			_pool = new GObjectPool();
 			_layout = ListLayoutType.SingleColumn;
@@ -37,6 +54,13 @@ package fairygui
 		public override function dispose():void
 		{
 			_pool.clear();
+			if (_virtualScrollPane != null)
+			{
+				_virtualScrollPane.owner.removeSizeChangeCallback(refreshVirtualList);
+				_virtualScrollPane.removeEventListener(Event.SCROLL, __scrolled, true);
+				_virtualScrollPane = null;
+			}
+			
 			super.dispose();
 		}
 
@@ -50,6 +74,20 @@ package fairygui
 			if(_layout != value)
 			{
 				_layout = value;
+				setBoundsChangedFlag();
+			}
+		}
+		
+		final public function get lineItemCount():int
+		{
+			return _lineItemCount;
+		}
+		
+		final public function set lineItemCount(value:int):void
+		{
+			if (_lineItemCount != value)
+			{
+				_lineItemCount = value;
 				setBoundsChangedFlag();
 			}
 		}
@@ -122,7 +160,9 @@ package fairygui
 			if(!url)
 				url = _defaultItem;
 
-			return _pool.getObject(url);
+			var ret:GObject = _pool.getObject(url);
+			ret.visible = true;
+			return ret;			
 		}
 		
 		public function returnToPool(obj:GObject):void
@@ -192,8 +232,8 @@ package fairygui
 		
 		public function removeChildrenToPool(beginIndex:int=0, endIndex:int=-1):void
 		{
-			if (endIndex < 0 || endIndex >= numChildren) 
-				endIndex = numChildren - 1;
+			if (endIndex < 0 || endIndex >= _children.length) 
+				endIndex = _children.length - 1;
 			
 			for (var i:int=beginIndex; i<=endIndex; ++i)
 				removeChildToPoolAt(beginIndex);
@@ -205,8 +245,13 @@ package fairygui
 			for(var i:int=0;i<cnt;i++)
 			{
 				var obj:GButton = _children[i].asButton;
-				if(obj!=null && obj.selected)
-					return i;
+				if (obj != null && obj.selected)
+				{
+					var j:int = _firstIndex + i;
+					if (_loop && j >= _numItems)
+						j -= _numItems;
+					return j;
+				}
 			}
 			return -1;
 		}
@@ -214,7 +259,7 @@ package fairygui
 		public function set selectedIndex(value:int):void
 		{
 			clearSelection();
-			if(value>=0 && value<_children.length)
+			if (value >= 0 && value < this.numItems)
 				addSelection(value);
 		}
 		
@@ -225,8 +270,13 @@ package fairygui
 			for(var i:int=0;i<cnt;i++)
 			{
 				var obj:GButton = _children[i].asButton;
-				if(obj!=null && obj.selected)
-					ret.push(i);
+				if (obj != null && obj.selected)
+				{
+					var j:int = _firstIndex + i;
+					if (_loop && j >= _numItems)
+						j -= _numItems;
+					ret.push(j);
+				}
 			}
 			return ret;
 		}
@@ -239,19 +289,39 @@ package fairygui
 			if(_selectionMode==ListSelectionMode.Single)
 				clearSelection();
 
-			var obj:GButton = getChildAt(index).asButton;
-			if(obj!=null)
+			if (scrollItToView)
+				scrollToView(index);
+			
+			index -= _firstIndex;
+			if (index < 0)
 			{
-				if(!obj.selected)
-					obj.selected = true;
-				if(scrollItToView && _scrollPane!=null)
-					_scrollPane.scrollToView(obj);
+				if (_loop && _numItems > 0)
+					index += _numItems;
+				else
+					return;
 			}
+			if (index >= _children.length)
+				return;
+			
+			var obj:GButton = getChildAt(index).asButton;
+			if (obj != null && !obj.selected)
+				obj.selected = true;
 		}
 		
 		public function removeSelection(index:int):void
 		{
 			if(_selectionMode==ListSelectionMode.None)
+				return;
+			
+			index -= _firstIndex;
+			if (index < 0)
+			{
+				if (_loop && _numItems > 0)
+					index += _numItems;
+				else
+					return;
+			}
+			if (index >= _children.length)
 				return;
 			
 			var obj:GButton = getChildAt(index).asButton;
@@ -499,7 +569,8 @@ package fairygui
 			
 			_selectionHandled = false;
 			
-			if(UIConfig.defaultScrollTouchEffect && this.scrollPane!=null)
+			if(UIConfig.defaultScrollTouchEffect
+				&& (this.scrollPane != null || this.parent != null && this.parent.scrollPane != null))
 				return;
 			
 			if(_selectionMode==ListSelectionMode.Single)
@@ -576,7 +647,7 @@ package fairygui
 						{
 							var min:int = Math.min(_lastSelectedIndex, index);
 							var max:int = Math.max(_lastSelectedIndex, index);
-							max = Math.min(max, this.numChildren-1);
+							max = Math.min(max, _children.length-1);
 							for(var i:int=min;i<=max;i++)
 							{
 								var obj:GButton = getChildAt(i).asButton;
@@ -627,11 +698,19 @@ package fairygui
 		{
 			ensureBoundsCorrect();
 			
-			var curCount:int = this.numChildren;
+			var curCount:int = this.numItems;
 			if(itemCount>curCount)
 				itemCount = curCount;
 			
-			if (itemCount == 0)
+			if (_virtual)
+			{
+				var lineCount:int = Math.ceil(itemCount / _curLineItemCount);
+				if (_layout == ListLayoutType.SingleColumn || _layout == ListLayoutType.FlowHorizontal)
+					this.viewHeight = lineCount * _itemSize.y + Math.max(0, lineCount - 1) * _lineGap;
+				else
+					this.viewWidth = lineCount * _itemSize.x + Math.max(0, lineCount - 1) * _columnGap;
+			}
+			else if (itemCount == 0)
 			{
 				if (_layout == ListLayoutType.SingleColumn || _layout == ListLayoutType.FlowHorizontal)
 					this.viewHeight = minSize;
@@ -679,7 +758,7 @@ package fairygui
 		
 		public function getMaxItemWidth():int
 		{
-			var cnt:int = numChildren;				
+			var cnt:int = _children.length;				
 			var max:int = 0;
 			for(var i:int=0;i<cnt;i++)
 			{
@@ -698,14 +777,18 @@ package fairygui
 				adjustItemsSize();
 			
 			if(_layout==ListLayoutType.FlowHorizontal || _layout==ListLayoutType.FlowVertical)
+			{
 				setBoundsChangedFlag();
+				if (_virtual)
+					handleVirtualListSizeChanged();
+			}
 		}
 		
 		public function adjustItemsSize():void
 		{
 			if(_layout==ListLayoutType.SingleColumn)
 			{
-				var cnt:int = numChildren;				
+				var cnt:int = _children.length;				
 				var cw:int = this.viewWidth;
 				for(var i:int=0;i<cnt;i++)
 				{
@@ -715,7 +798,7 @@ package fairygui
 			}
 			else if(_layout==ListLayoutType.SingleRow)
 			{
-				cnt = numChildren;
+				cnt = _children.length;
 				var ch:int = this.viewHeight;
 				for(i=0;i<cnt;i++)
 				{
@@ -739,69 +822,92 @@ package fairygui
 			}
 			
 			ensureBoundsCorrect();
-			var obj:GObject = null;
 			
-			var i:int = 0;
-			if (yValue != 0)
+			if (_virtual)
 			{
-				for (; i < cnt; i++)
+				if (_layout == ListLayoutType.SingleColumn || _layout == ListLayoutType.FlowHorizontal)
 				{
-					obj = _children[i];
-					if (yValue < obj.y)
-					{
-						if (i == 0)
-						{
-							yValue = 0;
-							break;
-						}
-						else
-						{
-							var prev:GObject = _children[i - 1];
-							if (yValue < prev.y + prev.actualHeight / 2) //inside item, top half part
-								yValue = prev.y;
-							else if (yValue < prev.y + prev.actualHeight)//inside item, bottom half part
-								yValue = obj.y;
-							else //between two items
-								yValue = obj.y + _lineGap / 2;
-							break;
-						}
-					}
+					var i:int = Math.floor(yValue / (_itemSize.y + _lineGap));
+					if (yValue > i * (_itemSize.y + _lineGap) + _itemSize.y / 2)
+						i++;
+					
+					yValue = i * (_itemSize.y + _lineGap);
 				}
-				
-				if (i == cnt)
-					yValue = obj.y;
+				else
+				{
+					i = Math.floor(xValue / (_itemSize.x + _columnGap));
+					if (xValue > i * (_itemSize.x + _columnGap) + _itemSize.x / 2)
+						i++;
+					
+					xValue = i * (_itemSize.x + _columnGap);
+				}
 			}
-			
-			if (xValue != 0)
+			else
 			{
-				if (i > 0)
-					i--;
-				for (; i < cnt; i++)
+				var obj:GObject = null;
+				
+				i = 0;
+				if (yValue != 0)
 				{
-					obj = _children[i];
-					if (xValue < obj.x)
+					for (; i < cnt; i++)
 					{
-						if (i == 0)
+						obj = _children[i];
+						if (yValue < obj.y)
 						{
-							xValue = 0;
-							break;
-						}
-						else
-						{
-							prev = _children[i - 1];
-							if (xValue < prev.x + prev.actualWidth / 2) //inside item, top half part
-								xValue = prev.x;
-							else if (xValue < prev.x + prev.actualWidth)//inside item, bottom half part
-								xValue = obj.x;
-							else //between two items
-								xValue = obj.x + _columnGap / 2;
-							break;
+							if (i == 0)
+							{
+								yValue = 0;
+								break;
+							}
+							else
+							{
+								var prev:GObject = _children[i - 1];
+								if (yValue < prev.y + prev.height / 2) //inside item, top half part
+									yValue = prev.y;
+								else if (yValue < prev.y + prev.height)//inside item, bottom half part
+									yValue = obj.y;
+								else //between two items
+									yValue = obj.y + _lineGap / 2;
+								break;
+							}
 						}
 					}
+					
+					if (i == cnt)
+						yValue = obj.y;
 				}
 				
-				if (i == cnt)
-					xValue = obj.x;
+				if (xValue != 0)
+				{
+					if (i > 0)
+						i--;
+					for (; i < cnt; i++)
+					{
+						obj = _children[i];
+						if (xValue < obj.x)
+						{
+							if (i == 0)
+							{
+								xValue = 0;
+								break;
+							}
+							else
+							{
+								prev = _children[i - 1];
+								if (xValue < prev.x + prev.width / 2) //inside item, top half part
+									xValue = prev.x;
+								else if (xValue < prev.x + prev.width)//inside item, bottom half part
+									xValue = obj.x;
+								else //between two items
+									xValue = obj.x + _columnGap / 2;
+								break;
+							}
+						}
+					}
+					
+					if (i == cnt)
+						xValue = obj.x;
+				}
 			}
 			
 			resultPoint.x = xValue;
@@ -809,9 +915,472 @@ package fairygui
 			return resultPoint;
 		}
 		
+		public function scrollToView(index:int, ani:Boolean=false):void
+		{
+			if (_virtual)
+			{
+				if (this.scrollPane != null)
+					scrollPane.scrollToView(getItemRect(index), ani);
+				else if (parent != null && parent.scrollPane != null)
+					parent.scrollPane.scrollToView(getItemRect(index), ani);
+			}
+			else
+			{
+				var obj:GButton = getChildAt(index).asButton;
+				if (obj != null)
+				{
+					if (this.scrollPane != null)
+						scrollPane.scrollToView(obj, ani);
+					else if (parent != null && parent.scrollPane != null)
+						parent.scrollPane.scrollToView(obj, ani);
+				}
+			}
+		}
+		
+		override public function getFirstChildInView():int
+		{
+			var ret:int = super.getFirstChildInView();
+			if (ret != -1)
+			{
+				ret += _firstIndex;
+				if (_loop && ret >= _numItems)
+					ret -= _numItems;
+				return ret;
+			}
+			else
+				return -1;
+		}
+		
+		public function setVirtual():void
+		{
+			_setVirtual(false);
+		}
+		
+		/// <summary>
+		/// Set the list to be virtual list, and has loop behavior.
+		/// </summary>
+		public function setVirtualAndLoop():void
+		{
+			_setVirtual(true);
+		}
+		
+		/// <summary>
+		/// Set the list to be virtual list.
+		/// </summary>
+		private function _setVirtual(loop:Boolean):void
+		{
+			if (!_virtual)
+			{
+				if (loop)
+				{
+					if (this.scrollPane == null)
+						throw new Error("Loop list must be scrollable!");
+					
+					if (_layout == ListLayoutType.FlowHorizontal || _layout == ListLayoutType.FlowVertical)
+						throw new Error("Only single row or single column layout type is supported for loop list!");
+					
+					this.scrollPane.bouncebackEffect = false;
+				}
+				
+				_virtual = true;
+				_loop = loop;
+				_itemSize = new Point();
+				removeChildrenToPool();
+				
+				var obj:GObject = getFromPool(null);
+				_itemSize.x = obj.width;
+				_itemSize.y = obj.height;
+				returnToPool(obj);
+				
+				if (this.scrollPane != null)
+				{
+					if (_layout == ListLayoutType.SingleColumn || _layout == ListLayoutType.FlowHorizontal)
+						this.scrollPane.scrollSpeed = _itemSize.y;
+					else
+						this.scrollPane.scrollSpeed = _itemSize.x;
+					
+					_virtualScrollPane = this.scrollPane;
+					
+				}
+				else if (parent != null && parent.scrollPane != null)
+				{
+					_virtualScrollPane = parent.scrollPane;
+					parent.addSizeChangeCallback(refreshVirtualList);
+				}
+				else
+					throw new Error("Virtual list must be scrollable or in scrollable container!");
+				
+				_virtualScrollPane.addEventListener(Event.SCROLL, __scrolled, true);
+				handleVirtualListSizeChanged();
+			}
+		}
+		
+		/// <summary>
+		/// Set the list item count. 
+		/// If the list is not virtual, specified number of items will be created. 
+		/// If the list is virtual, only items in view will be created.
+		/// </summary>
+		public function get numItems():int
+		{
+			if (_virtual)
+				return _numItems;
+			else
+				return _children.length;
+		}
+		
+		public function set numItems(value:int):void
+		{
+			if (_virtual)
+			{
+				_numItems = value;
+				refreshVirtualList();
+			}
+			else
+			{
+				var cnt:int = _children.length;
+				if (value > cnt)
+				{
+					for (var i:int = cnt; i < value; i++)
+						addItemFromPool();
+				}
+				else
+				{
+					removeChildrenToPool(value, cnt);
+				}
+				
+				if (itemRenderer != null)
+				{
+					for (i = 0; i < value; i++)
+						itemRenderer(i, getChildAt(i));
+				}
+			}
+		}
+		
+		private function handleVirtualListSizeChanged():void
+		{
+			var vw:Number = _virtualScrollPane.viewWidth;
+			var vh:Number = _virtualScrollPane.viewHeight;
+			if (_virtualScrollPane != this.scrollPane) //scroll support from parent
+			{
+				vw = Math.min(vw, this.viewWidth);
+				vh = Math.min(vh, this.viewHeight);
+			}
+			
+			if (_layout == ListLayoutType.SingleColumn || _layout == ListLayoutType.FlowHorizontal)
+			{
+				if (_layout == ListLayoutType.SingleColumn)
+					_curLineItemCount = 1;
+				else if (_lineItemCount != 0)
+					_curLineItemCount = _lineItemCount;
+				else
+					_curLineItemCount = Math.floor((vw + _columnGap) / (_itemSize.x + _columnGap));
+				_viewCount = (Math.ceil((vh + _lineGap) / (_itemSize.y + _lineGap)) + 1) * _curLineItemCount;
+				var numChildren:int = _children.length;
+				if (numChildren < _viewCount)
+				{
+					for (var i:int = numChildren; i < _viewCount; i++)
+						this.addItemFromPool();
+				}
+				else if (numChildren > _viewCount)
+					this.removeChildrenToPool(_viewCount, numChildren);
+			}
+			else
+			{
+				if (_layout == ListLayoutType.SingleRow)
+					_curLineItemCount = 1;
+				else if (_lineItemCount != 0)
+					_curLineItemCount = _lineItemCount;
+				else
+					_curLineItemCount = Math.floor((vh + _lineGap) / (_itemSize.y + _lineGap));
+				_viewCount = (Math.ceil((vw + _columnGap) / (_itemSize.x + _columnGap)) + 1) * _curLineItemCount;
+				numChildren = _children.length;
+				if (numChildren < _viewCount)
+				{
+					for (i = numChildren; i < _viewCount; i++)
+						this.addItemFromPool();
+				}
+				else if (numChildren > _viewCount)
+					this.removeChildrenToPool(_viewCount, numChildren);
+			}
+			
+			refreshVirtualList();
+		}
+		
+		private function refreshVirtualList():void
+		{
+			ensureBoundsCorrect();
+			
+			if (_layout == ListLayoutType.SingleColumn || _layout == ListLayoutType.FlowHorizontal)
+			{
+				if (this.scrollPane != null)
+				{
+					var ch:Number;
+					if (_layout == ListLayoutType.SingleColumn)
+					{
+						ch = _numItems * _itemSize.y + Math.max(0, _numItems - 1) * _lineGap;
+						if (_loop && ch > 0)
+							ch = ch * 2 + _lineGap;
+					}
+					else
+					{
+						var lineCount:int = Math.ceil(_numItems / _curLineItemCount);
+						ch = lineCount * _itemSize.y + Math.max(0, lineCount - 1) * _lineGap;
+					}
+					
+					this.scrollPane.setContentSize(this.scrollPane.contentWidth, ch);
+				}
+				
+				__scrolled(null);
+			}
+			else
+			{
+				if (this.scrollPane != null)
+				{
+					var cw:Number;
+					if (_layout == ListLayoutType.SingleRow)
+					{
+						cw = _numItems * _itemSize.x + Math.max(0, _numItems - 1) * _columnGap;
+						if (_loop && cw > 0)
+							cw = cw * 2 + _columnGap;
+					}
+					else
+					{
+						lineCount = Math.ceil(_numItems / _curLineItemCount);
+						cw = lineCount * _itemSize.x + Math.max(0, lineCount - 1) * _columnGap;
+					}
+					
+					this.scrollPane.setContentSize(cw, this.scrollPane.contentHeight);
+				}
+				
+				__scrolled(null);
+			}
+		}
+		
+		private function renderItems(beginIndex:int, endIndex:int):void
+		{
+			for (var i:int = 0; i < _viewCount; i++)
+			{
+				var obj:GObject = getChildAt(i);
+				var j:int = _firstIndex + i;
+				if (_loop && j >= _numItems)
+					j -= _numItems;
+				
+				if (j < _numItems)
+				{
+					obj.visible = true;
+					if (i >= beginIndex && i < endIndex)
+						itemRenderer(j, obj);
+				}
+				else
+					obj.visible = false;
+			}
+		}
+		
+		private function getItemRect(index:int):Rectangle
+		{
+			var rect:Rectangle;
+			var index1:int = index / _curLineItemCount;
+			var index2:int = index % _curLineItemCount;
+			switch (_layout)
+			{
+				case ListLayoutType.SingleColumn:
+					rect = new Rectangle(0, index1 * _itemSize.y + Math.max(0, index1 - 1) * _lineGap,
+						this.viewWidth, _itemSize.y);
+					break;
+				
+				case ListLayoutType.FlowHorizontal:
+					rect = new Rectangle(index2 * _itemSize.x + Math.max(0, index2 - 1) * _columnGap,
+						index1 * _itemSize.y + Math.max(0, index1 - 1) * _lineGap,
+						_itemSize.x, _itemSize.y);
+					break;
+				
+				case ListLayoutType.SingleRow:
+					rect = new Rectangle(index1 * _itemSize.x + Math.max(0, index1 - 1) * _columnGap, 0,
+						_itemSize.x, this.viewHeight);
+					break;
+				
+				case ListLayoutType.FlowVertical:
+					rect = new Rectangle(index1 * _itemSize.x + Math.max(0, index1 - 1) * _columnGap,
+						index2 * _itemSize.y + Math.max(0, index2 - 1) * _lineGap,
+						_itemSize.x, _itemSize.y);
+					break;
+			}
+			return rect;
+		}
+		
+		private function __scrolled(evt:Event):void
+		{
+			if (_layout == ListLayoutType.SingleColumn || _layout == ListLayoutType.FlowHorizontal)
+			{
+				if (_loop)
+				{
+					if (_virtualScrollPane.percY == 0)
+						_virtualScrollPane.posY = _numItems * (_itemSize.y + _lineGap);
+					else if (_virtualScrollPane.percY == 1)
+						_virtualScrollPane.posY = _numItems * _itemSize.y + Math.max(0, _numItems - 1) * _lineGap - this.viewHeight;
+				}
+				
+				var scrollPosY:Number = _virtualScrollPane.posY;
+				if (_virtualScrollPane != this.scrollPane)
+				{
+					scrollPosY -= this.y;
+					if (scrollPosY < 0)
+						scrollPosY = 0;
+				}
+				
+				var firstLine:int = Math.floor((scrollPosY + _lineGap) / (_itemSize.y + _lineGap));
+				var newFirstIndex:int = firstLine * _curLineItemCount;
+				for (var i:int = 0; i < _viewCount; i++)
+				{
+					var obj:GObject = getChildAt(i);
+					obj.y = (firstLine + (i / _curLineItemCount)) * (_itemSize.y + _lineGap);
+				}
+				if (newFirstIndex >= _numItems)
+					newFirstIndex -= _numItems;
+				
+				if (newFirstIndex != _firstIndex || evt == null)
+				{
+					var oldFirstIndex:int = _firstIndex;
+					_firstIndex = newFirstIndex;
+					
+					if (evt == null || oldFirstIndex + _viewCount < newFirstIndex || oldFirstIndex > newFirstIndex + _viewCount)
+					{
+						//no intersection, render all
+						for (i = 0; i < _viewCount; i++)
+						{
+							obj = getChildAt(i);
+							if (obj is GButton)
+								GButton(obj).selected = false;
+						}
+						renderItems(0, _viewCount);
+					}
+					else if (oldFirstIndex > newFirstIndex)
+					{
+						var j1:int = oldFirstIndex - newFirstIndex;
+						var j2:int = _viewCount - j1;
+						for (i = j2 - 1; i >= 0; i--)
+						{
+							var obj1:GObject = getChildAt(i);
+							var obj2:GObject = getChildAt(i + j1);
+							if (obj2 is GButton)
+								GButton(obj2).selected = false;
+							var tmp:Number = obj1.y;
+							obj1.y = obj2.y;
+							obj2.y = tmp;
+							swapChildrenAt(i + j1, i);
+						}
+						renderItems(0, j1);
+					}
+					else
+					{
+						j1 = newFirstIndex - oldFirstIndex;
+						j2 = _viewCount - j1;
+						for (i = 0; i < j2; i++)
+						{
+							obj1 = getChildAt(i);
+							obj2 = getChildAt(i + j1);
+							if (obj1 is GButton)
+								GButton(obj1).selected = false;
+							tmp = obj1.y;
+							obj1.y = obj2.y;
+							obj2.y = tmp;
+							swapChildrenAt(i + j1, i);
+						}
+						renderItems(j2, _viewCount);
+					}
+				}
+			}
+			else
+			{
+				if (_loop)
+				{
+					if (_virtualScrollPane.percX == 0)
+						_virtualScrollPane.posX = _numItems * (_itemSize.x + _columnGap);
+					else if (_virtualScrollPane.percX == 1)
+						_virtualScrollPane.posX = _numItems * _itemSize.x + Math.max(0, _numItems - 1) * _columnGap - this.viewWidth;
+				}
+				
+				var scrollPosX:Number = _virtualScrollPane.posX;
+				if (_virtualScrollPane != this.scrollPane)
+				{
+					scrollPosX -= this.x;
+					if (scrollPosX < 0)
+						scrollPosX = 0;
+				}
+				
+				firstLine = Math.floor((scrollPosX + _columnGap) / (_itemSize.x + _columnGap));
+				newFirstIndex = firstLine * _curLineItemCount;
+				
+				for (i = 0; i < _viewCount; i++)
+				{
+					obj = getChildAt(i);
+					obj.x = (firstLine + (i / _curLineItemCount)) * (_itemSize.x + _columnGap);
+				}
+				
+				if (newFirstIndex >= _numItems)
+					newFirstIndex -= _numItems;
+				
+				if (newFirstIndex != _firstIndex || evt == null)
+				{
+					oldFirstIndex = _firstIndex;
+					_firstIndex = newFirstIndex;
+					if (evt == null || oldFirstIndex + _viewCount < newFirstIndex || oldFirstIndex > newFirstIndex + _viewCount)
+					{
+						//no intersection, render all
+						for (i = 0; i < _viewCount; i++)
+						{
+							obj = getChildAt(i);
+							if (obj is GButton)
+								GButton(obj).selected = false;
+						}
+						
+						renderItems(0, _viewCount);
+					}
+					else if (oldFirstIndex > newFirstIndex)
+					{
+						j1 = oldFirstIndex - newFirstIndex;
+						j2 = _viewCount - j1;
+						for (i = j2 - 1; i >= 0; i--)
+						{
+							obj1 = getChildAt(i);
+							obj2 = getChildAt(i + j1);
+							if (obj2 is GButton)
+								GButton(obj2).selected = false;
+							tmp = obj1.x;
+							obj1.x = obj2.x;
+							obj2.x = tmp;
+							swapChildrenAt(i + j1, i);
+						}
+						
+						renderItems(0, j1);
+					}
+					else
+					{
+						j1 = newFirstIndex - oldFirstIndex;
+						j2 = _viewCount - j1;
+						for (i = 0; i < j2; i++)
+						{
+							obj1 = getChildAt(i);
+							obj2 = getChildAt(i + j1);
+							if (obj1 is GButton)
+								GButton(obj1).selected = false;
+							tmp = obj1.x;
+							obj1.x = obj2.x;
+							obj2.x = tmp;
+							swapChildrenAt(i + j1, i);
+						}
+						
+						renderItems(j2, _viewCount);
+					}
+				}
+			}
+			
+			_boundsChanged = false;
+		}
+		
 		override protected function updateBounds():void
 		{
-			var cnt:int = numChildren;
+			var cnt:int = _children.length;
 			var i:int;
 			var child:GObject;
 			var curX:int;
@@ -864,7 +1433,8 @@ package fairygui
 			}
 			else if(_layout==ListLayoutType.FlowHorizontal)
 			{
-				cw = this.viewWidth;
+				var j:int = 0;
+				var viewWidth:Number = this.viewWidth;
 				for(i=0;i<cnt;i++)
 				{
 					child = getChildAt(i);
@@ -874,23 +1444,31 @@ package fairygui
 					if(curX!=0)
 						curX += _columnGap;
 					
-					if(curX+child.width>cw && maxHeight!=0)
+					if (_lineItemCount != 0 && j >= _lineItemCount
+						|| _lineItemCount == 0 && curX + child.width > viewWidth && maxHeight != 0)
 					{
 						//new line
+						curX -= _columnGap;
+						if (curX > maxWidth)
+							maxWidth = curX;
 						curX = 0;
 						curY += maxHeight + _lineGap;
 						maxHeight = 0;
+						j = 0;
 					}
 					child.setXY(curX, curY);
 					curX += child.width;
-					if(child.height>maxHeight)
+					if (child.height > maxHeight)
 						maxHeight = child.height;
+					j++;
 				}
-				ch = curY+maxHeight;
+				ch = curY + maxHeight;
+				cw = maxWidth;
 			}
 			else
 			{
-				ch = this.viewHeight;
+				j = 0;
+				var viewHeight:Number = this.viewHeight;
 				for(i=0;i<cnt;i++)
 				{
 					child = getChildAt(i);
@@ -900,18 +1478,25 @@ package fairygui
 					if(curY!=0)
 						curY += _lineGap;
 					
-					if(curY+child.height>ch && maxWidth!=0)
+					if (_lineItemCount != 0 && j >= _lineItemCount
+						|| _lineItemCount == 0 && curY + child.height > viewHeight && maxWidth != 0)
 					{
+						curY -= _lineGap;
+						if (curY > maxHeight)
+							maxHeight = curY;
 						curY = 0;
 						curX += maxWidth + _columnGap;
 						maxWidth = 0;
+						j = 0;
 					}
 					child.setXY(curX, curY);
 					curY += child.height;
-					if(child.width>maxWidth)
+					if (child.width > maxWidth)
 						maxWidth = child.width;
+					j++;
 				}
-				cw = curX+maxWidth;
+				cw = curX + maxWidth;
+				ch = maxHeight;
 			}
 			setBounds(0,0,cw,ch);
 		}
@@ -981,6 +1566,10 @@ package fairygui
 			str = xml.@colGap;
 			if(str)
 				_columnGap = parseInt(str);
+			
+			str = xml.@lineItemCount;
+			if(str)
+				_lineItemCount = parseInt(str);
 			
 			str = xml.@selectionMode;
 			if(str)
