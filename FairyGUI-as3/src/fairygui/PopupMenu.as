@@ -161,12 +161,8 @@ package fairygui
 		
 		public function show(target:GObject=null, downward:Object=null):void
 		{
-			var r:GRoot = (target is GRoot)?GRoot(target):(target!=null?target.root:null);
-			if(!r)
-				r = GRoot.inst;
-			if(target is GRoot)
-				target = null;
-			r.showPopup(this.contentPane, target, downward);
+			var r:GRoot = target!=null?target.root:GRoot.inst;
+			r.showPopup(this.contentPane, (target is GRoot)?null:target, downward);
 		}
 
 		private function __clickItem(evt:ItemEvent):void

@@ -941,7 +941,7 @@ package fairygui
 					}
 					else
 					{
-						value.f1 = parseInt(arr[0]);
+						value.f1 = parseFloat(arr[0]);
 						value.b1 = true;
 					}
 					if(arr[1]=="-")
@@ -950,7 +950,7 @@ package fairygui
 					}
 					else
 					{
-						value.f2 = parseInt(arr[1]);
+						value.f2 = parseFloat(arr[1]);
 						value.b2 = true;
 					}
 					break;

@@ -3,6 +3,7 @@ package fairygui
 	import flash.display.DisplayObject;
 	import flash.display.DisplayObjectContainer;
 	import flash.display.InteractiveObject;
+	import flash.display.Stage;
 	import flash.events.Event;
 	import flash.events.EventDispatcher;
 	import flash.events.MouseEvent;
@@ -180,11 +181,7 @@ package fairygui
 			if (parent != null)
 				r = parent;
 			else
-			{
 				r = this.root;
-				if (r == null)
-					r = GRoot.inst;
-			}
 			
 			this.setXY(int((r.width-this.width)/2), int((r.height-this.height)/2));
 			if (restraint)
@@ -586,24 +583,16 @@ package fairygui
 		
 		public function get focused():Boolean
 		{
-			var r:GRoot = this.root;
-			if(r)
-				return r.focus == this;
-			else
-				return false;
+			return  this.root.focus == this;
 		}
 		
 		public function requestFocus():void
 		{
-			var r:GRoot = this.root;
-			if(r)
-			{
-				var p:GObject = this;
-				while(p && !p._focusable)
-					p = p.parent;
-				if(p!=null)
-					r.focus = p;
-			}
+			var p:GObject = this;
+			while(p && !p._focusable)
+				p = p.parent;
+			if(p!=null)
+				this.root.focus = p;
 		}
 		
 		final public function get tooltips():String
@@ -629,24 +618,18 @@ package fairygui
 		
 		private function __rollOver(evt:Event):void
 		{
-			var r:GRoot = this.root;
-			if(r)
-				GTimers.inst.callDelay(100, __doShowTooltips, r);
+			GTimers.inst.callDelay(100, __doShowTooltips);
 		}
 		
 		private function __doShowTooltips(r:GRoot):void
 		{
-			r.showTooltips(_tooltips);
+			this.root.showTooltips(_tooltips);
 		}
 		
 		private function __rollOut(evt:Event):void
-		{
-			var r:GRoot = this.root;
-			if(r)
-			{				
-				GTimers.inst.remove(__doShowTooltips);
-				r.hideTooltips();
-			}
+		{		
+			GTimers.inst.remove(__doShowTooltips);
+			this.root.hideTooltips();
 		}
 		
 		final public function get inContainer():Boolean
@@ -740,6 +723,9 @@ package fairygui
 		
 		public function get root():GRoot
 		{
+			if(this is GRoot)
+				return GRoot(this);
+			
 			var p:GObject = _parent;
 			while(p)
 			{
@@ -831,6 +817,7 @@ package fairygui
 		
 		public function dispose():void
 		{
+			removeFromParent();
 			_relations.dispose();
 		}
 
@@ -1183,19 +1170,23 @@ package fairygui
 		
 		public function triggerDown(touchPointID:int=-1):void
 		{
-			_buttonStatus = 1;
-			if(!GRoot.touchPointInput)
+			var st:Stage = _displayObject.stage;
+			if(st!=null)
 			{
-				_displayObject.stage.addEventListener(MouseEvent.MOUSE_UP, __stageMouseup, false, 20);
-				if(hasEventListener(GTouchEvent.DRAG))
-					_displayObject.stage.addEventListener(MouseEvent.MOUSE_MOVE, __mousemove);
-			}
-			else
-			{
-				_touchPointId = touchPointID;
-				_displayObject.stage.addEventListener(TouchEvent.TOUCH_END, __stageMouseup, false, 20);
-				if(hasEventListener(GTouchEvent.DRAG))
-					_displayObject.stage.addEventListener(TouchEvent.TOUCH_MOVE, __mousemove);
+				_buttonStatus = 1;
+				if(!GRoot.touchPointInput)
+				{
+					_displayObject.stage.addEventListener(MouseEvent.MOUSE_UP, __stageMouseup, false, 20);
+					if(hasEventListener(GTouchEvent.DRAG))
+						_displayObject.stage.addEventListener(MouseEvent.MOUSE_MOVE, __mousemove);
+				}
+				else
+				{
+					_touchPointId = touchPointID;
+					_displayObject.stage.addEventListener(TouchEvent.TOUCH_END, __stageMouseup, false, 20);
+					if(hasEventListener(GTouchEvent.DRAG))
+						_displayObject.stage.addEventListener(TouchEvent.TOUCH_MOVE, __mousemove);
+				}
 			}
 		}
 		

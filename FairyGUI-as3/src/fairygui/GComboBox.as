@@ -259,9 +259,7 @@ package fairygui
 			_list.selectedIndex = -1;
 			_dropdownObject.width = this.width;
 			
-			var r:GRoot = this.root;
-			if(r)
-				r.togglePopup(_dropdownObject, this, _popupDownward);
+			this.root.togglePopup(_dropdownObject, this, _popupDownward);
 			if(_dropdownObject.parent)
 				setState(GButton.DOWN);
 		}

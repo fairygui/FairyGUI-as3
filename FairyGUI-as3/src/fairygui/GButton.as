@@ -447,11 +447,7 @@ package fairygui
 				if(_linkedPopup is Window)
 					Window(_linkedPopup).toggleStatus();
 				else
-				{
-					var r:GRoot = this.root;
-					if(r)
-						r.togglePopup(_linkedPopup, this);
-				}
+					this.root.togglePopup(_linkedPopup, this);
 			}
 		}
 		

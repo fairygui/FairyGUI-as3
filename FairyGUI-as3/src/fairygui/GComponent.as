@@ -47,7 +47,11 @@ package fairygui
 		{
 			var numChildren:int = _children.length; 
 			for (var i:int=numChildren-1; i>=0; --i)
-				_children[i].dispose();
+			{
+				var obj:GObject = _children[i];
+				obj.parent = null; //avoid removeFromParent call
+				obj.dispose(); 
+			}
 			
 			super.dispose();
 		}

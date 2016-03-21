@@ -67,7 +67,8 @@ package fairygui.display
 			if(_endAt==-1 || _endAt>_frameCount - 1)
 				_endAt = _frameCount - 1;
 			
-			_currentFrame = -1;
+			if(_currentFrame<0 || _currentFrame>_frameCount - 1)
+				_currentFrame = _frameCount - 1;
 		}
 		
 		public function get frameCount():int
