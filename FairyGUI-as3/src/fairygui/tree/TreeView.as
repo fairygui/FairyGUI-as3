@@ -212,7 +212,7 @@ package fairygui.tree
 		internal function afterExpanded(node:TreeNode):void
 		{
 			if(node!=_root)
-				_listener.treeNodeWillExpand(node);
+				_listener.treeNodeWillExpand(node, true);
 
 			if(node.cell==null)
 				return;
@@ -232,6 +232,9 @@ package fairygui.tree
 		
 		internal function afterCollapsed(node:TreeNode):void
 		{
+			if(node!=_root)
+				_listener.treeNodeWillExpand(node, false);
+			
 			if(node.cell==null)
 				return;
 			

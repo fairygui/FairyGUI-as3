@@ -7,7 +7,7 @@ package fairygui.tree
 	{
 		function treeNodeCreateCell(node:TreeNode):GComponent;
 		function treeNodeRender(node:TreeNode, obj:GComponent):void;
-		function treeNodeWillExpand(node:TreeNode):void;
+		function treeNodeWillExpand(node:TreeNode, expand:Boolean):void;
 		function treeNodeClick(node:TreeNode, evt:ItemEvent):void;
 	}
 }

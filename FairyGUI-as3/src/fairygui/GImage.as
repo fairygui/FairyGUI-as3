@@ -175,6 +175,11 @@ package fairygui
 				_content.scaleX = this.width/_sourceWidth*this.scaleX;
 				_content.scaleY = this.height/_sourceHeight*this.scaleY;
 			}
+			else
+			{
+				_content.scaleX = this.scaleX;
+				_content.scaleY = this.scaleY;
+			}
 			updateBitmap();
 		}
 		
@@ -188,8 +193,8 @@ package fairygui
 			
 			if(_packageItem.scale9Grid!=null)
 			{
-				var w:Number = this.width*this.scaleX;
-				var h:Number = this.height*this.scaleY;
+				var w:Number = this.width;
+				var h:Number = this.height;
 				
 				if(_bmdAfterFlip.width==w && _bmdAfterFlip.height==h)
 					newBmd = _bmdAfterFlip;
@@ -201,8 +206,8 @@ package fairygui
 			}
 			else if(_packageItem.scaleByTile)
 			{
-				w = this.width*this.scaleX;
-				h = this.height*this.scaleY;
+				w = this.width;
+				h = this.height;
 				oldBmd = _content.bitmapData;
 				
 				if(_bmdAfterFlip.width==w && _bmdAfterFlip.height==h)

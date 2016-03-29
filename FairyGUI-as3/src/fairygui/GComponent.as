@@ -888,33 +888,30 @@ package fairygui
 			var thisPkg:UIPackage = _packageItem.owner;
 			var pkg:UIPackage;
 			if(pkgId && pkgId!=thisPkg.id)
-			{
 				pkg = UIPackage.getById(pkgId);
-				if(!pkg)
-					return null;
-			}
 			else
 				pkg = thisPkg;
 			
-			var src:String = xml.@src;
-			if(src)
+			if(pkg)
 			{
-				var pi:PackageItem = pkg.getItemById(src);
-				if(!pi)
-					return null;
-				
-				var g:GObject = pkg.createObject2(pi);
-				return g;
+				var src:String = xml.@src;
+				if(src)
+				{
+					var pi:PackageItem = pkg.getItemById(src);
+					if(pi)
+					{
+						var g:GObject = pkg.createObject2(pi);
+						return g;
+					}
+				}
 			}
+
+			var str:String = xml.name().localName;
+			if(str=="text" && xml.@input=="true")
+				g = new GTextInput();
 			else
-			{
-				var str:String = xml.name().localName;
-				if(str=="text" && xml.@input=="true")
-					g = new GTextInput();
-				else
-					g = UIObjectFactory.newObject2(str);
-				return g;
-			}
+				g = UIObjectFactory.newObject2(str);
+			return g;
 		}
 	}	
 }

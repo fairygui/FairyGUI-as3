@@ -261,7 +261,7 @@ package fairygui.tree
 		{
 			_tree = value;
 			if(_tree!=null && _tree.listener!=null && _expanded)
-				_tree.listener.treeNodeWillExpand(this);			
+				_tree.listener.treeNodeWillExpand(this, true);			
 			
 			if(_children!=null)
 			{
