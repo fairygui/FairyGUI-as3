@@ -170,20 +170,7 @@ package fairygui
 			if(_selected!=val)
 			{
 				_selected = val;
-				if(this.grayed && _buttonController && _buttonController.hasPage(DISABLED))
-				{
-					if(_selected)
-						setState(SELECTED_DISABLED);
-					else
-						setState(DISABLED);
-				}
-				else
-				{
-					if(_selected)
-						setState(_over?SELECTED_OVER:DOWN);
-					else
-						setState(_over?OVER:UP);
-				}
+				setCurrentState();
 				if(_selectedTitle && _titleObject)
 					_titleObject.text = _selected?_selectedTitle:_title;
 				if(_selectedIcon)
@@ -298,6 +285,24 @@ package fairygui
 			if(_buttonController)
 			{
 				_buttonController.selectedPage = val;
+			}
+		}
+		
+		protected function setCurrentState():void
+		{
+			if(this.grayed && _buttonController && _buttonController.hasPage(DISABLED))
+			{
+				if(_selected)
+					setState(SELECTED_DISABLED);
+				else
+					setState(DISABLED);
+			}
+			else
+			{
+				if(_selected)
+					setState(_over?SELECTED_OVER:DOWN);
+				else
+					setState(_over?OVER:UP);
 			}
 		}
 		
@@ -461,6 +466,15 @@ package fairygui
 					setState(OVER);
 				else
 					setState(UP);
+			}
+			else
+			{
+				if(!_over
+					&&_buttonController 
+					&& (_buttonController.selectedPage==OVER || _buttonController.selectedPage==SELECTED_OVER))
+				{
+					setCurrentState();
+				}
 			}
 		}
 		

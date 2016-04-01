@@ -68,34 +68,39 @@ package fairygui
 			return _nativeStage;
 		}
 		
-		public function setContentScaleFactor(designUIWidth:int, designUIHeight:int):void
+		public function setContentScaleFactor(designResolutionX:int, designResolutionY:int, 
+											  screenMatchMode:int=ScreenMatchMode.MatchWidthOrHeight):void
 		{
-			var w:int, h:int;
+			var screenWidth:int, screenHeight:int;
 			if(Capabilities.os.toLowerCase().slice(0,3)=="win" 
 				|| Capabilities.os.toLowerCase().slice(0,3)=="mac")
 			{
-				w = _nativeStage.stageWidth;
-				h = _nativeStage.stageHeight;
+				screenWidth = _nativeStage.stageWidth;
+				screenHeight = _nativeStage.stageHeight;
 			}
 			else
 			{
-				w = Capabilities.screenResolutionX;
-				h = Capabilities.screenResolutionY;
+				screenWidth = Capabilities.screenResolutionX;
+				screenHeight = Capabilities.screenResolutionY;
 			}
-
-			if(designUIWidth>0 && designUIHeight>0)
+			
+			if(designResolutionX==0) //backward compability
+				screenMatchMode = ScreenMatchMode.MatchWidth;
+			else if(designResolutionY==0) //backward compability
+				screenMatchMode = ScreenMatchMode.MatchHeight;
+			
+			if (screenMatchMode == ScreenMatchMode.MatchWidthOrHeight)
 			{
-				var s1:Number = w/designUIWidth;
-				var s2:Number = h/designUIHeight; 
+				var s1:Number = screenWidth/designResolutionX;
+				var s2:Number = screenHeight/designResolutionY; 
 				contentScaleFactor = Math.min(s1, s2);
 			}
-			else if(designUIWidth>0)
-				contentScaleFactor = w/designUIWidth;
-			else if(designUIHeight>0)
-				contentScaleFactor = h/designUIHeight; 
+			else if (screenMatchMode == ScreenMatchMode.MatchWidth)
+				contentScaleFactor = screenWidth / designResolutionX;
 			else
-				contentScaleFactor = 1;
-			this.setSize(Math.round(w/contentScaleFactor),Math.round(h/contentScaleFactor));
+				contentScaleFactor = screenHeight / designResolutionY;
+			
+			this.setSize(Math.round(screenWidth/contentScaleFactor),Math.round(screenHeight/contentScaleFactor));
 			this.scaleX = contentScaleFactor;
 			this.scaleY = contentScaleFactor;
 		}
