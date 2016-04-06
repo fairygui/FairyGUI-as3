@@ -145,6 +145,19 @@ package fairygui
 			gv.scaleX = _owner.scaleX;
 			gv.scaleY = _owner.scaleY;
 		}
+		
+		public function updateFromRelations(dx:Number, dy:Number):void
+		{
+			for each (var gv:GearSizeValue in _storage)
+			{
+				gv.width += dx;
+				gv.height += dy;
+			}
+			GearSizeValue(_default).width += dx;
+			GearSizeValue(_default).height += dy;
+			
+			updateState();
+		}
 	}
 }
 

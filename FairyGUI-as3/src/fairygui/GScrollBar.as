@@ -36,13 +36,13 @@ package fairygui
 			if(_vertical)
 			{
 				if(!_fixedGripSize)
-					_grip.height = val*_bar.height;
+					_grip.height = Math.max(val*_bar.height, 15);
 				_grip.y = _bar.y+(_bar.height-_grip.height)*_scrollPerc;
 			}
 			else
 			{
 				if(!_fixedGripSize)
-					_grip.width = val*_bar.width;
+					_grip.width = Math.max(val*_bar.width, 15);
 				_grip.x = _bar.x+(_bar.width-_grip.width)*_scrollPerc;
 			}
 		}

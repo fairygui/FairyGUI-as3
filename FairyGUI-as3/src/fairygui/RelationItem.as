@@ -331,7 +331,10 @@ package fairygui
 						v = _owner._rawWidth - _targetWidth;
 					if (info.percent)
 						v = v / _targetWidth * _target._rawWidth;
-					_owner.width = _target._rawWidth + v;
+					if(_target==_owner.parent)
+						_owner.setSize(_target._rawWidth + v, _owner._rawHeight, true);
+					else
+						_owner.width = _target._rawWidth + v;
 					break;
 				case RelationType.Height:
 					if(_owner._underConstruct && _owner==_target.parent)
@@ -340,7 +343,10 @@ package fairygui
 						v = _owner._rawHeight - _targetHeight;
 					if (info.percent)
 						v = v / _targetHeight * _target._rawHeight;
-					_owner.height = _target._rawHeight + v;
+					if(_target==_owner.parent)
+						_owner.setSize(_owner._rawWidth, _target._rawHeight + v, true);
+					else
+						_owner.height = _target._rawHeight + v;
 					break;
 				
 				case RelationType.LeftExt_Left:
@@ -474,6 +480,8 @@ package fairygui
 			
 			var ox:Number = _owner.x;
 			var oy:Number = _owner.y;
+			var ow:Number = _owner._rawWidth;
+			var oh:Number = _owner._rawHeight;
 			for each(var info:RelationDef in _defs)
 			{
 				applyOnSizeChanged(info);
@@ -496,6 +504,15 @@ package fairygui
 						trans.updateFromRelations(_owner.id, ox, oy);
 					}
 				}
+			}
+			
+			if (ow!=_owner._rawWidth || oh!=_owner._rawHeight)
+			{
+				ow = _owner._rawWidth - ow;
+				oh = _owner._rawHeight - oh;
+				
+				if (_owner.gearSize.controller != null)
+					_owner.gearSize.updateFromRelations(ow, oh);
 			}
 
 			_owner.relations.handling = null;

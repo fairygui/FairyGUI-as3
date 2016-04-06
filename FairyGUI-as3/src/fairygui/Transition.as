@@ -11,7 +11,11 @@ package fairygui
 	
 	public class Transition
 	{
-		private var _name:String;
+		public var name:String;
+		public var autoPlay:Boolean;
+		public var autoPlayRepeat:int;
+		public var autoPlayDelay:Number;
+
 		private var _owner:GComponent;
 		private var _ownerBaseX:Number;
 		private var _ownerBaseY:Number;
@@ -34,18 +38,9 @@ package fairygui
 			_owner = owner;
 			_items = new Vector.<TransitionItem>();
 			_maxTime = 0;
+			autoPlayDelay = 0;
 		}
-		
-		public function get name():String
-		{
-			return _name;
-		}
-		
-		public function set name(value:String):void
-		{
-			_name = value;
-		}
-		
+
 		public function play(onComplete:Function = null, onCompleteParam:Object = null,
 							 times:int = 1, delay:Number = 0):void
 		{
@@ -822,6 +817,14 @@ package fairygui
 			var str:String = xml.@options;
 			if(str)
 				_options = parseInt(str); 
+			this.autoPlay = xml.@autoPlay=="true";
+			str = xml.@autoPlayRepeat;
+			if(str)
+				this.autoPlayRepeat = parseInt(str);
+			str = xml.@autoPlayDelay;
+			if(str)
+				this.autoPlayDelay = parseFloat(str);
+			
 			var col:XMLList = xml.item;
 			for each (var cxml:XML in col)
 			{

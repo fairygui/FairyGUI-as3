@@ -770,6 +770,7 @@ package fairygui
 			var charX:int = GUTTER_X;
 			var lineIndent:int;
 			var charIndent:int;
+			rectWidth = this.width - GUTTER_X * 2;
 			
 			var lineCount:int = _lines.length;
 			for(var i:int=0;i<lineCount;i++)
@@ -810,8 +811,8 @@ package fairygui
 		
 		override protected function handlePositionChanged():void
 		{
-			displayObject.x = this.x;
-			displayObject.y = this.y+_yOffset;
+			displayObject.x = int(this.x);
+			displayObject.y = int(this.y+_yOffset);
 		}
 		
 		override protected function handleSizeChanged():void

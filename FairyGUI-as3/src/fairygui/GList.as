@@ -162,7 +162,8 @@ package fairygui
 				url = _defaultItem;
 
 			var ret:GObject = _pool.getObject(url);
-			ret.visible = true;
+			if(ret!=null)
+				ret.visible = true;
 			return ret;			
 		}
 		
@@ -927,14 +928,11 @@ package fairygui
 			}
 			else
 			{
-				var obj:GButton = getChildAt(index).asButton;
-				if (obj != null)
-				{
-					if (this.scrollPane != null)
-						scrollPane.scrollToView(obj, ani);
-					else if (parent != null && parent.scrollPane != null)
-						parent.scrollPane.scrollToView(obj, ani);
-				}
+				var obj:GObject = getChildAt(index);
+				if (this.scrollPane != null)
+					scrollPane.scrollToView(obj, ani);
+				else if (parent != null && parent.scrollPane != null)
+					parent.scrollPane.scrollToView(obj, ani);
 			}
 		}
 		
