@@ -64,7 +64,7 @@ package fairygui
 				_owner.internalVisible--;
 			}
 			
-			if(_tween && !UIPackage._constructing
+			if(_tween && !UIPackage._constructing && !disableAllTweenEffect
 				&& ct && _pageSet.containsId(_controller.previousPageId))
 			{
 				_owner.grayed = gv.grayed;

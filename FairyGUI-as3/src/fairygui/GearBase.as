@@ -6,6 +6,8 @@ package fairygui
 	
 	public class GearBase
 	{
+		public static var disableAllTweenEffect:Boolean = false;
+		
 		protected var _pageSet:PageOptionSet;
 		protected var _tween:Boolean;
 		protected var _easeType:Ease;

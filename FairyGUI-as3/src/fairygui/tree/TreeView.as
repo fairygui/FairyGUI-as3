@@ -3,7 +3,6 @@ package fairygui.tree
 	import flash.events.Event;
 	
 	import fairygui.GButton;
-	import fairygui.GComponent;
 	import fairygui.GList;
 	import fairygui.GObject;
 	import fairygui.event.ItemEvent;
@@ -90,14 +89,19 @@ package fairygui.tree
 			_list.addSelection(_list.getChildIndex(node.cell), scrollItToView);
 		}
 		
-		public function getNodeCell(node:TreeNode):GComponent
+		public function removeSelection(node:TreeNode):void
 		{
-			return node.cell;
+			_list.removeSelection(_list.getChildIndex(node.cell));
 		}
 		
 		public function clearSelection():void
 		{
 			_list.clearSelection();
+		}
+		
+		public function getNodeIndex(node:TreeNode):int
+		{
+			return _list.getChildIndex(node.cell);
 		}
 		
 		public function updateNode(node:TreeNode):void

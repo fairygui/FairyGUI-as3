@@ -63,6 +63,15 @@ package fairygui
 			renderNow();
 		}
 		
+		public function get restrict():String
+		{
+			return _textField.restrict;
+		}
+		
+		public function set restrict(value:String):void {
+			_textField.restrict = value;
+		}
+		
 		override protected function createDisplayObject():void
 		{ 
 			super.createDisplayObject();

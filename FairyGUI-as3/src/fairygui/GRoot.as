@@ -10,6 +10,7 @@ package fairygui
 	import flash.media.SoundTransform;
 	import flash.system.Capabilities;
 	import flash.system.TouchscreenType;
+	import flash.text.TextField;
 	import flash.ui.Multitouch;
 	import flash.ui.MultitouchInputMode;
 	
@@ -29,7 +30,6 @@ package fairygui
 		private var _tooltipWin:GObject;
 		private var _defaultTooltipWin:GObject;
 		private var _hitUI:Boolean;
-		private var _focusManagement:Boolean;
 		private var _contextMenuDisabled:Boolean;
 		private var _volumeScale:Number;
 		
@@ -43,7 +43,7 @@ package fairygui
 		public static var touchPointInput:Boolean;
 		public static var eatUIEvents:Boolean;
 		public static var contentScaleFactor:Number = 1;
-
+		
 		public static function get inst():GRoot
 		{
 			if(_inst==null)
@@ -103,11 +103,6 @@ package fairygui
 			this.setSize(Math.round(screenWidth/contentScaleFactor),Math.round(screenHeight/contentScaleFactor));
 			this.scaleX = contentScaleFactor;
 			this.scaleY = contentScaleFactor;
-		}
-		
-		public function enableFocusManagement():void
-		{
-			_focusManagement = true;
 		}
 		
 		public function setFlashContextMenuDisabled(value:Boolean):void
@@ -430,12 +425,16 @@ package fairygui
 		
 		public function set focus(value:GObject):void
 		{
-			if(!_focusManagement)
-				return;
-			
 			if(value && (!value.focusable || !value.onStage))
 				throw new Error("invalid focus target");
 			
+			setFocus(value);
+			if(value is GTextInput)
+				_nativeStage.focus = TextField(GTextInput(value).displayObject);
+		}
+		
+		private function setFocus(value:GObject):void
+		{
 			if(_focusedObject!=value)
 			{
 				var old:GObject;
@@ -543,21 +542,18 @@ package fairygui
 			buttonDown = true;
 			_hitUI = evt.target!=_nativeStage;
 			
-			if(_focusManagement)
-			{
-				var mc:DisplayObject = evt.target as DisplayObject;
-				while(mc!=_nativeStage && mc!=null) {
-					if(mc is UIDisplayObject)
+			var mc:DisplayObject = evt.target as DisplayObject;
+			while(mc!=_nativeStage && mc!=null) {
+				if(mc is UIDisplayObject)
+				{
+					var gg:GObject = UIDisplayObject(mc).owner;
+					if(gg.touchable && gg.focusable)
 					{
-						var gg:GObject = UIDisplayObject(mc).owner;
-						if(gg.touchable && gg.focusable)
-						{
-							this.focus = gg;
-							break;
-						}
+						this.setFocus(gg);
+						break;
 					}
-					mc = mc.parent;
 				}
+				mc = mc.parent;
 			}
 			
 			if(_tooltipWin!=null)

@@ -22,6 +22,8 @@ package fairygui
 		public static var buttonSound:String;
 		public static var buttonSoundVolumeScale:Number = 1;
 		
+		public static var buttonUseHandCursor:Boolean = false;
+		
 		//Resources for scrollbars
 		public static var horizontalScrollBar:String;
 		public static var verticalScrollBar:String;
@@ -54,5 +56,8 @@ package fairygui
 		
 		// Pixel offsets of mouse pointer to trigger dragging.
 		public static var clickDragSensitivity:int = 2;
+		
+		// When click the window, brings to front automatically.
+		public static var bringWindowToFrontOnClick:Boolean = true;
 	}
 }

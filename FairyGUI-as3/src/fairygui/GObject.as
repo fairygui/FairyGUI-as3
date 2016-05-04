@@ -232,11 +232,10 @@ package fairygui
 				_width = wv;
 				_height = hv;
 				
-				if((_pivotX!=0 || _pivotY!=0) && sourceWidth!=0 && sourceHeight!=0)
+				if(_pivotX!=0 || _pivotY!=0)
 				{
 					if(!ignorePivot)
-						this.setXY(this.x-_pivotX*dWidth/sourceWidth, 
-							this.y-_pivotY*dHeight/sourceHeight);
+						this.setXY(this.x-_pivotX*dWidth, this.y-_pivotY*dHeight);
 					applyPivot();
 				}
 				
@@ -343,24 +342,6 @@ package fairygui
 			setPivot(_pivotX, value);
 		}
 		
-		/// <summary>
-		/// Change the x and y coordinates of the object's origin in its own coordinate space.
-		/// </summary>
-		/// <param name="xv">x value in ratio</param>
-		/// <param name="yv">y value in ratio</param>
-		final public function setPivotByRatio(xv:Number, yv:Number):void
-		{
-			if (this.sourceWidth != 0)
-				xv = this.sourceWidth * xv;
-			else
-				xv = this.width * xv;
-			if (this.sourceHeight != 0)
-				yv = this.sourceHeight * yv;
-			else
-				yv = this.width * yv;
-			setPivot(xv, yv);
-		}
-		
 		final public function setPivot(xv:Number, yv:Number):void
 		{
 			if(_pivotX!=xv || _pivotY!=yv)
@@ -388,10 +369,8 @@ package fairygui
 					var b:Number   = _scaleX *  sin;
 					var c:Number   = _scaleY * -sin;
 					var d:Number   = _scaleY *  cos;
-					var sx:Number = sourceWidth != 0 ? (_width / sourceWidth) : 1;
-					var sy:Number = sourceHeight != 0 ? (_height / sourceHeight) : 1;
-					var px:Number = _pivotX*sx;
-					var py:Number = _pivotY*sy;
+					var px:Number = _pivotX*_width;
+					var py:Number = _pivotY*_height;
 					_pivotOffsetX = px -  (a * px + c * py);
 					_pivotOffsetY = py - (d * py + b * px);
 				}
@@ -1120,7 +1099,25 @@ package fairygui
 			if(str)
 			{
 				arr = str.split(",");
-				this.setPivot(parseFloat(arr[0]), parseFloat(arr[1]));
+				var n1:Number = parseFloat(arr[0]);
+				var n2:Number = parseFloat(arr[1])
+				//旧版本的兼容性处理
+				if(n1>2)
+				{
+					if(_sourceWidth!=0)
+						n1 = n1/_sourceWidth;
+					else
+						n1 = 0;
+				}
+				
+				if(n2>2)
+				{
+					if(_sourceHeight!=0)
+						n2 = n2/_sourceHeight;
+					else
+						n2 = 0;
+				}
+				this.setPivot(n1, n2);
 			}
 			
 			this.touchable = xml.@touchable!="false";

@@ -66,7 +66,7 @@ package fairygui
 				_owner.internalVisible--;
 			}
 			
-			if(_tween && !UIPackage._constructing
+			if(_tween && !UIPackage._constructing && !disableAllTweenEffect
 				&& ct && _pageSet.containsId(_controller.previousPageId))
 			{
 				var a:Boolean = gv.width != _owner.width || gv.height != _owner.height;

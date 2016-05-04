@@ -21,12 +21,15 @@ package fairygui
 		private var _loading:Boolean;
 		
 		protected var _requestingCmd:int;
+		
+		public var bringToFontOnClick:Boolean;
 
 		public function Window():void
 		{
 			super();
 			this.focusable = true;
 			_uiSources = new Vector.<IUISource>();
+			bringToFontOnClick = UIConfig.bringWindowToFrontOnClick;
 			
 			displayObject.addEventListener(Event.ADDED_TO_STAGE, __onShown);
 			displayObject.addEventListener(Event.REMOVED_FROM_STAGE, __onHidden);
@@ -345,7 +348,7 @@ package fairygui
 		
 		private function __mouseDown(evt:Event):void
 		{
-			if (this.isShowing)
+			if (this.isShowing && bringToFontOnClick)
 			{
 				this.root.showWindow(this);
 			}

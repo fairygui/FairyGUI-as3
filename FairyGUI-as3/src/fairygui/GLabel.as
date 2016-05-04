@@ -115,6 +115,13 @@ package fairygui
 				str = xml.@titleColor;
 				if(str)
 					this.titleColor = ToolSet.convertFromHtmlColor(str);
+				
+				if(_titleObject is GTextInput)
+				{
+					str = xml.@promptText;
+					if(str)
+						GTextInput(_titleObject).promptText = str;
+				}
 			}
 		}
 	}

@@ -60,7 +60,7 @@ package fairygui
 				_owner.internalVisible--;
 			}
 			
-			if(_tween && !UIPackage._constructing
+			if(_tween && !UIPackage._constructing && !disableAllTweenEffect
 				&& ct && _pageSet.containsId(_controller.previousPageId))
 			{
 				if (_owner.x != pt.x || _owner.y != pt.y)

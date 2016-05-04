@@ -1,5 +1,6 @@
 package fairygui
 {
+	import flash.display.Sprite;
 	import flash.events.Event;
 	import flash.events.MouseEvent;
 	import flash.media.Sound;
@@ -31,6 +32,7 @@ package fairygui
 		private var _hasDisabledPage:Boolean;
 		private var _downEffect:int;
 		private var _downEffectValue:Number;
+		private var _useHandCursor:Boolean;
 		
 		private var _over:Boolean;
 		
@@ -53,6 +55,12 @@ package fairygui
 			_pageOption = new PageOption();
 			_changeStateOnClick = true;
 			_downEffectValue = 0.8;
+			_useHandCursor = UIConfig.buttonUseHandCursor;
+			if(_useHandCursor)
+			{			
+				Sprite(this.displayObject).buttonMode = true;
+				Sprite(this.displayObject).useHandCursor = true;
+			}
 		}
 
 		final public function get icon():String
@@ -220,6 +228,18 @@ package fairygui
 					this.selected = false;
 				_mode = value;
 			}
+		}
+		
+		final public function get useHandCursor():Boolean
+		{
+			return _useHandCursor;
+		}
+		
+		public function set useHandCursor(value:Boolean):void
+		{
+			_useHandCursor = value;
+			Sprite(this.displayObject).buttonMode = _useHandCursor;
+			Sprite(this.displayObject).useHandCursor = _useHandCursor;
 		}
 
 		final public function get relatedController():Controller
@@ -391,7 +411,7 @@ package fairygui
 				_downEffect = str=="dark"?1:(str=="scale"?2:0);
 				str = xml.@downEffectValue;
 				_downEffectValue = parseFloat(str);
-				this.setPivotByRatio(0.5, 0.5);
+				this.setPivot(0.5, 0.5);
 			}
 			
 			_buttonController = getController("button");
