@@ -32,6 +32,9 @@ package fairygui
 		private var _hitUI:Boolean;
 		private var _contextMenuDisabled:Boolean;
 		private var _volumeScale:Number;
+		private var _designResolutionX:int;
+		private var _designResolutionY:int;
+		private var _screenMatchMode:int;
 		
 		private static var _inst:GRoot;
 		
@@ -71,34 +74,49 @@ package fairygui
 		public function setContentScaleFactor(designResolutionX:int, designResolutionY:int, 
 											  screenMatchMode:int=ScreenMatchMode.MatchWidthOrHeight):void
 		{
-			var screenWidth:int, screenHeight:int;
-			if(Capabilities.os.toLowerCase().slice(0,3)=="win" 
-				|| Capabilities.os.toLowerCase().slice(0,3)=="mac")
+			_designResolutionX = designResolutionX;
+			_designResolutionY = designResolutionY;
+			_screenMatchMode = screenMatchMode;
+			
+			if(_designResolutionX==0) //backward compability
+				_screenMatchMode = ScreenMatchMode.MatchWidth;
+			else if(_designResolutionY==0) //backward compability
+				_screenMatchMode = ScreenMatchMode.MatchHeight;
+			
+			applyScaleFactor();
+		}
+		
+		private function applyScaleFactor():void
+		{
+			var screenWidth:int = _nativeStage.stageWidth;
+			var screenHeight:int = _nativeStage.stageHeight;
+			
+			if(_designResolutionX==0 || _designResolutionY==0)
 			{
-				screenWidth = _nativeStage.stageWidth;
-				screenHeight = _nativeStage.stageHeight;
-			}
-			else
-			{
-				screenWidth = Capabilities.screenResolutionX;
-				screenHeight = Capabilities.screenResolutionY;
+				this.setSize(screenWidth, screenHeight);
+				return;
 			}
 			
-			if(designResolutionX==0) //backward compability
-				screenMatchMode = ScreenMatchMode.MatchWidth;
-			else if(designResolutionY==0) //backward compability
-				screenMatchMode = ScreenMatchMode.MatchHeight;
-			
-			if (screenMatchMode == ScreenMatchMode.MatchWidthOrHeight)
+			var dx:int = _designResolutionX;
+			var dy:int = _designResolutionY;
+			if (screenWidth > screenHeight && dx < dy || screenWidth < screenHeight && dx > dy) 
 			{
-				var s1:Number = screenWidth/designResolutionX;
-				var s2:Number = screenHeight/designResolutionY; 
+				//scale should not change when orientation change
+				var tmp:int = dx;
+				dx = dy;
+				dy = tmp;
+			}			
+			
+			if (_screenMatchMode == ScreenMatchMode.MatchWidthOrHeight)
+			{
+				var s1:Number = screenWidth/dx;
+				var s2:Number = screenHeight/dy; 
 				contentScaleFactor = Math.min(s1, s2);
 			}
-			else if (screenMatchMode == ScreenMatchMode.MatchWidth)
-				contentScaleFactor = screenWidth / designResolutionX;
+			else if (_screenMatchMode == ScreenMatchMode.MatchWidth)
+				contentScaleFactor = screenWidth / dx;
 			else
-				contentScaleFactor = screenHeight / designResolutionY;
+				contentScaleFactor = screenHeight / dy;
 			
 			this.setSize(Math.round(screenWidth/contentScaleFactor),Math.round(screenHeight/contentScaleFactor));
 			this.scaleX = contentScaleFactor;
@@ -624,26 +642,12 @@ package fairygui
 		
 		private function __winResize(evt:Event):void
 		{
-			var w:int, h:int;
-			if(Capabilities.os.toLowerCase().slice(0,3)=="win" 
-				|| Capabilities.os.toLowerCase().slice(0,3)=="mac")
-			{
-				w = _nativeStage.stageWidth;
-				h = _nativeStage.stageHeight;
-			}
-			else
-			{
-				w = Capabilities.screenResolutionX;
-				h = Capabilities.screenResolutionY;
-			}
-			this.setSize(Math.round(w/contentScaleFactor),Math.round(h/contentScaleFactor));
-
-			trace("screen size="+w+"x"+h+"/"+this.width+"x"+this.height);
+			applyScaleFactor();
 		}
 		
 		private function __orientationChange(evt:Event):void
 		{
-			__winResize(null);
+			applyScaleFactor();
 		}
 	}
 	
