@@ -11,8 +11,9 @@ package fairygui
 	[Event(name = "stateChanged", type = "fairygui.event.StateChangeEvent")]
 	public class GComboBox extends GComponent
 	{
+		public var dropdown:GComponent;
+		
 		protected var _titleObject:GTextField;
-		protected var _dropdownObject:GComponent;
 		protected var _list:GList;
 		
 		private var _visibleItemCount:int;
@@ -166,14 +167,14 @@ package fairygui
 			str = xml.@dropdown;
 			if(str)
 			{
-				_dropdownObject = UIPackage.createObjectFromURL(str) as GComponent;
-				if(!_dropdownObject)
+				dropdown = UIPackage.createObjectFromURL(str) as GComponent;
+				if(!dropdown)
 				{
 					trace("下拉框必须为元件");
 					return;
 				}
 				
-				_list = _dropdownObject.getChild("list").asList;
+				_list = dropdown.getChild("list").asList;
 				if (_list == null)
 				{
 					trace(this.resourceURL + ": 下拉框的弹出元件里必须包含名为list的列表");
@@ -181,13 +182,13 @@ package fairygui
 				}
 				_list.addEventListener(ItemEvent.CLICK, __clickItem);
 				
-				_list.addRelation(_dropdownObject, RelationType.Width);
-				_list.removeRelation(_dropdownObject, RelationType.Height);
+				_list.addRelation(dropdown, RelationType.Width);
+				_list.removeRelation(dropdown, RelationType.Height);
 	
-				_dropdownObject.addRelation(_list, RelationType.Height);
-				_dropdownObject.removeRelation(_list, RelationType.Width);
+				dropdown.addRelation(_list, RelationType.Height);
+				dropdown.removeRelation(_list, RelationType.Width);
 				
-				_dropdownObject.displayObject.addEventListener(Event.REMOVED_FROM_STAGE, __popupWinClosed);
+				dropdown.displayObject.addEventListener(Event.REMOVED_FROM_STAGE, __popupWinClosed);
 			}
 			
 			this.opaque = true;
@@ -257,10 +258,10 @@ package fairygui
 				_list.resizeToFit(_visibleItemCount);
 			}
 			_list.selectedIndex = -1;
-			_dropdownObject.width = this.width;
+			dropdown.width = this.width;
 			
-			this.root.togglePopup(_dropdownObject, this, _popupDownward);
-			if(_dropdownObject.parent)
+			this.root.togglePopup(dropdown, this, _popupDownward);
+			if(dropdown.parent)
 				setState(GButton.DOWN);
 		}
 		
@@ -274,8 +275,8 @@ package fairygui
 		
 		private function __clickItem(evt:ItemEvent):void
 		{
-			if(_dropdownObject.parent is GRoot)
-				GRoot(_dropdownObject.parent).hidePopup(_dropdownObject);
+			if(dropdown.parent is GRoot)
+				GRoot(dropdown.parent).hidePopup(dropdown);
 			_selectedIndex = _list.getChildIndex(evt.itemObject);
 			if(_selectedIndex>=0)
 				this.text = _items[_selectedIndex];
@@ -287,7 +288,7 @@ package fairygui
 		private function __rollover(evt:Event):void
 		{
 			_over = true;
-			if(this.isDown || _dropdownObject && _dropdownObject.parent)
+			if(this.isDown || dropdown && dropdown.parent)
 				return;
 			
 			setState(GButton.OVER);
@@ -296,7 +297,7 @@ package fairygui
 		private function __rollout(evt:Event):void
 		{
 			_over = false;
-			if(this.isDown || _dropdownObject && _dropdownObject.parent)
+			if(this.isDown || dropdown && dropdown.parent)
 				return;
 			
 			setState(GButton.UP);
@@ -304,13 +305,13 @@ package fairygui
 		
 		private function __mousedown(evt:Event):void
 		{
-			if(_dropdownObject)
+			if(dropdown)
 				showDropdown();
 		}
 		
 		private function __mouseup(evt:Event):void
 		{
-			if(_dropdownObject && !_dropdownObject.parent)
+			if(dropdown && !dropdown.parent)
 			{
 				if (_over)
 					setState(GButton.OVER);

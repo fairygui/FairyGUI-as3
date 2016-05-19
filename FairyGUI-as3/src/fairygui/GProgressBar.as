@@ -112,15 +112,15 @@ package fairygui
 						break;
 					
 					case ProgressTitleType.ValueAndMax:
-						_titleObject.text = newValue + "/" + _max;
+						_titleObject.text = Math.round(newValue) + "/" + Math.round(_max);
 						break;
 					
 					case ProgressTitleType.Value:
-						_titleObject.text = ""+newValue;
+						_titleObject.text = ""+Math.round(newValue);
 						break;
 					
 					case ProgressTitleType.Max:
-						_titleObject.text = ""+_max;
+						_titleObject.text = ""+Math.round(_max);
 						break;
 				}
 			}

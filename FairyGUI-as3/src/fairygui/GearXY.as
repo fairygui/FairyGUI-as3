@@ -69,9 +69,10 @@ package fairygui
 					var vars:Object = 
 						{
 							x: pt.x,
-								y: pt.y,
-								ease: _easeType,
-								overwrite:0
+							y: pt.y,
+							ease: _easeType,
+							delay: _delay,
+							overwrite:0
 						};
 					vars.onUpdate = __tweenUpdate;
 					vars.onComplete = __tweenComplete;

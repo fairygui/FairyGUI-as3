@@ -81,6 +81,7 @@ package fairygui
 							scaleX: gv.scaleX,
 							scaleY: gv.scaleY,
 							ease: _easeType,
+							delay: _delay,
 							overwrite:0
 						};
 					vars.onUpdate = __tweenUpdate;

@@ -374,7 +374,8 @@ package fairygui
 		
 		public function get textWidth():int
 		{
-			this.ensureSizeCorrect();
+			if(_requireRender)
+				renderNow();
 			return _textWidth;
 		}
 		
@@ -443,14 +444,17 @@ package fairygui
 		
 		protected function render():void
 		{
-			_requireRender = true;
-			if(_widthAutoSize || _heightAutoSize)
+			if(!_requireRender)
+			{
+				_requireRender = true;
+				GTimers.inst.add(0, 1, __render);
+			}
+			
+			if(!_sizeDirty && (_widthAutoSize || _heightAutoSize))
 			{
 				_sizeDirty = true;
 				_dispatcher.dispatch(this, GObject.SIZE_DELAY_CHANGE);
 			}
-			
-			GTimers.inst.add(0, 1, __render);
 		}
 		
 		private function __render():void
@@ -834,11 +838,15 @@ package fairygui
 		
 		protected function doAlign():void
 		{
-			if(_verticalAlign==VertAlignType.Top || _textHeight==0)
+			if(_verticalAlign==VertAlignType.Top)
 				_yOffset = -_fontAdjustment;
 			else
 			{
-				var dh:Number = this.height-_textHeight;
+				var dh:Number;
+				if(_textHeight==0)
+					dh = this.height-int(_textFormat.size);
+				else
+					dh = this.height-_textHeight;
 				if(dh<0)
 					dh = 0;
 				if(_verticalAlign==VertAlignType.Middle)

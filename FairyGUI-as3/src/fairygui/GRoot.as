@@ -171,6 +171,26 @@ package fairygui
 			
 			adjustModalLayer();
 		}
+		
+		public function bringToFront(win: Window):void {
+			var cnt: int = this.numChildren;
+			var i:int;
+			if(this._modalLayer.parent!=null && !win.modal)
+				i = this.getChildIndex(this._modalLayer) - 1;
+			else
+				i = cnt - 1;
+			
+			for(;i >= 0;i--) {
+				var g: GObject = this.getChildAt(i);
+				if(g==win)
+					return;
+				if(g is Window)
+					break;
+			}
+			
+			if(i>=0)
+				this.setChildIndex(win, i);
+		}
 
 		public function showModalWait(msg:String=null):void
 		{
