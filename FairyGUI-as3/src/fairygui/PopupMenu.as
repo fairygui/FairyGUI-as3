@@ -37,6 +37,7 @@ package fairygui
 			item.title = caption;
 			item.data = callback;
 			item.grayed = false;
+			item.useHandCursor = false;
 			var c:Controller = item.getController("checked");
 			if(c!=null)
 				c.selectedIndex = 0;
@@ -50,6 +51,7 @@ package fairygui
 			item.title = caption;
 			item.data = callback;
 			item.grayed = false;
+			item.useHandCursor = false;
 			var c:Controller = item.getController("checked");
 			if(c!=null)
 				c.selectedIndex = 0;

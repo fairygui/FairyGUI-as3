@@ -68,7 +68,9 @@ package fairygui.display
 				_endAt = _frameCount - 1;
 			
 			if(_currentFrame<0 || _currentFrame>_frameCount - 1)
-				_currentFrame = _frameCount - 1;
+				_currentFrame = _frameCount - 1;			
+			
+			_playState.rewind();
 		}
 		
 		public function get frameCount():int

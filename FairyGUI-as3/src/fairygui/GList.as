@@ -208,6 +208,7 @@ package fairygui
 				var button:GButton = GButton(child);
 				button.selected = false;
 				button.changeStateOnClick = false;
+				button.useHandCursor = false;
 			}
 			child.addEventListener(GTouchEvent.BEGIN, __mouseDownItem);
 			child.addEventListener(GTouchEvent.CLICK, __clickItem);
