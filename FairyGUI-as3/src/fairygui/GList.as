@@ -29,7 +29,6 @@ package fairygui
 		private var _selectionMode:int;
 		private var _lastSelectedIndex:int;
 		private var _pool:GObjectPool;
-		private var _selectionHandled:Boolean;
 		
 		//Virtual List support
 		private var _virtual:Boolean;
@@ -210,7 +209,6 @@ package fairygui
 				button.changeStateOnClick = false;
 				button.useHandCursor = false;
 			}
-			child.addEventListener(GTouchEvent.BEGIN, __mouseDownItem);
 			child.addEventListener(GTouchEvent.CLICK, __clickItem);
 			child.addEventListener("rightClick", __rightClickItem);
 			
@@ -233,7 +231,6 @@ package fairygui
 		override public function removeChildAt(index:int, dispose:Boolean=false):GObject
 		{
 			var child:GObject = super.removeChildAt(index, dispose);
-			child.removeEventListener(GTouchEvent.BEGIN, __mouseDownItem);
 			child.removeEventListener(GTouchEvent.CLICK, __clickItem);
 			child.removeEventListener("rightClick", __rightClickItem);
 			
@@ -587,37 +584,11 @@ package fairygui
 			}
 			return null;
 		}
-		
-		private function __mouseDownItem(evt:Event):void
-		{
-			var item:GButton = evt.currentTarget as GButton;
-			if(item==null || _selectionMode==ListSelectionMode.None)
-				return;
-			
-			_selectionHandled = false;
-			
-			if(UIConfig.defaultScrollTouchEffect
-				&& (this.scrollPane != null || this.parent != null && this.parent.scrollPane != null))
-				return;
-			
-			if(_selectionMode==ListSelectionMode.Single)
-			{
-				setSelectionOnEvent(item);
-			}
-			else
-			{
-				if(!item.selected)
-					setSelectionOnEvent(item);
-				//如果item.selected，这里不处理selection，因为可能用户在拖动
-			}
-		}
-		
+
 		private function __clickItem(evt:GTouchEvent):void
 		{
 			var item:GObject = GObject(evt.currentTarget);
-			if(!_selectionHandled)
-				setSelectionOnEvent(item);
-			_selectionHandled = false;
+			setSelectionOnEvent(item);
 			
 			if (scrollPane != null)
 				scrollPane.scrollToView(item, true);
@@ -650,7 +621,6 @@ package fairygui
 			if(!(item is GButton) || _selectionMode==ListSelectionMode.None)
 				return;
 			
-			_selectionHandled = true;
 			var dontChangeLastIndex:Boolean = false;
 			var button:GButton = GButton(item);
 			var index:int = getChildIndex(item);
