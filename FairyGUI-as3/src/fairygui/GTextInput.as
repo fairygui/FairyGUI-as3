@@ -142,10 +142,15 @@ package fairygui
 		{
 			super.setup_afterAdd(xml);
 			
-			if(!_text && _promptText)
+			if(!_text)
 			{
-				_textField.displayAsPassword = false;
-				_textField.htmlText = ToolSet.parseUBB(ToolSet.encodeHTML(_promptText));
+				if(_promptText)
+				{
+					_textField.displayAsPassword = false;
+					_textField.htmlText = ToolSet.parseUBB(ToolSet.encodeHTML(_promptText));
+				}
+				else
+					doAlign();				
 			}
 		}
 		
