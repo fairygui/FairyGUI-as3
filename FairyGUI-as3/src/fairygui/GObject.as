@@ -236,7 +236,7 @@ package fairygui
 				{
 					if(!ignorePivot)
 						this.setXY(this.x-_pivotX*dWidth, this.y-_pivotY*dHeight);
-					applyPivot();
+					updatePivotOffset();
 				}
 				
 				handleSizeChanged();
@@ -349,44 +349,41 @@ package fairygui
 				_pivotX = xv;
 				_pivotY = yv;
 				
-				applyPivot();
+				updatePivotOffset();
 			}
 		}
 		
-		private function applyPivot():void
+		private function updatePivotOffset():void
 		{
-			var ox:Number = _pivotOffsetX;
-			var oy:Number = _pivotOffsetY;
-			if(_pivotX!=0 || _pivotY!=0)
-			{
-				var rot:int = this.normalizeRotation;
-				if(rot!=0 || _scaleX!=1 || _scaleY!=1)
-				{				
-					var rotInRad:Number = rot*Math.PI/180;
-					var cos:Number = Math.cos(rotInRad);
-					var sin:Number = Math.sin(rotInRad);
-					var a:Number   = _scaleX *  cos;
-					var b:Number   = _scaleX *  sin;
-					var c:Number   = _scaleY * -sin;
-					var d:Number   = _scaleY *  cos;
-					var px:Number = _pivotX*_width;
-					var py:Number = _pivotY*_height;
-					_pivotOffsetX = px -  (a * px + c * py);
-					_pivotOffsetY = py - (d * py + b * px);
-				}
-				else
-				{
-					_pivotOffsetX = 0;
-					_pivotOffsetY = 0;
-				}
+			var rot:int = this.normalizeRotation;
+			if(rot!=0 || _scaleX!=1 || _scaleY!=1)
+			{				
+				var rotInRad:Number = rot*Math.PI/180;
+				var cos:Number = Math.cos(rotInRad);
+				var sin:Number = Math.sin(rotInRad);
+				var a:Number   = _scaleX *  cos;
+				var b:Number   = _scaleX *  sin;
+				var c:Number   = _scaleY * -sin;
+				var d:Number   = _scaleY *  cos;
+				var px:Number = _pivotX*_width;
+				var py:Number = _pivotY*_height;
+				_pivotOffsetX = px -  (a * px + c * py);
+				_pivotOffsetY = py - (d * py + b * px);
 			}
 			else
 			{
 				_pivotOffsetX = 0;
 				_pivotOffsetY = 0;
 			}
-			if(ox!=_pivotOffsetX || oy!=_pivotOffsetY)
+		}
+		
+		private function applyPivot():void
+		{
+			if(_pivotX!=0 || _pivotY!=0)
+			{
+				updatePivotOffset();
 				handlePositionChanged();
+			}
 		}
 		
 		final public function get touchable():Boolean

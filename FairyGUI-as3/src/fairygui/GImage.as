@@ -5,6 +5,7 @@ package fairygui
 	import flash.geom.ColorTransform;
 	import flash.geom.Matrix;
 	import flash.geom.Point;
+	import flash.geom.Rectangle;
 	
 	import fairygui.display.UIImage;
 	import fairygui.utils.ToolSet;
@@ -201,8 +202,29 @@ package fairygui
 				else if(w<=0 || h<=0)
 					newBmd = null;
 				else
+				{
+					var rect:Rectangle;
+					if(_flip!=FlipType.None)
+					{
+						rect = _packageItem.scale9Grid.clone();
+						if(_flip==FlipType.Horizontal || _flip==FlipType.Both)
+						{
+							rect.x = _bmdAfterFlip.width - rect.right;
+							rect.right = rect.x + rect.width;
+						}
+						
+						if(_flip==FlipType.Vertical || _flip==FlipType.Both)
+						{
+							rect.y = _bmdAfterFlip.height - rect.bottom;
+							rect.bottom = rect.y + rect.height;
+						}
+					}
+					else
+						rect = _packageItem.scale9Grid;
+					
 					newBmd = ToolSet.scaleBitmapWith9Grid(_bmdAfterFlip, 
-						_packageItem.scale9Grid, w, h, _packageItem.smoothing);
+						rect, w, h, _packageItem.smoothing);
+				}
 			}
 			else if(_packageItem.scaleByTile)
 			{

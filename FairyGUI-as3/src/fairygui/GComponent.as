@@ -1,5 +1,6 @@
 package fairygui 
 {
+	import flash.display.DisplayObject;
 	import flash.display.DisplayObjectContainer;
 	import flash.display.Graphics;
 	import flash.display.Shape;
@@ -18,7 +19,7 @@ package fairygui
 		
 		protected var _margin:Margin;
 		protected var _trackBounds:Boolean;
-		protected var _mask:Shape;
+		protected var _clipMask:Shape;
 		protected var _boundsChanged:Boolean;
 		
 		internal var _buildingDisplayList:Boolean;
@@ -578,7 +579,7 @@ package fairygui
 			{
 				return _scrollPane.isChildInView(child);
 			}
-			else if (_mask != null)
+			else if (_clipMask != null)
 			{
 				return child.x + child.width >= 0 && child.x <= this.width
 					&& child.y + child.height >= 0 && child.y <= this.height;
@@ -624,7 +625,7 @@ package fairygui
 		public function set margin(value:Margin):void
 		{
 			_margin.copy(value);
-			if(_mask)
+			if(_clipMask)
 			{
 				_container.x = _margin.left;
 				_container.y = _margin.top;
@@ -662,6 +663,18 @@ package fairygui
 			}
 		}
 		
+		public function get mask():DisplayObject
+		{
+			return _container.mask;
+		}
+		
+		public function set mask(value:DisplayObject):void
+		{
+			_container.mask = value;
+			if(!value && _clipMask)
+				_container.mask = _clipMask;
+		}
+		
 		protected function updateOpaque():void
 		{
 			var w:Number = this.width;
@@ -690,7 +703,7 @@ package fairygui
 			if(h<=0)
 				h = 1;
 			
-			var g:Graphics = _mask.graphics;
+			var g:Graphics = _clipMask.graphics;
 			g.clear();
 			g.lineStyle(0,0,0);
 			g.beginFill(0,0);
@@ -720,11 +733,11 @@ package fairygui
 				_container = new Sprite();
 				_rootContainer.addChild(_container);
 				
-				_mask = new Shape();
-				_rootContainer.addChild(_mask);
+				_clipMask = new Shape();
+				_rootContainer.addChild(_clipMask);
 				updateMask();
 				
-				_container.mask = _mask;
+				_container.mask = _clipMask;
 				_container.x = _margin.left;
 				_container.y = _margin.top;
 			}
@@ -743,7 +756,7 @@ package fairygui
 		{
 			if(_scrollPane)
 				_scrollPane.setSize(this.width, this.height);
-			if(_mask)
+			if(_clipMask)
 				updateMask();
 			
 			if(_opaque)
@@ -1078,7 +1091,12 @@ package fairygui
 				addChild(u);
 			}
 			
+			str = xml.@mask;
+			if(str)
+				this.mask = getChildById(str).displayObject;
+			
 			this.relations.setup(xml);
+			
 			var cnt:int = _children.length;
 			for(var i:int=0;i<cnt;i++)
 			{
