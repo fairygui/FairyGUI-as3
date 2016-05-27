@@ -148,9 +148,7 @@ package fairygui
 				{
 					_textField.displayAsPassword = false;
 					_textField.htmlText = ToolSet.parseUBB(ToolSet.encodeHTML(_promptText));
-				}
-				else
-					doAlign();				
+				}			
 			}
 		}
 		
