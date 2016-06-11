@@ -514,9 +514,6 @@ package fairygui
 		{
 			if(!_updatingLayout)
 				updateLayout();
-			
-			_container.scaleX = this.scaleX;
-			_container.scaleY = this.scaleY;
 		}
 		
 		private function resizeImage():void

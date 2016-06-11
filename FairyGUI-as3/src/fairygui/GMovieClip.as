@@ -19,6 +19,7 @@ package fairygui
 			_gearAnimation = new GearAnimation(this);
 			_gearColor = new GearColor(this);
 			
+			_sizeImplType = 1;
 			_color = 0xFFFFFF;
 		}
 		
@@ -115,12 +116,6 @@ package fairygui
 				_gearAnimation.apply();
 			if(_gearColor.controller==c)
 				_gearColor.apply();
-		}
-		
-		override protected function handleSizeChanged():void
-		{
-			displayObject.scaleX = this.width/_sourceWidth*this.scaleX;
-			displayObject.scaleY = this.height/_sourceHeight*this.scaleY;
 		}
 		
 		override public function constructFromResource(pkgItem:PackageItem):void

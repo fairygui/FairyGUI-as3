@@ -79,8 +79,8 @@ package fairygui
 			
 			_graphics.clear();
 			
-			var w:int = Math.ceil(this.width*this.scaleX);
-			var h:int = Math.ceil(this.height*this.scaleY);
+			var w:int = Math.ceil(this.width);
+			var h:int = Math.ceil(this.height);
 			if(w==0 || h==0)
 				return;
 			

@@ -169,18 +169,11 @@ package fairygui
 		
 		override protected function handleSizeChanged():void
 		{
-			super.handleSizeChanged();
-			
 			if(_packageItem.scale9Grid==null && !_packageItem.scaleByTile)
-			{
-				_content.scaleX = this.width/_sourceWidth*this.scaleX;
-				_content.scaleY = this.height/_sourceHeight*this.scaleY;
-			}
+				_sizeImplType = 1;
 			else
-			{
-				_content.scaleX = this.scaleX;
-				_content.scaleY = this.scaleY;
-			}
+				_sizeImplType = 0;
+			handleScaleChanged();
 			updateBitmap();
 		}
 		

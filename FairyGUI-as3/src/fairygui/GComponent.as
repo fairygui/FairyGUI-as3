@@ -761,9 +761,6 @@ package fairygui
 			
 			if(_opaque)
 				updateOpaque();
-			
-			_rootContainer.scaleX = this.scaleX;
-			_rootContainer.scaleY = this.scaleY;
 		}
 		
 		override protected function handleGrayChanged():void

@@ -62,6 +62,10 @@ package fairygui
 		private var _displayObject:DisplayObject;
 		private var _dragBounds:Rectangle;
 		
+		protected var _yOffset:int;
+		//Size的实现方式，有两种，0-GObject的w/h等于DisplayObject的w/h。1-GObject的sourceWidth/sourceHeight等于DisplayObject的w/h，剩余部分由scale实现
+		protected var _sizeImplType:int;
+		
 		internal var _parent:GComponent;
 		internal var _dispatcher:SimpleDispatcher;
 		internal var _rawWidth:Number;
@@ -232,14 +236,13 @@ package fairygui
 				_width = wv;
 				_height = hv;
 				
+				handleSizeChanged();
 				if(_pivotX!=0 || _pivotY!=0)
 				{
 					if(!ignorePivot)
 						this.setXY(this.x-_pivotX*dWidth, this.y-_pivotY*dHeight);
 					updatePivotOffset();
 				}
-				
-				handleSizeChanged();
 				
 				if(_gearSize.controller)
 					_gearSize.updateState();
@@ -314,8 +317,8 @@ package fairygui
 			{
 				_scaleX = sx;
 				_scaleY = sy;
+				handleScaleChanged();
 				applyPivot();
-				handleSizeChanged();
 				
 				if(_gearSize.controller)
 					_gearSize.updateState();
@@ -349,26 +352,35 @@ package fairygui
 				_pivotX = xv;
 				_pivotY = yv;
 				
-				applyPivot();
+				updatePivotOffset();
+				handlePositionChanged();
 			}
 		}
 		
 		private function updatePivotOffset():void
 		{
-			var rot:int = this.normalizeRotation;
-			if(rot!=0 || _scaleX!=1 || _scaleY!=1)
-			{				
-				var rotInRad:Number = rot*Math.PI/180;
-				var cos:Number = Math.cos(rotInRad);
-				var sin:Number = Math.sin(rotInRad);
-				var a:Number   = _scaleX *  cos;
-				var b:Number   = _scaleX *  sin;
-				var c:Number   = _scaleY * -sin;
-				var d:Number   = _scaleY *  cos;
-				var px:Number = _pivotX*_width;
-				var py:Number = _pivotY*_height;
-				_pivotOffsetX = px -  (a * px + c * py);
-				_pivotOffsetY = py - (d * py + b * px);
+			if(_pivotX!=0 || _pivotY!=0)
+			{
+				var rot:int = this.normalizeRotation;
+				if(rot!=0 || _scaleX!=1 || _scaleY!=1)
+				{				
+					var rotInRad:Number = rot * Math.PI/180;
+					var cos:Number = Math.cos(rotInRad);
+					var sin:Number = Math.sin(rotInRad);
+					var a:Number   = _scaleX *  cos;
+					var b:Number   = _scaleX *  sin;
+					var c:Number   = _scaleY * -sin;
+					var d:Number   = _scaleY *  cos;
+					var px:Number  = _pivotX * _width;
+					var py:Number  = _pivotY * _height;
+					_pivotOffsetX  = px -  (a * px + c * py);
+					_pivotOffsetY  = py - (d * py + b * px);
+				}
+				else
+				{
+					_pivotOffsetX = 0;
+					_pivotOffsetY = 0;
+				}
 			}
 			else
 			{
@@ -445,10 +457,10 @@ package fairygui
 			if(_rotation!=value)
 			{
 				_rotation = value;
-				applyPivot();
-				
 				if(_displayObject)
 					_displayObject.rotation = this.normalizeRotation;
+				
+				applyPivot();
 				
 				if(_gearLook.controller)
 					_gearLook.updateState();
@@ -1007,6 +1019,8 @@ package fairygui
 			_displayObject.rotation = old.rotation;
 			_displayObject.alpha = old.alpha;
 			_displayObject.visible = old.visible;
+			_displayObject.scaleX = old.scaleX;
+			_displayObject.scaleY = old.scaleY;
 			if((_displayObject is InteractiveObject) && (old is InteractiveObject))
 			{
 				InteractiveObject(_displayObject).mouseEnabled = InteractiveObject(old).mouseEnabled;
@@ -1019,13 +1033,35 @@ package fairygui
 		{
 			if(_displayObject)
 			{
-				_displayObject.x = int(_x+_pivotOffsetX);
-				_displayObject.y = int(_y+_pivotOffsetY);
+				_displayObject.x = int(_x)+_pivotOffsetX;
+				_displayObject.y = int(_y+_yOffset)+_pivotOffsetY;
 			}
 		}
 		
 		protected function handleSizeChanged():void
 		{
+			if(_displayObject!=null && _sizeImplType==1 && _sourceWidth!=0 && _sourceHeight!=0)
+			{
+				_displayObject.scaleX = _width/_sourceWidth*_scaleX;
+				_displayObject.scaleY = _height/_sourceHeight*_scaleY;
+			}
+		}
+		
+		protected function handleScaleChanged():void
+		{
+			if(_displayObject!=null)
+			{
+				if( _sizeImplType==0 || _sourceWidth==0 || _sourceHeight==0)
+				{
+					_displayObject.scaleX = _scaleX;
+					_displayObject.scaleY = _scaleY;
+				}
+				else
+				{
+					_displayObject.scaleX = _width/_sourceWidth*_scaleX;
+					_displayObject.scaleY = _height/_sourceHeight*_scaleY;
+				}
+			}
 		}
 		
 		public function handleControllerChanged(c:Controller):void
