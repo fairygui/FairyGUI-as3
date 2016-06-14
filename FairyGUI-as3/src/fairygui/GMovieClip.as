@@ -138,6 +138,8 @@ package fairygui
 		private function __movieClipLoaded(pi:PackageItem):void
 		{
 			_movieClip.interval = _packageItem.interval;
+			_movieClip.swing = _packageItem.swing;
+			_movieClip.repeatDelay = _packageItem.repeatDelay;
 			_movieClip.frames = _packageItem.frames;
 			_movieClip.boundsRect = new Rectangle(0, 0, sourceWidth, sourceHeight);
 		}

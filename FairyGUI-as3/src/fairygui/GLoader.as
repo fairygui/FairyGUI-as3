@@ -329,6 +329,8 @@ package fairygui
 			
 			fairygui.display.MovieClip(_content).interval = pi.interval;
 			fairygui.display.MovieClip(_content).frames = pi.frames;
+			fairygui.display.MovieClip(_content).repeatDelay = pi.repeatDelay;
+			fairygui.display.MovieClip(_content).swing = pi.swing;
 			fairygui.display.MovieClip(_content).boundsRect = new Rectangle(0,0,_contentSourceWidth,_contentSourceHeight);
 
 			updateLayout();

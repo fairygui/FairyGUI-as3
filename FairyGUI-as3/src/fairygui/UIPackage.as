@@ -4,7 +4,6 @@ package fairygui
 	import flash.display.BitmapData;
 	import flash.display.LoaderInfo;
 	import flash.events.Event;
-	import flash.geom.Point;
 	import flash.geom.Rectangle;
 	import flash.media.Sound;
 	import flash.system.LoaderContext;
@@ -609,15 +608,8 @@ package fairygui
 		private function loadMovieClip(item:PackageItem):void
 		{
 			var xml:XML = getXMLDesc(item.id + ".xml");
-			item.pivot = new Point();
-			var str:String = xml.@pivot;
-			if(str)
-			{
-				var arr:Array = str.split(",");
-				item.pivot.x = int(arr[0]);
-				item.pivot.y = int(arr[1]);
-			}
-			
+			var str:String;
+			var arr:Array;
 			str = xml.@interval;
 			if (str != null)
 				item.interval = parseInt(str);

@@ -31,7 +31,6 @@ package fairygui
 		public var image:BitmapData;
 		
 		//movieclip
-		public var pivot:Point;
 		public var interval:Number;
 		public var repeatDelay:Number;
 		public var swing:Boolean;
