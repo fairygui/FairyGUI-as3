@@ -154,6 +154,17 @@ package fairygui
 				_buttonController.selectedPage = val;
 		}
 		
+		override public function dispose():void
+		{
+			if(dropdown) 
+			{
+				dropdown.dispose();
+				dropdown = null;
+			}
+			
+			super.dispose();
+		}
+		
 		override protected function constructFromXML(xml:XML):void
 		{
 			super.constructFromXML(xml);
@@ -247,7 +258,7 @@ package fairygui
 			{
 				_itemsUpdated = false;
 				
-				_list.removeChildren();
+				_list.removeChildrenToPool();
 				var cnt:int = _items.length;
 				for(var i:int=0;i<cnt;i++)
 				{

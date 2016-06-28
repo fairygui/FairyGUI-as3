@@ -1012,6 +1012,14 @@ package fairygui
 			
 			setSize(_sourceWidth, _sourceHeight);
 			
+			str = xml.@pivot;
+			if(str)
+			{
+				arr = str.split(",");
+				str = xml.@anchor;
+				internalSetPivot(parseFloat(arr[0]), parseFloat(arr[1]), str=="true");
+			}
+			
 			var overflow:int;
 			str = xml.@overflow;
 			if(str)

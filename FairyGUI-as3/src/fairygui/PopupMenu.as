@@ -31,6 +31,11 @@ package fairygui
 			_list.addEventListener(ItemEvent.CLICK, __clickItem);
 		}
 		
+		public function dispose():void
+		{
+			_contentPane.dispose();
+		}
+		
 		public function addItem(caption:String, callback:Function=null):GButton
 		{
 			var item:GButton = _list.addItemFromPool().asButton;

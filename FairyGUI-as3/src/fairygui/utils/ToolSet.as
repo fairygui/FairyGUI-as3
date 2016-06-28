@@ -18,6 +18,9 @@ package fairygui.utils
 				0.299, 0.587, 0.114, 0, 0,
 				0, 0, 0, 1, 0])];
 		
+		public static const RAD_TO_DEG:Number = 180/Math.PI;
+		public static const DEG_TO_RAD:Number = Math.PI/180;
+		
 		public function ToolSet()
 		{
 		}

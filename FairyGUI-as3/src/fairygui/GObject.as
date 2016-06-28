@@ -8,6 +8,7 @@ package fairygui
 	import flash.events.EventDispatcher;
 	import flash.events.MouseEvent;
 	import flash.events.TouchEvent;
+	import flash.filters.ColorMatrixFilter;
 	import flash.geom.Point;
 	import flash.geom.Rectangle;
 	import flash.text.TextField;
@@ -18,6 +19,7 @@ package fairygui
 	import fairygui.event.DragEvent;
 	import fairygui.event.GTouchEvent;
 	import fairygui.event.IBubbleEvent;
+	import fairygui.utils.ColorMatrix;
 	import fairygui.utils.GTimers;
 	import fairygui.utils.SimpleDispatcher;
 	import fairygui.utils.ToolSet;
@@ -36,8 +38,6 @@ package fairygui
 		private var _y:Number;
 		private var _width:Number;
 		private var _height:Number;
-		private var _pivotX:Number;
-		private var _pivotY:Number;
 		private var _alpha:Number;
 		private var _rotation:int;
 		private var _visible:Boolean;
@@ -45,7 +45,10 @@ package fairygui
 		private var _grayed:Boolean;
 		private var _draggable:Boolean;
 		private var _scaleX:Number;
-		private var _scaleY:Number;
+		private var _scaleY:Number;		
+		private var _pivotX:Number;
+		private var _pivotY:Number;
+		private var _pivotAsAnchor:Boolean;
 		private var _pivotOffsetX:Number;
 		private var _pivotOffsetY:Number;
 		private var _sortingOrder:int;
@@ -239,9 +242,14 @@ package fairygui
 				handleSizeChanged();
 				if(_pivotX!=0 || _pivotY!=0)
 				{
-					if(!ignorePivot)
-						this.setXY(this.x-_pivotX*dWidth, this.y-_pivotY*dHeight);
-					updatePivotOffset();
+					if(!_pivotAsAnchor)
+					{
+						if(!ignorePivot)
+							this.setXY(this.x-_pivotX*dWidth, this.y-_pivotY*dHeight);
+						updatePivotOffset();
+					}
+					else
+						applyPivot();
 				}
 				
 				if(_gearSize.controller)
@@ -345,16 +353,26 @@ package fairygui
 			setPivot(_pivotX, value);
 		}
 		
-		final public function setPivot(xv:Number, yv:Number):void
+		final public function setPivot(xv:Number, yv:Number, asAnchor:Boolean=false):void
 		{
-			if(_pivotX!=xv || _pivotY!=yv)
+			if(_pivotX!=xv || _pivotY!=yv || _pivotAsAnchor!=asAnchor)
 			{
 				_pivotX = xv;
 				_pivotY = yv;
+				_pivotAsAnchor = asAnchor;
 				
 				updatePivotOffset();
 				handlePositionChanged();
 			}
+		}
+		
+		protected function internalSetPivot(xv:Number, yv:Number, asAnchor:Boolean):void
+		{
+			_pivotX = xv;
+			_pivotY = yv;
+			_pivotAsAnchor = asAnchor;
+			if(_pivotAsAnchor)
+				handlePositionChanged();
 		}
 		
 		private function updatePivotOffset():void
@@ -364,7 +382,7 @@ package fairygui
 				var rot:int = this.normalizeRotation;
 				if(rot!=0 || _scaleX!=1 || _scaleY!=1)
 				{				
-					var rotInRad:Number = rot * Math.PI/180;
+					var rotInRad:Number = rot * ToolSet.DEG_TO_RAD;
 					var cos:Number = Math.cos(rotInRad);
 					var sin:Number = Math.sin(rotInRad);
 					var a:Number   = _scaleX *  cos;
@@ -618,6 +636,26 @@ package fairygui
 		{		
 			GTimers.inst.remove(__doShowTooltips);
 			this.root.hideTooltips();
+		}
+		
+		public function get blendMode():String
+		{
+			return _displayObject.blendMode;
+		}
+		
+		public function set blendMode(value:String):void
+		{
+			_displayObject.blendMode = value;
+		}
+		
+		public function get filters():Array
+		{
+			return _displayObject.filters;
+		}
+		
+		public function set filters(value:Array):void
+		{
+			_displayObject.filters = value;
 		}
 		
 		final public function get inContainer():Boolean
@@ -1033,8 +1071,16 @@ package fairygui
 		{
 			if(_displayObject)
 			{
-				_displayObject.x = int(_x)+_pivotOffsetX;
-				_displayObject.y = int(_y+_yOffset)+_pivotOffsetY;
+				if(_pivotAsAnchor)
+				{
+					_displayObject.x = int(_x-_pivotX*_width)+_pivotOffsetX;
+					_displayObject.y = int(_y-_pivotY*_height+_yOffset)+_pivotOffsetY;
+				}
+				else
+				{
+					_displayObject.x = int(_x)+_pivotOffsetX;
+					_displayObject.y = int(_y+_yOffset)+_pivotOffsetY;
+				}
 			}
 		}
 		
@@ -1110,7 +1156,7 @@ package fairygui
 				arr = str.split(",");
 				_initWidth = parseInt(arr[0]);
 				_initHeight = parseInt(arr[1]);
-				setSize(_initWidth,_initHeight);
+				setSize(_initWidth,_initHeight, true);
 			}
 			
 			str = xml.@scale;
@@ -1150,13 +1196,39 @@ package fairygui
 					else
 						n2 = 0;
 				}
-				this.setPivot(n1, n2);
+				str = xml.@anchor;
+				this.setPivot(n1, n2, str=="true");
 			}
+			else
+				this.setPivot(0,0,false);
 			
 			this.touchable = xml.@touchable!="false";
 			this.visible = xml.@visible!="false";
 			this.grayed = xml.@grayed=="true";			
 			this.tooltips = xml.@tooltips;
+			
+			str = xml.@blend;
+			if (str)
+				this.blendMode = str;
+			
+			str = xml.@filter;
+			if (str)
+			{
+				switch (str)
+				{
+					case "color":
+						str = xml.@filterData;
+						arr = str.split(",");
+						var cm:ColorMatrix = new ColorMatrix();
+						cm.adjustBrightness(parseFloat(arr[0]));
+						cm.adjustContrast(parseFloat(arr[1]));
+						cm.adjustSaturation(parseFloat(arr[2]));
+						cm.adjustHue(parseFloat(arr[3]));
+						var cf:ColorMatrixFilter = new ColorMatrixFilter(cm);						
+						this.filters = [cf];
+						break;
+				}
+			}
 		}
 		
 		public function setup_afterAdd(xml:XML):void

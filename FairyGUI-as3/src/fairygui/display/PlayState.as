@@ -5,7 +5,6 @@ package fairygui.display
 	public class PlayState
 	{
 		public var reachEnding:Boolean; //是否已播放到结尾
-		public var frameStarting:Boolean; //是否刚开始新的一帧
 		public var reversed:Boolean; //是否已反向播放
 		public var repeatedCount:int; //重复次数
 		
@@ -30,26 +29,44 @@ package fairygui.display
 			_lastTime = tt;
 			
 			reachEnding = false;
-			frameStarting = false;
 			_curFrameDelay += elapsed;
-			var realFrame:int = reversed ? mc.frameCount - _curFrame - 1 : _curFrame;
-			var interval:int = mc.interval + mc.frames[realFrame].addDelay + ((realFrame == 0 && repeatedCount > 0) ? mc.repeatDelay : 0);
+			var interval:int = mc.interval + mc.frames[_curFrame].addDelay + ((_curFrame == 0 && repeatedCount > 0) ? mc.repeatDelay : 0);
 			if (_curFrameDelay < interval)
 				return;
 			
-			_curFrameDelay = 0;
-			_curFrame++;
-			frameStarting = true;
-			
-			if (_curFrame > mc.frameCount - 1)
+			_curFrameDelay = 0;			
+			if (mc.swing)
 			{
-				_curFrame = 0;
-				repeatedCount++;
-				reachEnding = true;
-				if (mc.swing)
+				if(reversed)
 				{
-					reversed = !reversed;
+					_curFrame--;
+					if(_curFrame<0)
+					{
+						_curFrame = Math.min(1, mc.frameCount-1);
+						repeatedCount++;
+						reversed = !reversed;
+					}
+				}
+				else
+				{
 					_curFrame++;
+					if (_curFrame > mc.frameCount - 1)
+					{
+						_curFrame = Math.max(0, mc.frameCount-2);
+						repeatedCount++;
+						reachEnding = true;
+						reversed = !reversed;
+					}
+				}				
+			}
+			else
+			{
+				_curFrame++;
+				if (_curFrame > mc.frameCount - 1)
+				{
+					_curFrame = 0;
+					repeatedCount++;
+					reachEnding = true;
 				}
 			}
 		}
