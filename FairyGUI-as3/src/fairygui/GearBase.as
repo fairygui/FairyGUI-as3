@@ -8,7 +8,6 @@ package fairygui
 	{
 		public static var disableAllTweenEffect:Boolean = false;
 		
-		protected var _pageSet:PageOptionSet;
 		protected var _tween:Boolean;
 		protected var _easeType:Ease;
 		protected var _tweenTime:Number;
@@ -20,7 +19,6 @@ package fairygui
 		public function GearBase(owner:GObject)
 		{
 			_owner = owner;
-			_pageSet = new PageOptionSet();
 			_easeType = Quad.easeOut;
 			_tweenTime = 0.3;
 			_delay = 0;
@@ -36,18 +34,11 @@ package fairygui
 			if(val!=_controller)
 			{
 				_controller = val;
-				_pageSet.controller = val;
-				_pageSet.clear();
 				if(_controller)
 					init();
 			}
 		}
-		
-		final public function getPageSet():PageOptionSet
-		{
-			return _pageSet;
-		}
-		
+
 		final public function get tween():Boolean
 		{
 			return _tween;
@@ -97,14 +88,6 @@ package fairygui
 			init();
 			
 			var str:String;
-			str = xml.@pages;
-			var pages:Array;
-			if(str)
-				pages = str.split(",");
-			else
-				pages = [];
-			for each(str in pages)
-				_pageSet.addById(str);
 
 			str = xml.@tween;
 			if(str)
@@ -130,32 +113,47 @@ package fairygui
 			if(str)
 				_delay = parseFloat(str);
 			
-			str = xml.@values;
-			var values:Array;
-			if(str)
-				values = xml.@values.split("|");
-			else
-				values = [];
-
-			for(var i:int=0;i<values.length;i++)
+			if(this is GearDisplay)
 			{
-				str = values[i];
-				if(str!="-")
-					addStatus(pages[i], str);
+				str = xml.@pages;
+				if(str)
+				{
+					var arr:Array = str.split(",");
+					for each(str in arr)
+					{
+						GearDisplay(this).pages.push(str);
+					}
+				}
 			}
-			str = xml.@["default"];
-			if(str)
-				addStatus(null, str);
+			else
+			{
+				var pages:Array;
+				var values:Array;
+				
+				str = xml.@pages;
+				if(str)
+					pages = str.split(",");
+				
+				str = xml.@values;
+				if(str)
+					values = str.split("|");
+				
+				if(pages && values)
+				{
+					for(var i:int=0;i<values.length;i++)
+					{
+						str = values[i];
+						if(str!="-")
+							addStatus(pages[i], str);
+					}
+				}
+				
+				str = xml.@["default"];
+				if(str)
+					addStatus(null, str);
+			}	
 		}
 
-		protected function get connected():Boolean
-		{
-			if(_controller && !_pageSet.empty)
-				return _pageSet.containsId(_controller.selectedPageId);
-			else
-				return false;
-		}
-		
 		protected function addStatus(pageId:String, value:String):void
 		{
 			

@@ -35,14 +35,8 @@ package fairygui
 		{
 			_owner._gearLocked = true;
 			
-			var gv:GearAnimationValue;
-			if(connected)
-			{
-				gv = _storage[_controller.selectedPageId];
-				if(!gv)
-					gv = _default;
-			}
-			else
+			var gv:GearAnimationValue = _storage[_controller.selectedPageId];
+			if(!gv)
 				gv = _default;
 			
 			IAnimationGear(_owner).playing = gv.playing;
@@ -57,18 +51,12 @@ package fairygui
 				return;
 			
 			var mc:IAnimationGear = IAnimationGear(_owner);
-			var gv:GearAnimationValue;
-			if(connected)
+			var gv:GearAnimationValue = _storage[_controller.selectedPageId];
+			if(!gv)
 			{
-				gv = _storage[_controller.selectedPageId];
-				if(!gv)
-				{
-					gv = new GearAnimationValue();
-					_storage[_controller.selectedPageId] = gv;
-				}
+				gv = new GearAnimationValue();
+				_storage[_controller.selectedPageId] = gv;
 			}
-			else
-				gv = _default;
 			
 			gv.playing = mc.playing;
 			gv.frame = mc.frame;

@@ -41,17 +41,10 @@ package fairygui
 		{
 			_owner._gearLocked = true;
 			
-			var pt:Point;
-			var ct:Boolean = this.connected;
-			if(ct)
-			{
-				pt = _storage[_controller.selectedPageId];
-				if(!pt)
-					pt = _default;
-			}
-			else
+			var pt:Point = _storage[_controller.selectedPageId];
+			if(!pt)
 				pt = _default;
-			
+
 			if(_tweener!=null)
 			{
 				_owner.setXY(_tweener.vars.x, _tweener.vars.y);
@@ -60,8 +53,7 @@ package fairygui
 				_owner.internalVisible--;
 			}
 			
-			if(_tween && !UIPackage._constructing && !disableAllTweenEffect
-				&& ct && _pageSet.containsId(_controller.previousPageId))
+			if(_tween && !UIPackage._constructing && !disableAllTweenEffect)
 			{
 				if (_owner.x != pt.x || _owner.y != pt.y)
 				{
@@ -106,18 +98,11 @@ package fairygui
 		{
 			if(_owner._gearLocked)
 				return;
-			
-			if(connected)
-			{
-				var pt:Point = _storage[_controller.selectedPageId];
-				if(!pt) {
-					pt = new Point();
-					_storage[_controller.selectedPageId] = pt;
-				}
-			}
-			else
-			{
-				pt = _default;
+
+			var pt:Point = _storage[_controller.selectedPageId];
+			if(!pt) {
+				pt = new Point();
+				_storage[_controller.selectedPageId] = pt;
 			}
 			
 			pt.x = _owner.x;

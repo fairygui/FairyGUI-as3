@@ -44,17 +44,10 @@ package fairygui
 		{
 			_owner._gearLocked = true;
 			
-			var gv:GearSizeValue;
-			var ct:Boolean = this.connected;
-			if(ct)
-			{
-				gv = _storage[_controller.selectedPageId];
-				if(!gv)
-					gv = _default;
-			}
-			else
+			var gv:GearSizeValue = _storage[_controller.selectedPageId];
+			if(!gv)
 				gv = _default;
-			
+
 			if(_tweener!=null)
 			{
 				if(_tweener.vars.onUpdateParams[0])
@@ -66,8 +59,7 @@ package fairygui
 				_owner.internalVisible--;
 			}
 			
-			if(_tween && !UIPackage._constructing && !disableAllTweenEffect
-				&& ct && _pageSet.containsId(_controller.previousPageId))
+			if(_tween && !UIPackage._constructing && !disableAllTweenEffect)
 			{
 				var a:Boolean = gv.width != _owner.width || gv.height != _owner.height;
 				var b:Boolean = gv.scaleX != _owner.scaleX || gv.scaleY != _owner.scaleY;
@@ -126,21 +118,13 @@ package fairygui
 			if(_owner._gearLocked)
 				return;
 
-			var gv:GearSizeValue;
-			if(connected)
+			var gv:GearSizeValue = _storage[_controller.selectedPageId];
+			if(!gv)
 			{
-				gv = _storage[_controller.selectedPageId];
-				if(!gv)
-				{
-					gv = new GearSizeValue();
-					_storage[_controller.selectedPageId] = gv;
-				}
+				gv = new GearSizeValue();
+				_storage[_controller.selectedPageId] = gv;
 			}
-			else
-			{
-				gv = _default;
-			}
-			
+
 			gv.width = _owner.width;
 			gv.height = _owner.height;
 			gv.scaleX = _owner.scaleX;
