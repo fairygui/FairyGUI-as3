@@ -19,8 +19,8 @@ package fairygui
 		
 		override public function apply():void
 		{
-			if(_controller && pages!=null && pages.length>0 
-				&& pages.indexOf(_controller.selectedPageId)!=-1)
+			if(!_controller || pages==null || pages.length==0 
+				|| pages.indexOf(_controller.selectedPageId)!=-1)
 				_owner.internalVisible++;
 			else
 				_owner.internalVisible = 0;
