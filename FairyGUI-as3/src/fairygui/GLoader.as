@@ -281,6 +281,11 @@ package fairygui
 						_contentItem.owner.addItemCallback(_contentItem, __movieClipLoaded);
 					}
 				}
+				else if(_contentItem.type==PackageItemType.Swf)
+				{
+					_loading = 2;
+					_contentItem.owner.addItemCallback(_contentItem, __swfLoaded);
+				}
 				else
 					setErrorState();
 			}
@@ -332,6 +337,39 @@ package fairygui
 			fairygui.display.MovieClip(_content).repeatDelay = pi.repeatDelay;
 			fairygui.display.MovieClip(_content).swing = pi.swing;
 			fairygui.display.MovieClip(_content).boundsRect = new Rectangle(0,0,_contentSourceWidth,_contentSourceHeight);
+
+			updateLayout();
+		}
+		
+		private function __swfLoaded(content:DisplayObject):void
+		{
+			_loading = 0;
+			if(_content)
+				_container.removeChild(_content);
+			_content = DisplayObject(content);
+			if(_content)
+			{
+				try
+				{
+					_container.addChild(_content);
+				}
+				catch(e:Error)
+				{
+					trace("__swfLoaded:"+e);
+					_content = null;
+				}
+			}
+			
+			if(_content && (_content is flash.display.MovieClip))
+			{
+				if(_playing)
+					flash.display.MovieClip(_content).gotoAndPlay(_frame+1);
+				else
+					flash.display.MovieClip(_content).gotoAndStop(_frame+1);
+			}
+			
+			_contentSourceWidth = _content.width;
+			_contentSourceHeight = _content.height;
 
 			updateLayout();
 		}
