@@ -19,6 +19,7 @@ package fairygui
 		 * itemRenderer(int index, GObject item);
 		 */
 		public var itemRenderer:Function;
+		public var scrollItemToViewOnClick: Boolean;
 		
 		private var _layout:int;
 		private var _lineItemCount:int;
@@ -51,6 +52,7 @@ package fairygui
 			_autoResizeItem = true;
 			_lastSelectedIndex = -1;
 			this.opaque = true;
+			scrollItemToViewOnClick = true;
 		}
 		
 		public override function dispose():void
@@ -590,7 +592,7 @@ package fairygui
 			var item:GObject = GObject(evt.currentTarget);
 			setSelectionOnEvent(item);
 			
-			if (scrollPane != null)
+			if (scrollPane != null && scrollItemToViewOnClick)
 				scrollPane.scrollToView(item, true);
 			
 			var ie:ItemEvent = new ItemEvent(ItemEvent.CLICK, item);
@@ -606,7 +608,7 @@ package fairygui
 			if((item is GButton) && !GButton(item).selected)
 				setSelectionOnEvent(item);
 			
-			if (scrollPane != null)
+			if (scrollPane != null && scrollItemToViewOnClick)
 				scrollPane.scrollToView(item, true);
 			
 			var ie:ItemEvent = new ItemEvent(ItemEvent.CLICK, item);
@@ -841,6 +843,11 @@ package fairygui
 		{
 			if (_virtual)
 			{
+				if(this._virtualListChanged!=0) { 
+					this.refreshVirtualList();
+					GTimers.inst.remove(this.refreshVirtualList);
+				}
+				
 				if (this.scrollPane != null)
 					scrollPane.scrollToView(getItemRect(index), ani, setFirst);
 				else if (parent != null && parent.scrollPane != null)

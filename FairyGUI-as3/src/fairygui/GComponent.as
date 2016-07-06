@@ -44,6 +44,7 @@ package fairygui
 		override protected function createDisplayObject():void
 		{
 			_rootContainer = new UISprite(this);
+			_rootContainer.mouseEnabled = false;
 			setDisplayObject(_rootContainer);			
 			_container = _rootContainer;
 		}
@@ -610,10 +611,14 @@ package fairygui
 			if(_opaque!=value)
 			{
 				_opaque = value;
-				if(_opaque)
+				if(_opaque) {
+					Sprite(this.displayObject).mouseEnabled = this.touchable;
 					updateOpaque();
-				else
+				}
+				else {
+					Sprite(this.displayObject).mouseEnabled = false;
 					_rootContainer.graphics.clear();
+				}
 			}
 		}
 		
@@ -1019,6 +1024,10 @@ package fairygui
 				str = xml.@anchor;
 				internalSetPivot(parseFloat(arr[0]), parseFloat(arr[1]), str=="true");
 			}
+			
+			str = xml.@opaque;
+			if(str!="false")
+				this.opaque = true;
 			
 			var overflow:int;
 			str = xml.@overflow;

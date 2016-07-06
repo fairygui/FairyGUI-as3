@@ -431,7 +431,10 @@ package fairygui
 			
 			if(_displayObject is InteractiveObject)
 			{
-				InteractiveObject(_displayObject).mouseEnabled = _touchable;
+				if(this is GComponent)
+					InteractiveObject(_displayObject).mouseEnabled = _touchable && GComponent(this).opaque;
+				else
+					InteractiveObject(_displayObject).mouseEnabled = _touchable;
 				if(_displayObject is DisplayObjectContainer)
 					DisplayObjectContainer(_displayObject).mouseChildren = _touchable;
 			}
@@ -1202,9 +1205,12 @@ package fairygui
 			else
 				this.setPivot(0,0,false);
 			
-			this.touchable = xml.@touchable!="false";
-			this.visible = xml.@visible!="false";
-			this.grayed = xml.@grayed=="true";			
+			if(xml.@touchable=="false")
+				this.touchable = false;
+			if(xml.@visible=="false")
+				this.visible = false;
+			if(xml.@grayed=="true")
+				this.grayed = true;
 			this.tooltips = xml.@tooltips;
 			
 			str = xml.@blend;
