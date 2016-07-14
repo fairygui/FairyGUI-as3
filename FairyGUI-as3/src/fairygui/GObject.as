@@ -200,9 +200,12 @@ package fairygui
 		
 		final public function get width():Number
 		{
-			ensureSizeCorrect();
-			if(_relations.sizeDirty)
-				_relations.ensureRelationsSizeCorrect();
+			if(!this._underConstruct)
+			{
+				ensureSizeCorrect();
+				if(_relations.sizeDirty)
+					_relations.ensureRelationsSizeCorrect();
+			}
 			return _width;
 		}
 		
@@ -213,9 +216,12 @@ package fairygui
 		
 		final public function get height():Number
 		{
-			ensureSizeCorrect();
-			if(_relations.sizeDirty)
-				_relations.ensureRelationsSizeCorrect();
+			if(!this._underConstruct)
+			{
+				ensureSizeCorrect();
+				if(_relations.sizeDirty)
+					_relations.ensureRelationsSizeCorrect();
+			}
 			return _height;
 		}
 		
