@@ -4,10 +4,11 @@ package fairygui
 
 	public class GearSize extends GearBase
 	{
+		public var tweener:TweenLite;
+		
 		private var _storage:Object;
 		private var _default:GearSizeValue;
 		private var _tweenValue:GearSizeValue;
-		private var _tweener:TweenLite;
 		
 		public function GearSize(owner:GObject)
 		{
@@ -42,27 +43,37 @@ package fairygui
 		
 		override public function apply():void
 		{
-			_owner._gearLocked = true;
-			
 			var gv:GearSizeValue = _storage[_controller.selectedPageId];
 			if(!gv)
 				gv = _default;
 
-			if(_tweener!=null)
-			{
-				if(_tweener.vars.onUpdateParams[0])
-					_owner.setSize(_tweener.vars.width, _tweener.vars.height, _owner.gearXY.controller==_controller);
-				if(_tweener.vars.onUpdateParams[1])
-					_owner.setScale(_tweener.vars.scaleX, _tweener.vars.scaleY);
-				_tweener.kill();
-				_tweener = null;
-				_owner.internalVisible--;
-			}
-			
 			if(_tween && !UIPackage._constructing && !disableAllTweenEffect)
 			{
-				var a:Boolean = gv.width != _owner.width || gv.height != _owner.height;
-				var b:Boolean = gv.scaleX != _owner.scaleX || gv.scaleY != _owner.scaleY;
+				var a:Boolean;
+				var b:Boolean;
+				if(tweener!=null)
+				{
+					a = tweener.vars.onUpdateParams[0];
+					b = tweener.vars.onUpdateParams[1];
+					if(a && (tweener.vars.width!=gv.width || tweener.vars.height!=gv.height)
+						|| b && (tweener.vars.scaleX!=gv.scaleX || tweener.vars.scaleY!=gv.scaleY))
+					{
+						_owner._gearLocked = true;
+						if(a)
+							_owner.setSize(tweener.vars.width, tweener.vars.height, _owner.gearXY.controller==_controller);
+						if(b)
+							_owner.setScale(tweener.vars.scaleX, tweener.vars.scaleY);
+						_owner._gearLocked = false;
+						tweener.kill();
+						tweener = null;
+						_owner.internalVisible--;
+					}
+					else
+						return;
+				}
+				
+				a = gv.width != _owner.width || gv.height != _owner.height;
+				b = gv.scaleX != _owner.scaleX || gv.scaleY != _owner.scaleY;
 				if(a || b)
 				{
 					_owner.internalVisible++;
@@ -85,16 +96,16 @@ package fairygui
 					_tweenValue.height = _owner.height;
 					_tweenValue.scaleX = _owner.scaleX;
 					_tweenValue.scaleY = _owner.scaleY;
-					_tweener = TweenLite.to(_tweenValue, _tweenTime, vars);
+					tweener = TweenLite.to(_tweenValue, _tweenTime, vars);
 				}
 			}
 			else
 			{
+				_owner._gearLocked = true;
 				_owner.setSize(gv.width, gv.height, _owner.gearXY.controller==_controller);
 				_owner.setScale(gv.scaleX, gv.scaleY);
+				_owner._gearLocked = false;
 			}
-				
-			_owner._gearLocked = false;
 		}
 		
 		private function __tweenUpdate(a:Boolean, b:Boolean):void
@@ -110,7 +121,7 @@ package fairygui
 		private function __tweenComplete():void
 		{
 			_owner.internalVisible--;
-			_tweener = null;
+			tweener = null;
 		}
 		
 		override public function updateState():void

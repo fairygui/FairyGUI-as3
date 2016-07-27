@@ -109,9 +109,13 @@ package fairygui
 			xml = xml.Label[0];
 			if(xml)
 			{
-				this.text = xml.@title;
-				this.icon = xml.@icon;
 				var str:String;
+				str = xml.@title;
+				if(str)
+					this.text = str;
+				str = xml.@icon;
+				if(str)
+					this.icon = str;				
 				str = xml.@titleColor;
 				if(str)
 					this.titleColor = ToolSet.convertFromHtmlColor(str);

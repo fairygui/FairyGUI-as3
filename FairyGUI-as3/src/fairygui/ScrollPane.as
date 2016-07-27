@@ -48,6 +48,7 @@ package fairygui
 		private var _pageMode:Boolean;
 		private var _pageSizeH:Number;
 		private var _pageSizeV:Number;
+		private var _inertiaDisabled:Boolean;
 		
 		private var _yPerc:Number;
 		private var _xPerc:Number;
@@ -126,6 +127,7 @@ package fairygui
 				_bouncebackEffect = false;
 			else
 				_bouncebackEffect = UIConfig.defaultScrollBounceEffect;
+			_inertiaDisabled = (flags & 256)!=0;
 			
 			_xPerc = 0;
 			_yPerc = 0;
@@ -1087,14 +1089,14 @@ package fairygui
 				var y:int = _container.mouseY - _yOffset;
 				if (y > 0) 
 				{
-					if (!_bouncebackEffect)
+					if (!_bouncebackEffect || _inertiaDisabled)
 						_maskContentHolder.y = 0;
 					else
 						_maskContentHolder.y = int(y * 0.5);
 				}
 				else if (y < -_yOverlap) 
 				{
-					if (!_bouncebackEffect)
+					if (!_bouncebackEffect || _inertiaDisabled)
 						_maskContentHolder.y = -int(_yOverlap);
 					else
 						_maskContentHolder.y = int((y- _yOverlap) * 0.5);
@@ -1118,14 +1120,14 @@ package fairygui
 				var x:int = _container.mouseX - _xOffset;
 				if (x > 0) 
 				{
-					if (!_bouncebackEffect)
+					if (!_bouncebackEffect || _inertiaDisabled)
 						_maskContentHolder.x = 0;
 					else
 						_maskContentHolder.x = int(x * 0.5);
 				}
 				else if (x < 0 - _xOverlap) 
 				{
-					if (!_bouncebackEffect)
+					if (!_bouncebackEffect || _inertiaDisabled)
 						_maskContentHolder.x = -int(_xOverlap);
 					else
 						_maskContentHolder.x = int( (x - _xOverlap) * 0.5);
@@ -1166,6 +1168,9 @@ package fairygui
 				return;
 
 			_isMouseMoved = false;
+			
+			if(_inertiaDisabled)
+				return;
 			
 			var time:Number = (getTimer() - _time2) / 1000;
 			if(time==0)

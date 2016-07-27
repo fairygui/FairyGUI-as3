@@ -6,10 +6,11 @@ package fairygui
 
 	public class GearLook extends GearBase
 	{
+		public var tweener:TweenLite;
+		
 		private var _storage:Object;
 		private var _default:GearLookValue;
 		private var _tweenValue:Point;
-		private var _tweener:TweenLite;
 		
 		public function GearLook(owner:GObject)
 		{
@@ -40,28 +41,40 @@ package fairygui
 		
 		override public function apply():void
 		{
-			_owner._gearLocked = true;
-			
 			var gv:GearLookValue = _storage[_controller.selectedPageId];
 			if(!gv)
 				gv = _default;
 			
-			if(_tweener!=null)
-			{
-				if(_tweener.vars.onUpdateParams[0])
-					_owner.alpha = _tweener.vars.x;
-				if(_tweener.vars.onUpdateParams[1])
-					_owner.rotation = _tweener.vars.y;
-				_tweener.kill();
-				_tweener = null;
-				_owner.internalVisible--;
-			}
-			
 			if(_tween && !UIPackage._constructing && !disableAllTweenEffect)
 			{
+				_owner._gearLocked = true;
 				_owner.grayed = gv.grayed;
-				var a:Boolean = gv.alpha!=_owner.alpha;
-				var b:Boolean = gv.rotation!=_owner.rotation;
+				_owner._gearLocked = false;
+				
+				var a:Boolean;
+				var b:Boolean;
+				if(tweener!=null)
+				{
+					a = tweener.vars.onUpdateParams[0];
+					b = tweener.vars.onUpdateParams[1];
+					if(a && tweener.vars.x!=gv.alpha || b && tweener.vars.y!=gv.rotation)
+					{
+						_owner._gearLocked = true;
+						if(a)
+							_owner.alpha = tweener.vars.x;
+						if(b)
+							_owner.rotation = tweener.vars.y;
+						_owner._gearLocked = false;
+						tweener.kill();
+						tweener = null;
+						_owner.internalVisible--;
+					}
+					else
+						return;
+				}
+				
+				a = gv.alpha!=_owner.alpha;
+				b = gv.rotation!=_owner.rotation;
 				if(a || b)
 				{
 					_owner.internalVisible++;
@@ -80,17 +93,17 @@ package fairygui
 						_tweenValue = new Point();
 					_tweenValue.x = _owner.alpha;
 					_tweenValue.y = _owner.rotation;
-					_tweener = TweenLite.to(_tweenValue, _tweenTime, vars);
+					tweener = TweenLite.to(_tweenValue, _tweenTime, vars);
 				}
 			}
 			else
 			{
+				_owner._gearLocked = true;
 				_owner.alpha = gv.alpha;
 				_owner.rotation = gv.rotation;
 				_owner.grayed = gv.grayed;
+				_owner._gearLocked = false;
 			}
-				
-			_owner._gearLocked = false;
 		}
 		
 		private function __tweenUpdate(a:Boolean, b:Boolean):void
@@ -106,7 +119,7 @@ package fairygui
 		private function __tweenComplete():void
 		{
 			_owner.internalVisible--;
-			_tweener = null;
+			tweener = null;
 		}
 		
 		override public function updateState():void

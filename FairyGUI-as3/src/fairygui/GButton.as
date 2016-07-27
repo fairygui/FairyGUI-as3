@@ -442,8 +442,12 @@ package fairygui
 			if(xml)
 			{
 				var str:String;
-				this.title = xml.@title;
-				this.icon = xml.@icon;
+				str = xml.@title;
+				if(str)
+					this.title = str;
+				str = xml.@icon;
+				if(str)
+					this.icon = str;
 				str = xml.@selectedTitle;
 				if(str)
 					this.selectedTitle = str;

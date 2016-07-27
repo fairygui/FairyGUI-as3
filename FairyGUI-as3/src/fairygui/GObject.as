@@ -55,6 +55,7 @@ package fairygui
 		private var _internalVisible:int;
 		private var _focusable:Boolean;
 		private var _tooltips:String;
+		private var _pixelSnapping:Boolean;
 		
 		private var _relations:Relations;
 		private var _group:GGroup;
@@ -179,6 +180,20 @@ package fairygui
 					_parent.setBoundsChangedFlag();
 					_dispatcher.dispatch(this, XY_CHANGED);
 				}
+			}
+		}
+		
+		public function get pixelSnapping():Boolean
+		{
+			return _pixelSnapping;
+		}
+		
+		public function set pixelSnapping(value:Boolean):void
+		{
+			if(_pixelSnapping!=value)
+			{
+				_pixelSnapping = value;
+				handlePositionChanged();
 			}
 		}
 		
@@ -1080,16 +1095,20 @@ package fairygui
 		{
 			if(_displayObject)
 			{
+				var xv:Number = _x;
+				var yv:Number = _y+_yOffset;
 				if(_pivotAsAnchor)
-				{
-					_displayObject.x = int(_x-_pivotX*_width)+_pivotOffsetX;
-					_displayObject.y = int(_y-_pivotY*_height+_yOffset)+_pivotOffsetY;
+				{					
+					xv -= _pivotX*_width;
+					yv -= _pivotY*_height;
 				}
-				else
+				if(_pixelSnapping)
 				{
-					_displayObject.x = int(_x)+_pivotOffsetX;
-					_displayObject.y = int(_y+_yOffset)+_pivotOffsetY;
+					xv = Math.round(xv);
+					yv = Math.round(yv);
 				}
+				_displayObject.x = xv+_pivotOffsetX;
+				_displayObject.y = yv+_pivotOffsetY;
 			}
 		}
 		

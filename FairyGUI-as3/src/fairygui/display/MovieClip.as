@@ -184,8 +184,6 @@ package fairygui.display
 					setFrame(_frames[_currentFrame]);
 				}
 			}
-			else
-				setFrame(null);
 		}
 
 		private function setFrame(frame:Frame):void

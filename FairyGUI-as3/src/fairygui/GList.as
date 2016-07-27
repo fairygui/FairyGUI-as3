@@ -307,6 +307,8 @@ package fairygui
 			if(_selectionMode==ListSelectionMode.None)
 				return;
 			
+			checkVirtualList();
+			
 			if(_selectionMode==ListSelectionMode.Single)
 				clearSelection();
 
@@ -368,6 +370,8 @@ package fairygui
 		
 		public function selectAll():void
 		{
+			checkVirtualList();
+			
 			var cnt:int = _children.length;
 			for(var i:int=0;i<cnt;i++)
 			{
@@ -390,6 +394,8 @@ package fairygui
 		
 		public function selectReverse():void
 		{
+			checkVirtualList();
+			
 			var cnt:int = _children.length;
 			for(var i:int=0;i<cnt;i++)
 			{
@@ -843,10 +849,7 @@ package fairygui
 		{
 			if (_virtual)
 			{
-				if(this._virtualListChanged!=0) { 
-					this.refreshVirtualList();
-					GTimers.inst.remove(this.refreshVirtualList);
-				}
+				checkVirtualList();
 				
 				if (this.scrollPane != null)
 					scrollPane.scrollToView(getItemRect(index), ani, setFirst);
@@ -910,7 +913,6 @@ package fairygui
 				
 				_virtual = true;
 				_loop = loop;
-				_itemSize = new Point();
 				removeChildrenToPool();
 				
 				if(_itemSize==null)
@@ -973,9 +975,17 @@ package fairygui
 			}
 		}
 		
-		private function __parentSizeChanged():void
+		public function refreshVirtualList():void
 		{
-			setVirtualListChangedFlag(true);
+			setVirtualListChangedFlag(false);
+		}
+		
+		private function checkVirtualList():void
+		{
+			if(this._virtualListChanged!=0) { 
+				this._refreshVirtualList();
+				GTimers.inst.remove(_refreshVirtualList);
+			}
 		}
 		
 		private function setVirtualListChangedFlag(layoutChanged:Boolean=false):void
@@ -985,10 +995,10 @@ package fairygui
 			else if (_virtualListChanged == 0)
 				_virtualListChanged = 1;
 			
-			GTimers.inst.callLater(refreshVirtualList);
+			GTimers.inst.callLater(_refreshVirtualList);
 		}
 		
-		private function refreshVirtualList():void
+		private function _refreshVirtualList():void
 		{
 			if (_virtualListChanged == 0)
 				return;
@@ -1557,6 +1567,9 @@ package fairygui
 						GLabel(obj).title = String(cxml.@title);
 						GLabel(obj).icon = String(cxml.@icon);
 					}
+					str = cxml.@name;
+					if(str)
+						obj.name = str;
 				}
 			}
 		}

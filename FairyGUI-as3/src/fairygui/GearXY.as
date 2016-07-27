@@ -6,10 +6,11 @@ package fairygui
 	
 	public class GearXY extends GearBase
 	{
+		public var tweener:TweenLite;
+		
 		private var _storage:Object;
 		private var _default:Point;
 		private var _tweenValue:Point;
-		private var _tweener:TweenLite;
 		
 		public function GearXY(owner:GObject)
 		{
@@ -39,22 +40,27 @@ package fairygui
 
 		override public function apply():void
 		{
-			_owner._gearLocked = true;
-			
 			var pt:Point = _storage[_controller.selectedPageId];
 			if(!pt)
 				pt = _default;
 
-			if(_tweener!=null)
-			{
-				_owner.setXY(_tweener.vars.x, _tweener.vars.y);
-				_tweener.kill();
-				_tweener = null;
-				_owner.internalVisible--;
-			}
-			
 			if(_tween && !UIPackage._constructing && !disableAllTweenEffect)
 			{
+				if(tweener!=null)
+				{
+					if(tweener.vars.x!=pt.x || tweener.vars.y!=pt.y)
+					{
+						_owner._gearLocked = true;
+						_owner.setXY(tweener.vars.x, tweener.vars.y);
+						_owner._gearLocked = false;
+						tweener.kill();
+						tweener = null;
+						_owner.internalVisible--;
+					}
+					else
+						return;
+				}
+				
 				if (_owner.x != pt.x || _owner.y != pt.y)
 				{
 					_owner.internalVisible++;
@@ -72,13 +78,15 @@ package fairygui
 						_tweenValue = new Point();
 					_tweenValue.x = _owner.x;
 					_tweenValue.y = _owner.y;
-					_tweener = TweenLite.to(_tweenValue, _tweenTime, vars);
+					tweener = TweenLite.to(_tweenValue, _tweenTime, vars);
 				}
 			}
 			else
+			{
+				_owner._gearLocked = true;
 				_owner.setXY(pt.x, pt.y);
-			
-			_owner._gearLocked = false;
+				_owner._gearLocked = false;
+			}
 		}
 		
 		private function __tweenUpdate():void
@@ -91,7 +99,7 @@ package fairygui
 		private function __tweenComplete():void
 		{
 			_owner.internalVisible--;
-			_tweener = null;
+			tweener = null;
 		}
 		
 		override public function updateState():void

@@ -249,6 +249,15 @@ package fairygui
 				}
 				else
 					_selectedIndex = -1;
+				
+				str = xml.@direction;
+				if(str)
+				{
+					if(str=="up")
+						_popupDownward = false;
+					else if(str=="auto")
+						_popupDownward = null;
+				}
 			}				
 		}
 		

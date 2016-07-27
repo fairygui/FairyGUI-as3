@@ -421,6 +421,9 @@ package fairygui
 					value = strings[elementId];
 					if(value!=undefined)
 						cxml.@text = value;
+					value = strings[elementId+"-prompt"];
+					if(value!=undefined)
+						cxml.@prompt = value;
 				}
 				else if(ename=="list")
 				{

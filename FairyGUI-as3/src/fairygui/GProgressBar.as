@@ -81,7 +81,7 @@ package fairygui
 			}
 		}
 		
-		public function tweenValue(value:int, duration:Number):void
+		public function tweenValue(value:int, duration:Number):TweenLite
 		{
 			if(_value != value)
 			{
@@ -92,7 +92,10 @@ package fairygui
 				_value = value;
 				_tweener = TweenLite.to(this, duration,
 					{_tweenValue:value, onUpdate:onUpdateTween, ease: Linear.ease});
+				return _tweener;
 			}
+			else
+				return null;
 		}
 		
 		private function onUpdateTween():void
