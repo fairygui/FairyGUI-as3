@@ -693,6 +693,7 @@ package fairygui
 			var size:int = 0;
 			var xadvance:int = 0;
 			var resizable:Boolean = false;
+			var colored:Boolean = false;
 			
 			for(i=0;i<lineCount;i++)
 			{
@@ -718,19 +719,8 @@ package fairygui
 					bg.offsetY = kv.yoffset;
 					bg.width = kv.width;
 					bg.height = kv.height;
-					bg.advance = kv.xadvance;
-					if(kv.chnl!=undefined)
-					{
-						bg.channel = kv.chnl;
-						if (bg.channel == 15)
-							bg.channel = 4;
-						else if (bg.channel == 1)
-							bg.channel = 3;
-						else if (bg.channel == 2)
-							bg.channel = 2;
-						else
-							bg.channel = 1;
-					}
+					bg.advance = kv.xadvance;					
+					bg.channel = font.translateChannel(kv.chnl);
 					
 					if(!ttf)
 					{
@@ -769,8 +759,11 @@ package fairygui
 				else if(str=="info")
 				{
 					ttf = kv.face!=null;
+					colored = ttf;
 					size = kv.size;
 					resizable = kv.resizable=="true";
+					if(kv.colored!=undefined)
+						colored = kv.colored=="true";
 					if(ttf)
 					{
 						var ba:ByteArray = _reader.readResFile(item.id+".png");
@@ -796,6 +789,7 @@ package fairygui
 			font.ttf = ttf;
 			font.size = size;
 			font.resizable = resizable;
+			font.colored = colored;
 			item.bitmapFont = font;
 		}
 		
