@@ -12,6 +12,7 @@ package fairygui
 	import fairygui.text.BMGlyph;
 	import fairygui.text.BitmapFont;
 	import fairygui.utils.CharSize;
+	import fairygui.utils.FontUtils;
 	import fairygui.utils.GTimers;
 	import fairygui.utils.ToolSet;
 
@@ -501,6 +502,7 @@ package fairygui
 			}
 			
 			switchBitmapMode(false);
+			_textField.embedFonts = FontUtils.isEmbeddedFont(_textFormat);
 			_textField.defaultTextFormat = _textFormat;
 			if(_widthAutoSize)
 			{

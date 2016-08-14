@@ -14,6 +14,7 @@ package fairygui.text
 	import fairygui.PackageItem;
 	import fairygui.UIPackage;
 	import fairygui.utils.CharSize;
+	import fairygui.utils.FontUtils;
 	import fairygui.utils.ToolSet;
 	
 	public class RichTextField extends Sprite 
@@ -116,6 +117,7 @@ package fairygui.text
 					_defaultTextFormat.kerning = false;
 			}
 			
+			_textField.embedFonts = FontUtils.isEmbeddedFont(_defaultTextFormat);
 			_textField.defaultTextFormat = _defaultTextFormat;
 		}
 		
