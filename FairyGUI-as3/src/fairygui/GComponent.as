@@ -1138,7 +1138,7 @@ package fairygui
 			if(_transitions.length>0)
 			{
 				this.addEventListener(Event.ADDED_TO_STAGE, __addedToStage);
-				this.removeEventListener(Event.REMOVED_FROM_STAGE, __removedFromStage);
+				this.addEventListener(Event.REMOVED_FROM_STAGE, __removedFromStage);
 			}
 			
 			applyAllControllers();
