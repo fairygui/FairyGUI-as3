@@ -929,7 +929,7 @@ package fairygui
 				else
 					this.scrollPane.scrollSpeed = _itemSize.x;
 				
-				this.scrollPane.addEventListener(Event.SCROLL, __scrolled, true);
+				this.scrollPane.addEventListener(Event.SCROLL, __scrolled);
 				setVirtualListChangedFlag(true);
 			}
 		}
