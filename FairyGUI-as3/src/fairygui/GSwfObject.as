@@ -12,14 +12,11 @@ package fairygui
 		protected var _content:DisplayObject;
 		protected var _playing:Boolean;
 		protected var _frame:int;
-		protected var _gearAnimation:GearAnimation;
 		
 		public function GSwfObject()
 		{
 			_playing = true;
 			_sizeImplType = 1;
-			
-			_gearAnimation = new GearAnimation(this);
 		}
 		
 		override protected function createDisplayObject():void
@@ -50,8 +47,7 @@ package fairygui
 					else
 						MovieClip(_content).gotoAndStop(_frame+1);
 				}
-				if(_gearAnimation.controller)
-					_gearAnimation.updateState();
+				updateGear(5);
 			}
 		}
 		
@@ -72,14 +68,8 @@ package fairygui
 					else
 						MovieClip(_content).gotoAndStop(_frame+1);
 				}
-				if(_gearAnimation.controller)
-					_gearAnimation.updateState();
+				updateGear(5);
 			}
-		}
-		
-		final public function get gearAnimation():GearAnimation
-		{
-			return _gearAnimation;
 		}
 		
 		override public function dispose():void
@@ -88,13 +78,6 @@ package fairygui
 			super.dispose();
 		}
 
-		override public function handleControllerChanged(c:Controller):void
-		{
-			super.handleControllerChanged(c);
-			if(_gearAnimation.controller==c)
-				_gearAnimation.apply();
-		}
-		
 		override public function constructFromResource(pkgItem:PackageItem):void
 		{
 			_packageItem = pkgItem;
@@ -142,15 +125,6 @@ package fairygui
 			
 			var str:String = xml.@playing;
 			_playing =  str!= "false";
-		}
-		
-		override public function setup_afterAdd(xml:XML):void
-		{
-			super.setup_afterAdd(xml);
-			
-			var cxml:XML = xml.gearAni[0];
-			if(cxml)
-				_gearAnimation.setup(cxml);
 		}
 	}
 }

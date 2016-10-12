@@ -12,8 +12,6 @@ package fairygui
 
 	public class GImage extends GObject implements IColorGear
 	{
-		private var _gearColor:GearColor;
-		
 		private var _content:Bitmap;
 		private var _bmdAfterFlip:BitmapData;
 		private var _color:uint;
@@ -21,7 +19,6 @@ package fairygui
 			
 		public function GImage()
 		{
-			_gearColor = new GearColor(this);
 			_color = 0xFFFFFF;
 		}
 		
@@ -35,9 +32,7 @@ package fairygui
 			if(_color != value)
 			{
 				_color = value;
-				if (_gearColor.controller != null)
-					_gearColor.updateState();
-				
+				updateGear(4);
 				applyColor();
 			}
 		}
@@ -110,18 +105,6 @@ package fairygui
 		{ 
 			_content = new UIImage(this);
 			setDisplayObject(_content);
-		}
-		
-		final public function get gearColor():GearColor
-		{
-			return _gearColor;
-		}
-		
-		override public function handleControllerChanged(c:Controller):void
-		{
-			super.handleControllerChanged(c);
-			if(_gearColor.controller==c)
-				_gearColor.apply();
 		}
 		
 		override public function dispose():void
@@ -271,16 +254,6 @@ package fairygui
 			str = xml.@flip;
 			if(str)
 				_flip = FlipType.parse(str);			
-		}
-		
-		override public function setup_afterAdd(xml:XML):void
-		{
-			super.setup_afterAdd(xml);
-			
-			var cxml:XML = xml.gearAni[0];
-			cxml = xml.gearColor[0];
-			if(cxml)
-				_gearColor.setup(cxml);
 		}
 	}
 }

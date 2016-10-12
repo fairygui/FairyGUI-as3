@@ -1,33 +1,28 @@
 package fairygui
 {
-	import fairygui.utils.ToolSet;
 
-	public class GearColor extends GearBase
+	public class GearIcon extends GearBase
 	{
 		private var _storage:Object;
-		private var _default:uint;
+		private var _default:String;
 		
-		public function GearColor(owner:GObject)
+		public function GearIcon(owner:GObject)
 		{
 			super(owner);			
 		}
 		
 		override protected function init():void
 		{
-			_default = IColorGear(_owner).color;
+			_default = _owner.icon;
 			_storage = {};
 		}
 		
 		override protected function addStatus(pageId:String, value:String):void
 		{
-			if(value=="-")
-				return;
-			
-			var col:uint = ToolSet.convertFromHtmlColor(value);
 			if(pageId==null)
-				_default = col;
+				_default = value;
 			else
-				_storage[pageId] = col; 
+				_storage[pageId] = value; 
 		}
 		
 		override public function apply():void
@@ -36,9 +31,9 @@ package fairygui
 
 			var data:* = _storage[_controller.selectedPageId];
 			if(data!=undefined)
-				IColorGear(_owner).color = uint(data);
+				_owner.icon = String(data);
 			else
-				IColorGear(_owner).color = uint(_default);
+				_owner.icon = _default;
 			
 			_owner._gearLocked = false;
 		}
@@ -47,8 +42,8 @@ package fairygui
 		{
 			if (_controller == null || _owner._gearLocked || _owner._underConstruct)
 				return;
-
-			_storage[_controller.selectedPageId] = IColorGear(_owner).color;
+			
+			_storage[_controller.selectedPageId] = _owner.icon;
 		}
 	}
 }

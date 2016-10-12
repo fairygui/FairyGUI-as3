@@ -90,7 +90,7 @@ package fairygui
 				if(tid==-1)
 					throw new Error("invalid relation type");
 
-				newItem.quickAdd(tid, usePercent);
+				newItem.internalAdd(tid, usePercent);
 			}
 			
 			_items.push(newItem);

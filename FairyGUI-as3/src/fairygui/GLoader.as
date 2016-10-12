@@ -19,9 +19,6 @@ package fairygui
 
 	public class GLoader extends GObject implements IColorGear, IAnimationGear
 	{
-		private var _gearAnimation:GearAnimation;
-		private var _gearColor:GearColor;
-		
 		private var _url:String;
 		private var _align:int;
 		private var _verticalAlign:int;
@@ -57,24 +54,12 @@ package fairygui
 			_verticalAlign = VertAlignType.Top;
 			_showErrorSign = true;
 			_color = 0xFFFFFF;
-			
-			_gearAnimation = new GearAnimation(this);
-			_gearColor = new GearColor(this);
 		}
 		
 		override protected function createDisplayObject():void
 		{
 			_container = new UISprite(this);
 			setDisplayObject(_container);
-		}
-		
-		override public function handleControllerChanged(c:Controller):void
-		{
-			super.handleControllerChanged(c);
-			if(_gearAnimation.controller==c)
-				_gearAnimation.apply();
-			if(_gearColor.controller==c)
-				_gearColor.apply();
 		}
 		
 		public override function dispose():void
@@ -107,6 +92,17 @@ package fairygui
 			
 			_url = value;
 			loadContent();
+			updateGear(7);
+		}
+		
+		override public function get icon():String
+		{
+			return _url;
+		}
+		
+		override public function set icon(value:String):void
+		{
+			this.url = value;
 		}
 		
 		public function get align():int
@@ -179,8 +175,7 @@ package fairygui
 					fairygui.display.MovieClip(_content).playing = value;
 				else if(_content is flash.display.MovieClip)
 					flash.display.MovieClip(_content).stop();
-				if (_gearAnimation.controller != null)
-					_gearAnimation.updateState();
+				updateGear(5);
 			}
 		}
 		
@@ -203,8 +198,7 @@ package fairygui
 					else
 						flash.display.MovieClip(_content).gotoAndStop(_frame+1);
 				}
-				if (_gearAnimation.controller != null)
-					_gearAnimation.updateState();
+				updateGear(5);
 			}
 		}
 		
@@ -218,8 +212,7 @@ package fairygui
 			if(_color != value)
 			{
 				_color = value;
-				if (_gearColor.controller != null)
-					_gearColor.updateState();
+				updateGear(4);
 				applyColor();
 			}
 		}
@@ -662,19 +655,6 @@ package fairygui
 			
 			if(_url)
 				loadContent();
-		}
-		
-		override public function setup_afterAdd(xml:XML):void
-		{
-			super.setup_afterAdd(xml);
-			
-			var cxml:XML = xml.gearAni[0];
-			if(cxml)
-				_gearAnimation.setup(cxml);
-			cxml = xml.gearAni[0];
-			cxml = xml.gearColor[0];
-			if(cxml)
-				_gearColor.setup(cxml);
 		}
 	}
 }

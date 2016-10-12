@@ -1,5 +1,6 @@
 package fairygui
 {
+
 	public class GearAnimation extends GearBase
 	{
 		private var _storage:Object;
@@ -18,6 +19,9 @@ package fairygui
 		
 		override protected function addStatus(pageId:String, value:String):void
 		{
+			if(value=="-")
+				return;
+			
 			var gv:GearAnimationValue;
 			if(pageId==null)
 				gv = _default;
@@ -47,7 +51,7 @@ package fairygui
 		
 		override public function updateState():void
 		{
-			if(_owner._gearLocked)
+			if (_controller == null || _owner._gearLocked || _owner._underConstruct)
 				return;
 			
 			var mc:IAnimationGear = IAnimationGear(_owner);

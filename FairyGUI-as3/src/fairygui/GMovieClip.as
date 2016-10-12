@@ -8,17 +8,11 @@ package fairygui
 	
 	public class GMovieClip extends GObject implements IAnimationGear, IColorGear
 	{	
-		private var _gearAnimation:GearAnimation;
-		private var _gearColor:GearColor;
-		
 		private var _movieClip:UIMovieClip;
 		private var _color:uint;
 		
 		public function GMovieClip()
 		{
-			_gearAnimation = new GearAnimation(this);
-			_gearColor = new GearColor(this);
-			
 			_sizeImplType = 1;
 			_color = 0xFFFFFF;
 		}
@@ -41,8 +35,7 @@ package fairygui
 			if(_movieClip.playing!=value)
 			{
 				_movieClip.playing = value;
-				if(_gearAnimation.controller)
-					_gearAnimation.updateState();
+				updateGear(5);
 			}
 		}
 		
@@ -56,8 +49,7 @@ package fairygui
 			if(_movieClip.currentFrame!=value)
 			{
 				_movieClip.currentFrame = value;
-				if(_gearAnimation.controller)
-					_gearAnimation.updateState();
+				updateGear(5);
 			}
 		}
 		
@@ -79,8 +71,7 @@ package fairygui
 			if(_color != value)
 			{
 				_color = value;
-				if (_gearColor.controller != null)
-					_gearColor.updateState();
+				updateGear(4);
 				applyColor();
 			}
 		}
@@ -94,30 +85,11 @@ package fairygui
 			_movieClip.transform.colorTransform = ct;
 		}
 		
-		final public function get gearAnimation():GearAnimation
-		{
-			return _gearAnimation;
-		}
-		
-		final public function get gearColor():GearColor
-		{
-			return _gearColor;
-		}
-		
 		public override function dispose():void
 		{
 			super.dispose();
 		}
-		
-		override public function handleControllerChanged(c:Controller):void
-		{
-			super.handleControllerChanged(c);
-			if(_gearAnimation.controller==c)
-				_gearAnimation.apply();
-			if(_gearColor.controller==c)
-				_gearColor.apply();
-		}
-		
+
 		override public function constructFromResource(pkgItem:PackageItem):void
 		{
 			_packageItem = pkgItem;
@@ -157,18 +129,6 @@ package fairygui
 			str = xml.@color;
 			if(str)
 				this.color = ToolSet.convertFromHtmlColor(str);
-		}
-		
-		override public function setup_afterAdd(xml:XML):void
-		{
-			super.setup_afterAdd(xml);
-			
-			var cxml:XML = xml.gearAni[0];
-			if(cxml)
-				_gearAnimation.setup(cxml);
-			cxml = xml.gearColor[0];
-			if(cxml)
-				_gearColor.setup(cxml);
 		}
 	}
 }

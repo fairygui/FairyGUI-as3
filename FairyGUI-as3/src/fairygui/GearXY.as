@@ -25,6 +25,9 @@ package fairygui
 		
 		override protected function addStatus(pageId:String, value:String):void
 		{
+			if(value=="-")
+				return;
+			
 			var arr:Array = value.split(",");
 			var pt:Point;
 			if(pageId==null)
@@ -104,7 +107,7 @@ package fairygui
 		
 		override public function updateState():void
 		{
-			if(_owner._gearLocked)
+			if (_controller == null || _owner._gearLocked || _owner._underConstruct)
 				return;
 
 			var pt:Point = _storage[_controller.selectedPageId];
@@ -117,8 +120,11 @@ package fairygui
 			pt.y = _owner.y;
 		}
 		
-		public function updateFromRelations(dx:Number, dy:Number):void
+		override public function updateFromRelations(dx:Number, dy:Number):void
 		{
+			if(_controller==null || _storage==null)
+				return;
+			
 			for each (var pt:Point in _storage)
 			{
 				pt.x += dx;

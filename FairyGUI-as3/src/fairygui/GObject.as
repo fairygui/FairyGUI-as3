@@ -59,10 +59,7 @@ package fairygui
 		
 		private var _relations:Relations;
 		private var _group:GGroup;
-		private var _gearDisplay:GearDisplay;
-		private var _gearXY:GearXY;
-		private var _gearSize:GearSize;
-		private var _gearLook:GearLook;
+		private var _gears:Vector.<GearBase>;
 		private var _displayObject:DisplayObject;
 		private var _dragBounds:Rectangle;
 		
@@ -117,11 +114,7 @@ package fairygui
 			
 			_relations = new Relations(this);
 			_dispatcher = new SimpleDispatcher();
-			
-			_gearDisplay = new GearDisplay(this);
-			_gearXY = new GearXY(this);
-			_gearSize = new GearSize(this);
-			_gearLook = new GearLook(this);
+			_gears = new Vector.<GearBase>(8, true);
 		}
 
 		final public function get id():String
@@ -172,8 +165,7 @@ package fairygui
 				if(this is GGroup)
 					GGroup(this).moveChildren(dx, dy);
 				
-				if(_gearXY.controller)
-					_gearXY.updateState();
+				updateGear(1);
 				
 				if (parent != null && !(parent is GList))
 				{
@@ -273,8 +265,7 @@ package fairygui
 						applyPivot();
 				}
 				
-				if(_gearSize.controller)
-					_gearSize.updateState();
+				updateGear(2);
 				
 				if(_parent)
 				{
@@ -349,8 +340,7 @@ package fairygui
 				handleScaleChanged();
 				applyPivot();
 				
-				if(_gearSize.controller)
-					_gearSize.updateState();
+				updateGear(2);
 			}
 		}
 		
@@ -472,9 +462,7 @@ package fairygui
 			{
 				_grayed = value;
 				handleGrayChanged();
-				
-				if(_gearLook.controller)
-					_gearLook.updateState();
+				updateGear(3);
 			}
 		}
 		
@@ -503,9 +491,7 @@ package fairygui
 					_displayObject.rotation = this.normalizeRotation;
 				
 				applyPivot();
-				
-				if(_gearLook.controller)
-					_gearLook.updateState();
+				updateGear(3);
 			}
 		}
 		
@@ -537,9 +523,7 @@ package fairygui
 		{
 			if(_displayObject)
 				_displayObject.alpha = _alpha;
-			
-			if(_gearLook.controller)
-				_gearLook.updateState();
+			updateGear(3);
 		}
 		
 		final public function get visible():Boolean
@@ -709,25 +693,71 @@ package fairygui
 		{
 			return _group;
 		}
-
-		final public function get gearDisplay():GearDisplay
+		
+		final public function getGear(index:int):GearBase
 		{
-			return _gearDisplay;
+			var gear:GearBase = _gears[index];
+			if (gear == null)
+			{
+				switch (index)
+				{
+					case 0:
+						gear = new GearDisplay(this);
+						break;
+					case 1:
+						gear = new GearXY(this);
+						break;
+					case 2:
+						gear = new GearSize(this);
+						break;
+					case 3:
+						gear = new GearLook(this);
+						break;
+					case 4:
+						gear = new GearColor(this);
+						break;
+					case 5:
+						gear = new GearAnimation(this);
+						break;
+					case 6:
+						gear = new GearText(this);
+						break;
+					case 7:
+						gear = new GearIcon(this);
+						break;
+					default:
+						throw new Error("FairyGUI: invalid gear index!");
+				}
+				_gears[index] = gear;
+			}
+			return gear;
 		}
 		
+		protected function updateGear(index:int):void
+		{
+			if (_gears[index] != null)
+				_gears[index].updateState();
+		}
+		
+		internal function updateGearFromRelations(index:int, dx:Number, dy:Number):void
+		{
+			if (_gears[index] != null)
+				_gears[index].updateFromRelations(dx, dy);
+		}
+
 		final public function get gearXY():GearXY
 		{
-			return _gearXY;
+			return GearXY(getGear(1));
 		}
 		
 		final public function get gearSize():GearSize
 		{
-			return _gearSize;
+			return GearSize(getGear(2));
 		}
 		
 		final public function get gearLook():GearLook
 		{
-			return _gearLook;
+			return GearLook(getGear(3));
 		}
 		
 		final public function get relations():Relations
@@ -862,6 +892,15 @@ package fairygui
 		}
 		
 		public function set text(value:String):void
+		{
+		}
+		
+		public function get icon():String
+		{
+			return null;
+		}
+		
+		public function set icon(value:String):void
 		{
 		}
 		
@@ -1140,14 +1179,12 @@ package fairygui
 		
 		public function handleControllerChanged(c:Controller):void
 		{
-			if(_gearDisplay.controller==c)
-				_gearDisplay.apply();
-			if(_gearXY.controller==c)
-				_gearXY.apply();
-			if(_gearSize.controller==c)
-				_gearSize.apply();
-			if(_gearLook.controller==c)
-				_gearLook.apply();
+			for (var i:int = 0; i < 8; i++)
+			{
+				var gear:GearBase = _gears[i];
+				if (gear != null && gear.controller == c)
+					gear.apply();
+			}
 		}
 		
 		protected function handleGrayChanged():void
@@ -1262,29 +1299,30 @@ package fairygui
 			}
 		}
 		
+		private static var GearXMLKeys:Object = {
+				"gearDisplay":0,
+				"gearXY":1,
+				"gearSize":2,
+				"gearLook":3,
+				"gearColor":4,
+				"gearAni":5,
+				"gearText":6,
+				"gearIcon":7
+			};
+		
 		public function setup_afterAdd(xml:XML):void
 		{
-			var cxml:XML;
-			
 			var s:String = xml.@group;
 			if(s)
 				_group = _parent.getChildById(s) as GGroup;
 			
-			cxml = xml.gearDisplay[0];
-			if(cxml)
-				_gearDisplay.setup(cxml);
-			
-			cxml = xml.gearXY[0];
-			if(cxml)
-				_gearXY.setup(cxml);
-			
-			cxml = xml.gearSize[0];
-			if(cxml)
-				_gearSize.setup(cxml);
-			
-			cxml = xml.gearLook[0];
-			if(cxml)
-				_gearLook.setup(cxml);
+			var col:Object = xml.elements();
+			for each(var cxml:XML in col)
+			{
+				var index:* = GearXMLKeys[cxml.name().localName];
+				if(index!=undefined)
+					getGear(int(index)).setup(cxml);
+			}
 		}
 		
 		//touch support

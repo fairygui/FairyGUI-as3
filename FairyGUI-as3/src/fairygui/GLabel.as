@@ -12,26 +12,19 @@ package fairygui
 			super();
 		}
 		
-		final public function get icon():String
+		override public function get icon():String
 		{
-			if(_iconObject is GLoader)
-				return GLoader(_iconObject).url;
-			else if(_iconObject is GLabel)
-				return GLabel(_iconObject).icon;
-			else if(_iconObject is GButton)
-				return GButton(_iconObject).icon;
+			if(_iconObject!=null)
+				return _iconObject.icon;
 			else
 				return null;
 		}
 		
-		public function set icon(value:String):void
+		override public function set icon(value:String):void
 		{
-			if(_iconObject is GLoader)
-				GLoader(_iconObject).url = value;
-			else if(_iconObject is GLabel)
-				GLabel(_iconObject).icon = value;
-			else if(_iconObject is GButton)
-				GButton(_iconObject).icon = value;
+			if(_iconObject!=null)
+				_iconObject.icon = value;
+			updateGear(7);
 		}
 		
 		final public function get title():String
@@ -46,6 +39,7 @@ package fairygui
 		{
 			if(_titleObject)
 				_titleObject.text = value;
+			updateGear(6);
 		}
 		
 		override final public function get text():String
@@ -115,16 +109,25 @@ package fairygui
 					this.text = str;
 				str = xml.@icon;
 				if(str)
-					this.icon = str;				
+					this.icon = str;
 				str = xml.@titleColor;
 				if(str)
 					this.titleColor = ToolSet.convertFromHtmlColor(str);
 				
 				if(_titleObject is GTextInput)
 				{
-					str = xml.@promptText;
+					str = xml.@prompt;
 					if(str)
-						GTextInput(_titleObject).promptText = str;
+						GTextInput(_titleObject).promptText = str;					
+					str = xml.@maxLength;
+					if(str)
+						GTextInput(_titleObject).maxLength = parseInt(str);
+					str = xml.@restrict;
+					if(str)
+						GTextInput(_titleObject).restrict = str;
+					str = xml.@password;
+					if(str)
+						GTextInput(_titleObject).password = str=="true";
 				}
 			}
 		}

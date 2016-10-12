@@ -1557,16 +1557,12 @@ package fairygui
 				if(obj!=null)
 				{
 					addChild(obj);
-					if(obj is GButton)
-					{
-						GButton(obj).title = String(cxml.@title);
-						GButton(obj).icon = String(cxml.@icon);
-					}
-					else if(obj is GLabel)
-					{
-						GLabel(obj).title = String(cxml.@title);
-						GLabel(obj).icon = String(cxml.@icon);
-					}
+					str = cxml.@title;
+					if(str)
+						obj.text = str;
+					str = cxml.@icon;
+					if(str)
+						obj.icon = str;
 					str = cxml.@name;
 					if(str)
 						obj.name = str;

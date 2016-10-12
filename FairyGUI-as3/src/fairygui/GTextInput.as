@@ -11,6 +11,7 @@ package fairygui
 	{
 		private var _changed:Boolean;
 		private var _promptText:String;
+		private var _password:Boolean;
 		
 		public function GTextInput()
 		{
@@ -68,8 +69,23 @@ package fairygui
 			return _textField.restrict;
 		}
 		
-		public function set restrict(value:String):void {
+		public function set restrict(value:String):void
+		{
 			_textField.restrict = value;
+		}
+		
+		public function get password():Boolean
+		{
+			return _password;
+		}
+		
+		public function set password(val:Boolean):void
+		{
+			if(_password != val)
+			{
+				_password = val;
+				render();
+			}
 		}
 		
 		override protected function createDisplayObject():void
@@ -119,7 +135,7 @@ package fairygui
 			}
 			else
 			{
-				_textField.displayAsPassword = _displayAsPassword;
+				_textField.displayAsPassword = _password;
 				_textField.text = _text;
 			}
 			_changed = false;
@@ -142,6 +158,7 @@ package fairygui
 			str = xml.@restrict;
 			if(str)
 				_textField.restrict = str;
+			_password = xml.@password=="true";
 		}
 		
 		override public function setup_afterAdd(xml:XML):void
@@ -168,7 +185,7 @@ package fairygui
 		{
 			if(!_text && _promptText)
 			{
-				_textField.displayAsPassword = _displayAsPassword;
+				_textField.displayAsPassword = _password;
 				_textField.text = "";
 			}
 			TextInputHistory.inst.startRecord(_textField);

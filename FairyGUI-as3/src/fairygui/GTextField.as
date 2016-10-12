@@ -38,11 +38,8 @@ package fairygui
 		protected var _stroke:int;
 		protected var _strokeColor:uint;
 		protected var _shadowOffset:Point;
-		protected var _displayAsPassword:Boolean;
 		protected var _textFilters:Array;
-		
-		protected var _gearColor:GearColor;
-		
+
 		protected var _textField:UITextField;
 		protected var _bitmap:UIImage;
 		protected var _bitmapData:BitmapData;
@@ -76,8 +73,6 @@ package fairygui
 			_autoSize= AutoSizeType.Both;
 			_widthAutoSize = true;
 			_heightAutoSize = true;
-			
-			_gearColor = new GearColor(this);
 		}
 		
 		override protected function createDisplayObject():void
@@ -118,6 +113,7 @@ package fairygui
 			_text = value;
 			if(_text==null)
 				_text = "";
+			updateGear(6);
 			
 			if(parent && parent._underConstruct)
 				renderNow();
@@ -171,9 +167,7 @@ package fairygui
 			if(_color!=value)
 			{
 				_color = value;
-				if(_gearColor.controller)
-					_gearColor.updateState();
-				
+				updateGear(4);				
 				updateTextFormat();
 			}
 		}
@@ -385,20 +379,6 @@ package fairygui
 			return _autoSize;
 		}
 		
-		final public function get displayAsPassword():Boolean
-		{
-			return _displayAsPassword;
-		}
-		
-		public function set displayAsPassword(val:Boolean):void
-		{
-			if(_displayAsPassword != val)
-			{
-				_displayAsPassword = val;
-				render();
-			}
-		}
-		
 		public function get textWidth():int
 		{
 			if(_requireRender)
@@ -410,19 +390,6 @@ package fairygui
 		{
 			if(_sizeDirty && _requireRender)
 				renderNow();
-		}
-
-		final public function get gearColor():GearColor
-		{
-			return _gearColor;
-		}
-		
-		override public function handleControllerChanged(c:Controller):void
-		{
-			super.handleControllerChanged(c);
-			
-			if(_gearColor.controller==c)
-				_gearColor.apply();
 		}
 		
 		protected function updateTextFormat():void
@@ -764,10 +731,10 @@ package fairygui
 			var w:int, h:int;
 			if(_widthAutoSize)
 			{
-				if(textWidth==0)
+				if(_textWidth==0)
 					w = 0;
 				else
-					w = textWidth;
+					w = _textWidth;
 			}
 			else
 				w = this.width;
@@ -887,7 +854,6 @@ package fairygui
 			var str:String;
 			var arr:Array;
 			
-			_displayAsPassword = xml.@password=="true";
 			str = xml.@font;
 			if(str)
 				_font = str;
@@ -970,10 +936,6 @@ package fairygui
 				this.text = str;
 
 			_sizeDirty = false;
-			
-			var cxml:XML = xml.gearColor[0];
-			if(cxml)
-				_gearColor.setup(cxml);
 		}
 	}
 }

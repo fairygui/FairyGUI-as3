@@ -1,5 +1,6 @@
 package fairygui
 {
+
 	public class GearDisplay extends GearBase
 	{
 		public var pages:Vector.<String>;

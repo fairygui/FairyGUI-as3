@@ -47,6 +47,7 @@ package fairygui
 		{
 			if(_titleObject)
 				_titleObject.text = value;
+			updateGear(6);
 		}
 		
 		final public function get titleColor():uint

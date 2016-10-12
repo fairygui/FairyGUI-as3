@@ -513,8 +513,7 @@ package fairygui
 		
 		internal function applyController(c:Controller):void
 		{
-			var child:GObject;
-			for each(child in _children)
+			for each(var child:GObject in _children)
 				child.handleControllerChanged(c);
 		}
 		
