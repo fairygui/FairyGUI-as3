@@ -70,8 +70,9 @@ package fairygui
 			info.type = relationType;
 			_defs.push(info);
 			
-			//当使用中线关联时，因为需要除以2，很容易因为奇数宽度/高度造成小数点坐标，所以设置了这类关联的对象，自动启用pixelSnapping
-			if (relationType == RelationType.Left_Center || relationType == RelationType.Center_Center || relationType == RelationType.Right_Center
+			//当使用中线关联时，因为需要除以2，很容易因为奇数宽度/高度造成小数点坐标；当使用百分比时，也会造成小数坐标；
+			//所以设置了这类关联的对象，自动启用pixelSnapping
+			if (usePercent || relationType == RelationType.Left_Center || relationType == RelationType.Center_Center || relationType == RelationType.Right_Center
 				|| relationType == RelationType.Top_Middle || relationType == RelationType.Middle_Middle || relationType == RelationType.Bottom_Middle)
 				_owner.pixelSnapping = true;
 		}
