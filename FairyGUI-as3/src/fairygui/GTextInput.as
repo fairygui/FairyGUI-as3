@@ -108,26 +108,27 @@ package fairygui
 			return _text;
 		}
 		
-		override protected function updateTextFormat():void
-		{
-			super.updateTextFormat();
-			
-			_textField.width = this.width;
-			_textField.height = this.height+_fontAdjustment;
-			_textField.defaultTextFormat = _textFormat;
-			_textField.wordWrap = !_singleLine;
-			_textField.multiline = !_singleLine;
-			_yOffset = -_fontAdjustment;
-			_textField.y = this.y+_yOffset;
-		}
-		
 		override protected function render():void
 		{
 			renderNow(true);
 		}
 		
+		override protected function updateTextFormat():void
+		{
+			super.updateTextFormat();
+			
+			_textField.defaultTextFormat = _textFormat;
+		}
+		
 		override protected function renderNow(updateBounds:Boolean=true):void
 		{
+			_textField.width = this.width;
+			_textField.height = this.height+_fontAdjustment;
+			_textField.wordWrap = !_singleLine;
+			_textField.multiline = !_singleLine;
+			_yOffset = -_fontAdjustment;
+			_textField.y = this.y+_yOffset;
+			
 			if(!_text && _promptText)
 			{
 				_textField.displayAsPassword = false;

@@ -4,11 +4,12 @@ package fairygui
 	import flash.display.Graphics;
 	import flash.display.LineScaleMode;
 	import flash.display.Sprite;
+	import flash.geom.ColorTransform;
 	
 	import fairygui.display.UISprite;
 	import fairygui.utils.ToolSet;
 	
-	public class GGraph extends GObject
+	public class GGraph extends GObject implements IColorGear
 	{
 		private var _graphics:Graphics;
 		
@@ -36,6 +37,22 @@ package fairygui
 			delayCreateDisplayObject();
 			_graphics = Sprite(displayObject).graphics;
 			return _graphics;
+		}
+		
+		public function get color():uint
+		{
+			return _fillColor;
+		}
+		
+		public function set color(value:uint):void 
+		{
+			if(_fillColor != value)
+			{
+				_fillColor = value;
+				updateGear(4);
+				if(_type!=0)
+					drawCommon();
+			}
 		}
 		
 		public function drawRect(lineSize:int, lineColor:int, lineAlpha:Number,

@@ -5,6 +5,7 @@ package fairygui
 		public static const None:int = 0;
 		public static const Both:int = 1;
 		public static const Height:int = 2;
+		public static const Shrink:int = 3;
 		
 		public function AutoSizeType()
 		{
@@ -20,6 +21,8 @@ package fairygui
 					return Both;
 				case "height":
 					return Height;
+				case "shrink":
+					return Shrink;
 				default:
 					return None;
 			}

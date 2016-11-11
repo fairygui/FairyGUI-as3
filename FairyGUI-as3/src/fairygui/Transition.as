@@ -3,16 +3,17 @@ package fairygui
 	import com.greensock.TweenMax;
 	import com.greensock.easing.EaseLookup;
 	
+	import flash.filters.ColorMatrixFilter;
 	import flash.media.Sound;
 	import flash.utils.getTimer;
 	
+	import fairygui.utils.ColorMatrix;
 	import fairygui.utils.GTimers;
 	import fairygui.utils.ToolSet;
 	
 	public class Transition
 	{
 		public var name:String;
-		public var autoPlay:Boolean;
 		public var autoPlayRepeat:int;
 		public var autoPlayDelay:Number;
 
@@ -28,6 +29,8 @@ package fairygui
 		private var _options:int;
 		private var _reversed:Boolean;
 		private var _maxTime:Number;
+		private var  _autoPlay:Boolean;
+		private var _timeScale:Number;
 		
 		public const OPTION_IGNORE_DISPLAY_CONTROLLER:int = 1;
 		
@@ -39,6 +42,30 @@ package fairygui
 			_items = new Vector.<TransitionItem>();
 			_maxTime = 0;
 			autoPlayDelay = 0;
+			_timeScale = 1;
+		}
+		
+		public function get autoPlay():Boolean
+		{
+			return _autoPlay;
+		}
+		
+		public function set autoPlay(value:Boolean):void
+		{
+			if (_autoPlay != value)
+			{
+				_autoPlay = value;
+				if (_autoPlay)
+				{
+					if (_owner.onStage)
+						play(null, null, autoPlayRepeat, autoPlayDelay);
+				}
+				else
+				{
+					if (!_owner.onStage)
+						stop(false, true);
+				}
+			}
 		}
 
 		public function play(onComplete:Function = null, onCompleteParam:Object = null,
@@ -143,11 +170,11 @@ package fairygui
 		
 		private function stopItem(item:TransitionItem, setToComplete:Boolean):void
 		{
-			if ((_options & OPTION_IGNORE_DISPLAY_CONTROLLER) != 0)
-			{
-				if (item.target != _owner)
-					item.target.internalVisible--;
-			}
+			if ((_options & OPTION_IGNORE_DISPLAY_CONTROLLER) != 0 && item.target != _owner)
+				item.target.internalVisible--;
+			
+			if (item.type == TransitionActionType.ColorFilter)
+				item.target.filters = null;
 			
 			if(item.completed)
 				return;
@@ -191,6 +218,38 @@ package fairygui
 			}
 		}		
 		
+		public function dispose():void
+		{
+			if (!_playing)
+				return;
+			
+			_playing = false;
+			var cnt:int = _items.length;
+			for (var i:int = 0; i < cnt; i++)
+			{
+				var item:TransitionItem = _items[i];
+				if (item.target == null || item.completed)
+					continue;
+				
+				if (item.tweener != null)
+				{
+					item.tweener.kill();
+					item.tweener = null;
+				}
+				
+				if (item.type == TransitionActionType.Transition)
+				{
+					var trans:Transition = GComponent(item.target).getTransition(item.value.s);
+					if (trans != null)
+						trans.dispose();
+				}
+				else if (item.type == TransitionActionType.Shake)
+				{
+					GTimers.inst.remove(item.__shake);
+				}
+			}
+		}
+		
 		public function get playing():Boolean
 		{
 			return _playing;
@@ -226,6 +285,7 @@ package fairygui
 					case TransitionActionType.Size:
 					case TransitionActionType.Pivot:
 					case TransitionActionType.Scale:
+					case TransitionActionType.Skew:
 						value.b1 = true;
 						value.b2 = true;
 						value.f1 = parseFloat(args[0]);
@@ -254,10 +314,6 @@ package fairygui
 						value.b = args[0];
 						break;
 					
-					case TransitionActionType.Controller:
-						value.s = args[0];
-						break;
-					
 					case TransitionActionType.Sound:
 						value.s = args[0];
 						if(args.length > 1)
@@ -275,6 +331,13 @@ package fairygui
 						if (args.length > 1)
 							value.f2 = parseFloat(args[1]);
 						break;
+					
+					case TransitionActionType.ColorFilter:
+						value.f1 = parseFloat(args[0]);
+						value.f2 = parseFloat(args[1]);
+						value.f3 = parseFloat(args[2]);
+						value.f4 = parseFloat(args[3]);
+						break;
 				}
 			}
 		}
@@ -285,16 +348,15 @@ package fairygui
 			for (var i:int = 0; i < cnt; i++)
 			{
 				var item:TransitionItem = _items[i];
-				if (item.label == null && item.label2 == null)
-					continue;
-				
 				if (item.label == label)
 				{
 					item.hook = callback;
+					break;
 				}
 				else if (item.label2 == label)
 				{
 					item.hook2 = callback;
+					break;
 				}
 			}
 		}
@@ -313,14 +375,43 @@ package fairygui
 		public function setTarget(label:String, newTarget:GObject):void
 		{
 			var cnt:int = _items.length;
-			var value:TransitionValue;
 			for (var i:int = 0; i < cnt; i++)
 			{
 				var item:TransitionItem = _items[i];
-				if (item.label == null && item.label2 == null)
-					continue;
-				
-				item.targetId = newTarget.id;
+				if (item.label == label)
+					item.targetId = newTarget.id;
+			}
+		}
+		
+		public function SetDuration(label:String, value:Number):void
+		{
+			var cnt:int = _items.length;
+			for (var i:int = 0; i < cnt; i++)
+			{
+				var item:TransitionItem = _items[i];
+				if (item.tween && item.label == label)
+					item.duration = value;
+			}
+		}
+		
+		public function get timeScale():Number
+		{
+			return _timeScale;
+		}
+		
+		public function set timeScale(value:Number):void
+		{
+			_timeScale = value;
+			
+			if (_playing)
+			{
+				var cnt:int = _items.length;
+				for (var i:int = 0; i < cnt; i++)
+				{
+					var item:TransitionItem = _items[i];
+					if (item.tweener != null)
+						item.tweener.timeScale(_timeScale);
+				}
 			}
 		}
 		
@@ -362,6 +453,8 @@ package fairygui
 			var i:int;
 			var item:TransitionItem;
 			var startTime:Number;
+			var startValue:TransitionValue;
+			var endValue:TransitionValue;
 			
 			for (i = 0; i < cnt; i++)
 			{
@@ -388,57 +481,67 @@ package fairygui
 							if (startTime == 0)
 								startTween(item);
 							else
+							{
 								item.tweener = TweenMax.delayedCall(startTime, __delayCall, item.params);
+								if(_timeScale!=1)
+									item.tweener.timeScale(_timeScale);
+							}
 							break;
 						
 						case TransitionActionType.Scale:
 						case TransitionActionType.Alpha:
 						case TransitionActionType.Rotation:
+						case TransitionActionType.Skew:
+						case TransitionActionType.Color:
+						case TransitionActionType.ColorFilter:
 							_totalTasks++;
 							parms = {};
 							if(_reversed)
 							{
-								switch(item.type)
-								{
-									case TransitionActionType.Scale:
-										item.value.f1 = item.endValue.f1;
-										item.value.f2 = item.endValue.f2;
-										parms.f1 = item.startValue.f1;
-										parms.f2 = item.startValue.f2;
-										break;
-									
-									case TransitionActionType.Alpha:
-										item.value.f1 = item.endValue.f1;
-										parms.f1 = item.startValue.f1;
-										break;
-									
-									case TransitionActionType.Rotation:
-										item.value.i = item.endValue.i;
-										parms.i = item.startValue.i;										
-										break;
-								}
+								startValue = item.endValue;
+								endValue = item.startValue;
 							}
 							else
 							{
-								switch(item.type)
-								{
-									case TransitionActionType.Scale:
-										item.value.f1 = item.startValue.f1;
-										item.value.f2 = item.startValue.f2;
-										parms.f1 = item.endValue.f1;
-										parms.f2 = item.endValue.f2;
-										break;
-									
-									case TransitionActionType.Alpha:
-										item.value.f1 = item.startValue.f1;
-										parms.f1 = item.endValue.f1;
-										break;
-									
-									case TransitionActionType.Rotation:
-										item.value.i = item.startValue.i;
-										parms.i = item.endValue.i;							
-										break;
-								}
+								startValue = item.startValue;
+								endValue = item.endValue;
+							}
+	
+							switch(item.type)
+							{
+								case TransitionActionType.Scale:
+								case TransitionActionType.Skew:
+									item.value.f1 = startValue.f1;
+									item.value.f2 = startValue.f2;
+									parms.f1 = endValue.f1;
+									parms.f2 = endValue.f2;
+									break;
+								
+								case TransitionActionType.Alpha:
+									item.value.f1 = startValue.f1;
+									parms.f1 = endValue.f1;
+									break;
+								
+								case TransitionActionType.Rotation:
+									item.value.i = startValue.i;
+									parms.i = endValue.i;							
+									break;
+								
+								case TransitionActionType.Color:
+									item.value.c = startValue.c;
+									parms.hexColors = { c:endValue.c};
+									break;
+								
+								case TransitionActionType.ColorFilter:
+									item.value.f1 = startValue.f1;
+									item.value.f2 = startValue.f2;
+									item.value.f3 = startValue.f3;
+									item.value.f4 = startValue.f4;
+									parms.f1 = endValue.f1;
+									parms.f2 = endValue.f2;
+									parms.f3 = endValue.f3;
+									parms.f4 = endValue.f4;
+									break;
 							}
 							parms.ease = item.easeType;
 							parms.onStart = __tweenStart;
@@ -460,6 +563,8 @@ package fairygui
 								parms.yoyo = item.yoyo;
 							}							
 							item.tweener = TweenMax.to(item.value, item.duration, parms);
+							if(_timeScale!=1)
+								item.tweener.timeScale(_timeScale);
 							break;
 					}
 				}
@@ -477,6 +582,8 @@ package fairygui
 						item.completed = false;
 						_totalTasks++;
 						item.tweener =  TweenMax.delayedCall(startTime, __delayCall2, item.params);
+						if(_timeScale!=1)
+							item.tweener.timeScale(_timeScale);
 					}
 				}
 			}
@@ -548,6 +655,8 @@ package fairygui
 			
 			applyValue(item, item.value);
 			item.tweener = TweenMax.to(item.value, item.duration, parms);
+			if(_timeScale!=1)
+				item.tweener.timeScale(_timeScale);
 			
 			if (item.hook != null)
 				item.hook();
@@ -619,17 +728,24 @@ package fairygui
 					{
 						_playing = false;
 						_owner.internalVisible--;
-						var cnt:int = _items.length;
 						
-						if ((_options & OPTION_IGNORE_DISPLAY_CONTROLLER) != 0)
+						var cnt:int = _items.length;				
+						for (var i:int = 0; i < cnt; i++)
 						{
-							for (var i:int = 0; i < cnt; i++)
+							var item:TransitionItem = _items[i];
+							if (item.target != null)
 							{
-								var item:TransitionItem = _items[i];
-								if (item.target != null && item.target!=_owner)
+								if((_options & OPTION_IGNORE_DISPLAY_CONTROLLER) != 0 && item.target!=_owner)
 									item.target.internalVisible--;
 							}
+							
+							if (item.filterCreated)
+							{
+								item.filterCreated = false;
+								item.target.filters = null;
+							}
 						}
+
 						if (_onComplete != null)
 						{
 							var func:Function = _onComplete;
@@ -700,6 +816,10 @@ package fairygui
 					item.target.setScale(value.f1, value.f2);
 					break;
 				
+				case TransitionActionType.Skew:
+					//todo
+					break;
+				
 				case TransitionActionType.Color:
 					IColorGear(item.target).color = value.c;
 					break;
@@ -714,27 +834,7 @@ package fairygui
 				case TransitionActionType.Visible:
 					item.target.visible = value.b;
 					break;
-				
-				case TransitionActionType.Controller:
-					var arr:Array = value.s.split(",");
-					for each(var str:String in arr)
-					{
-						var arr2:Array = str.split("=");
-						var cc:Controller = GComponent(item.target).getController(arr2[0]);
-						if(cc)
-						{
-							str = arr2[1];
-							if(str.charAt(0)=="$")
-							{
-								str = str.substring(1);
-								cc.selectedPage = str;
-							}
-							else
-								cc.selectedIndex = parseInt(str);	
-						}							
-					}
-					break;
-				
+
 				case TransitionActionType.Transition:
 					var trans:Transition = GComponent(item.target).getTransition(value.s);
 					if (trans != null)
@@ -751,6 +851,8 @@ package fairygui
 								trans.playReverse(__playTransComplete, item, value.i);
 							else
 								trans.play(__playTransComplete, item, value.i);
+							if (_timeScale != 1)
+								trans.timeScale = _timeScale;
 						}
 					}
 					break;
@@ -773,6 +875,28 @@ package fairygui
 					GTimers.inst.add(1, 0, item.__shake, this.shakeItem);
 					_totalTasks++;
 					item.completed = false;
+					break;
+				
+				case TransitionActionType.ColorFilter:
+					var cf:ColorMatrixFilter;
+					var arr:Array = item.target.filters;
+					
+					if (arr == null || !(arr[0] is ColorMatrixFilter))
+					{
+						cf = new ColorMatrixFilter();	
+						arr = [cf];
+						item.filterCreated = true;
+					}
+					else
+						cf = ColorMatrixFilter(arr[0]);
+
+					var cm:ColorMatrix = new ColorMatrix();
+					cm.adjustBrightness(value.f1);
+					cm.adjustContrast(value.f2);
+					cm.adjustSaturation(value.f3);
+					cm.adjustHue(value.f4);
+					cf.matrix = cm;
+					item.target.filters = arr;
 					break;
 			}
 			
@@ -863,9 +987,6 @@ package fairygui
 					case "Visible":
 						item.type = TransitionActionType.Visible;
 						break;
-					case "Controller":
-						item.type = TransitionActionType.Controller;
-						break;
 					case "Sound":
 						item.type = TransitionActionType.Sound;
 						break;
@@ -874,6 +995,12 @@ package fairygui
 						break;
 					case "Shake":
 						item.type = TransitionActionType.Shake;
+						break;
+					case "ColorFilter":
+						item.type = TransitionActionType.ColorFilter;
+						break;
+					case "Skew":
+						item.type = TransitionActionType.Skew;
 						break;
 					default:
 						item.type = TransitionActionType.Unknown;
@@ -937,6 +1064,7 @@ package fairygui
 				case TransitionActionType.XY:
 				case TransitionActionType.Size:
 				case TransitionActionType.Pivot:
+				case TransitionActionType.Skew:
 					arr = str.split(",");
 					if (arr[0] == "-")
 					{
@@ -994,10 +1122,6 @@ package fairygui
 					value.b = str=="true";
 					break;
 				
-				case TransitionActionType.Controller:
-					value.s = str;
-					break;
-				
 				case TransitionActionType.Sound:
 					arr = str.split(",");
 					value.s = arr[0];
@@ -1027,6 +1151,14 @@ package fairygui
 					value.f1 = parseFloat(arr[0]);
 					value.f2 = parseFloat(arr[1]);
 					break;
+				
+				case TransitionActionType.ColorFilter:
+					arr = str.split(",");
+					value.f1 = parseFloat(arr[0]);
+					value.f2 = parseFloat(arr[1]);
+					value.f3 = parseFloat(arr[2]);
+					value.f4 = parseFloat(arr[3]);
+					break;
 			}
 		}
 	}
@@ -1049,11 +1181,12 @@ class TransitionActionType
 	public static const Color:int=6;
 	public static const Animation:int=7;
 	public static const Visible:int = 8;
-	public static const Controller:int=9;
-	public static const Sound:int=10;
-	public static const Transition:int=11;
-	public static const Shake:int = 12;
-	public static const Unknown:int = 13;
+	public static const Sound:int=9;
+	public static const Transition:int=10;
+	public static const Shake:int = 11;
+	public static const ColorFilter:int = 12;
+	public static const Skew:int = 13;
+	public static const Unknown:int = 14;
 }
 
 class TransitionItem
@@ -1076,6 +1209,7 @@ class TransitionItem
 	public var tweener:TweenLite;
 	public var completed:Boolean;
 	public var target:GObject;
+	public var filterCreated:Boolean;
 	
 	public var params:Array;
 	public function TransitionItem()
@@ -1098,6 +1232,7 @@ class TransitionValue
 	public var f1:Number;//x, scalex, pivotx,alpha,shakeAmplitude
 	public var f2:Number;//y, scaley, pivoty, shakePeriod
 	public var f3:Number;
+	public var f4:Number;
 	public var i:int;//rotation,frame
 	public var c:uint;//color
 	public var b:Boolean;//playing
@@ -1105,5 +1240,9 @@ class TransitionValue
 	
 	public var b1:Boolean = true;
 	public var b2:Boolean = true;
+	
+	public function TransitionValue()
+	{
+	}
 }
 

@@ -70,8 +70,11 @@ package fairygui
 				return;
 			
 			var arr:Vector.<GObject> = _pool[url];
-			if(!arr)
-				return;
+			if(arr==null)
+			{
+				arr = new Vector.<GObject>;
+				_pool[url] = arr;
+			}
 			
 			_count++;
 			arr.push(obj);

@@ -357,7 +357,7 @@ package fairygui
 				this.selected = _pageOption.id==c.selectedPageId;
 		}
 		
-		override protected function handleGrayChanged():void
+		override protected function handleGrayedChanged():void
 		{
 			if(_buttonController && _buttonController.hasPage(DISABLED))
 			{
@@ -376,7 +376,7 @@ package fairygui
 				}
 			}
 			else
-				super.handleGrayChanged();
+				super.handleGrayedChanged();
 		}
 		
 		override protected function constructFromXML(xml:XML):void
@@ -406,11 +406,16 @@ package fairygui
 			_buttonController = getController("button");
 			_titleObject = getChild("title");
 			_iconObject = getChild("icon");
-						
+			if (_titleObject != null)
+				_title = _titleObject.text;
+			if (_iconObject != null)
+				_icon = _iconObject.icon;
+			
 			if(_mode==ButtonMode.Common)
 				setState(UP);
 			
-			this.opaque = true;	
+			this.opaque = true;
+			
 			if(!GRoot.touchScreen)
 			{
 				displayObject.addEventListener(MouseEvent.ROLL_OVER, __rollover);

@@ -76,7 +76,7 @@ package fairygui
 		
 		public function set editable(val:Boolean):void
 		{
-			if(_titleObject)
+			if(_titleObject is GTextInput)
 				_titleObject.asTextInput.editable = val;
 		}
 		

@@ -2,9 +2,11 @@ package fairygui
 {
 	import flash.events.Event;
 	import flash.events.MouseEvent;
+	import flash.text.TextField;
+	import flash.text.TextFieldType;
 	
-	import fairygui.event.ItemEvent;
 	import fairygui.event.GTouchEvent;
+	import fairygui.event.ItemEvent;
 	import fairygui.event.StateChangeEvent;
 	import fairygui.utils.ToolSet;
 	
@@ -13,17 +15,20 @@ package fairygui
 	{
 		public var dropdown:GComponent;
 		
-		protected var _titleObject:GTextField;
+		protected var _titleObject:GObject;
+		protected var _iconObject:GObject;
 		protected var _list:GList;
 		
+		protected var _items:Array;
+		protected var _icons:Array;
+		protected var _values:Array;
+		protected var _popupDownward:Object;
+		
 		private var _visibleItemCount:int;
-		private var _items:Array;
-		private var _values:Array;
 		private var _itemsUpdated:Boolean;
 		private var _selectedIndex:int;
 		private var _buttonController:Controller;
 		private var _over:Boolean;
-		private var _popupDownward:Object;
 		
 		public function GComboBox()
 		{
@@ -52,16 +57,39 @@ package fairygui
 		
 		final public function get titleColor():uint
 		{
-			if(_titleObject)
-				return _titleObject.color;
+			if(_titleObject is GTextField)
+				return GTextField(_titleObject).color;
+			else if(_titleObject is GLabel)
+				return GLabel(_titleObject).titleColor;
+			else if(_titleObject is GButton)
+				return GButton(_titleObject).titleColor;
 			else
 				return 0;
 		}
 		
 		public function set titleColor(value:uint):void
 		{
-			if(_titleObject)
-				_titleObject.color = value;
+			if(_titleObject is GTextField)
+				GTextField(_titleObject).color = value;
+			else if(_titleObject is GLabel)
+				GLabel(_titleObject).titleColor = value;
+			else if(_titleObject is GButton)
+				GButton(_titleObject).titleColor = value;
+		}
+		
+		final override public function get icon():String
+		{
+			if(_iconObject)
+				return _iconObject.icon;
+			else
+				return null;
+		}
+		
+		override public function set icon(value:String):void
+		{
+			if(_iconObject)
+				_iconObject.icon = value;
+			updateGear(7);
 		}
 		
 		final public function get visibleItemCount():int
@@ -103,10 +131,29 @@ package fairygui
 					_selectedIndex = 0;
 				
 				this.text = _items[_selectedIndex];
+				if (_icons != null && _selectedIndex < _icons.length)
+					this.icon = _icons[_selectedIndex];
 			}
 			else
+			{
 				this.text = "";
+				if (_icons != null)
+					this.icon = null;
+				_selectedIndex = -1;
+			}
 			_itemsUpdated = true;
+		}
+		
+		final public function get icons():Array
+		{
+			return _icons;
+		}
+		
+		public function set icons(value:Array):void
+		{
+			_icons = value;
+			if (_icons != null && _selectedIndex != -1 && _selectedIndex < _icons.length)
+				this.icon = _icons[_selectedIndex];
 		}
 		
 		final public function get values():Array
@@ -133,10 +180,18 @@ package fairygui
 				return;
 			
 			_selectedIndex = val;
-			if(selectedIndex>=0 && selectedIndex<_items.length)
+			if(_selectedIndex>=0 && _selectedIndex<_items.length)
+			{
 				this.text = _items[_selectedIndex];
+				if (_icons != null && _selectedIndex < _icons.length)
+					this.icon = _icons[_selectedIndex];
+			}
 			else
+			{
 				this.text = "";
+				if (_icons != null)
+					this.icon = null;
+			}
 		}
 		
 		public function get value():String
@@ -153,6 +208,27 @@ package fairygui
 		{
 			if(_buttonController)
 				_buttonController.selectedPage = val;
+		}
+		
+		protected function setCurrentState():void
+		{
+			if(this.grayed && _buttonController && _buttonController.hasPage(GButton.DISABLED))
+				setState(GButton.DISABLED);
+			else
+				setState(_over?GButton.OVER:GButton.UP);
+		}
+		
+		override protected function handleGrayedChanged():void
+		{
+			if(_buttonController && _buttonController.hasPage(GButton.DISABLED))
+			{
+				if(this.grayed)
+					setState(GButton.DISABLED);
+				else
+					setState(GButton.UP);
+			}
+			else
+				super.handleGrayedChanged();
 		}
 		
 		override public function dispose():void
@@ -175,7 +251,9 @@ package fairygui
 			var str:String;
 			
 			_buttonController = getController("button");
-			_titleObject = getChild("title") as GTextField;
+			_titleObject = getChild("title");
+			_iconObject = getChild("icon");
+			
 			str = xml.@dropdown;
 			if(str)
 			{
@@ -231,10 +309,19 @@ package fairygui
 					_visibleItemCount = parseInt(str);
 				
 				var col:XMLList = xml.item;
+				var i:int = 0;
 				for each(var cxml:XML in col)
 				{
 					_items.push(String(cxml.@title));
 					_values.push(String(cxml.@value));
+					str = cxml.@icon;
+					if (str)
+					{
+						if(!_icons)
+							_icons = new Array(col.length());
+						_icons[i] = str;
+					}
+					i++;
 				}
 				
 				str = xml.@title;
@@ -250,6 +337,10 @@ package fairygui
 				}
 				else
 					_selectedIndex = -1;
+				
+				str = xml.@icon;
+				if(str)
+					this.icon = str;
 				
 				str = xml.@direction;
 				if(str)
@@ -275,6 +366,7 @@ package fairygui
 					var item:GObject = _list.addItemFromPool();
 					item.name = i<_values.length?_values[i]:"";
 					item.text = _items[i];
+					item.icon = (_icons != null && i < _icons.length) ? _icons[i] : null;
 				}
 				_list.resizeToFit(_visibleItemCount);
 			}
@@ -288,21 +380,15 @@ package fairygui
 		
 		private function __popupWinClosed(evt:Event):void
 		{
-			if(_over)
-				setState(GButton.OVER);
-			else
-				setState(GButton.UP);
+			setCurrentState();
 		}
 		
 		private function __clickItem(evt:ItemEvent):void
 		{
 			if(dropdown.parent is GRoot)
 				GRoot(dropdown.parent).hidePopup(dropdown);
-			_selectedIndex = _list.getChildIndex(evt.itemObject);
-			if(_selectedIndex>=0)
-				this.text = _items[_selectedIndex];
-			else
-				this.text = "";
+			_selectedIndex = int.MIN_VALUE;
+			this.selectedIndex = _list.getChildIndex(evt.itemObject);
 			dispatchEvent(new StateChangeEvent(StateChangeEvent.CHANGED));
 		}
 		
@@ -312,7 +398,7 @@ package fairygui
 			if(this.isDown || dropdown && dropdown.parent)
 				return;
 			
-			setState(GButton.OVER);
+			setCurrentState();
 		}
 		
 		private function __rollout(evt:Event):void
@@ -321,11 +407,14 @@ package fairygui
 			if(this.isDown || dropdown && dropdown.parent)
 				return;
 			
-			setState(GButton.UP);
+			setCurrentState();
 		}
 		
-		private function __mousedown(evt:Event):void
+		private function __mousedown(evt:GTouchEvent):void
 		{
+			if ((evt.realTarget is TextField) && TextField(evt.realTarget).type==TextFieldType.INPUT)
+				return;
+
 			if(dropdown)
 				showDropdown();
 		}
@@ -333,12 +422,7 @@ package fairygui
 		private function __mouseup(evt:Event):void
 		{
 			if(dropdown && !dropdown.parent)
-			{
-				if (_over)
-					setState(GButton.OVER);
-				else
-					setState(GButton.UP);
-			}
+				setCurrentState();
 		}
 	}
 }

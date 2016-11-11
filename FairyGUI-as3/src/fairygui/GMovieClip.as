@@ -90,29 +90,27 @@ package fairygui
 			super.dispose();
 		}
 
-		override public function constructFromResource(pkgItem:PackageItem):void
+		override public function constructFromResource():void
 		{
-			_packageItem = pkgItem;
-			
-			_sourceWidth = _packageItem.width;
-			_sourceHeight = _packageItem.height;
+			_sourceWidth = packageItem.width;
+			_sourceHeight = packageItem.height;
 			_initWidth = _sourceWidth;
 			_initHeight = _sourceHeight;
 
 			setSize(_sourceWidth, _sourceHeight);
 			
-			if(_packageItem.loaded)
-				__movieClipLoaded(_packageItem);
+			if(packageItem.loaded)
+				__movieClipLoaded(packageItem);
 			else
-				_packageItem.owner.addItemCallback(_packageItem, __movieClipLoaded);
+				packageItem.owner.addItemCallback(packageItem, __movieClipLoaded);
 		}
 		
 		private function __movieClipLoaded(pi:PackageItem):void
 		{
-			_movieClip.interval = _packageItem.interval;
-			_movieClip.swing = _packageItem.swing;
-			_movieClip.repeatDelay = _packageItem.repeatDelay;
-			_movieClip.frames = _packageItem.frames;
+			_movieClip.interval = packageItem.interval;
+			_movieClip.swing = packageItem.swing;
+			_movieClip.repeatDelay = packageItem.repeatDelay;
+			_movieClip.frames = packageItem.frames;
 			_movieClip.boundsRect = new Rectangle(0, 0, sourceWidth, sourceHeight);
 		}
 

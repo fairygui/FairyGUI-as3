@@ -9,7 +9,6 @@ package fairygui
 	import flash.events.Event;
 	import flash.events.IOErrorEvent;
 	import flash.geom.ColorTransform;
-	import flash.geom.Point;
 	import flash.geom.Rectangle;
 	import flash.net.URLRequest;
 	
@@ -479,16 +478,20 @@ package fairygui
 			else
 			{		
 				var sx:Number = 1, sy:Number = 1;
-				if(_fill==FillType.Scale || _fill==FillType.ScaleFree)
+				if(_fill!=LoaderFillType.None)
 				{
 					sx = this.width/_contentSourceWidth;
 					sy = this.height/_contentSourceHeight;
 					
 					if(sx!=1 || sy!=1)
 					{
-						if(_fill==FillType.Scale)
+						if (_fill == LoaderFillType.ScaleMatchHeight)
+							sx = sy;
+						else if (_fill == LoaderFillType.ScaleMatchWidth)
+							sy = sx;
+						else if (_fill == LoaderFillType.Scale)
 						{
-							if(sx>sy)
+							if (sx > sy)
 								sx = sy;
 							else
 								sy = sx;
@@ -563,13 +566,13 @@ package fairygui
 				var oldBmd:BitmapData = Bitmap(_content).bitmapData;
 				var newBmd:BitmapData;
 				
-				if(source.width==this.width && source.height==this.height)
+				if(source.width==_contentWidth && source.height==_contentHeight)
 					newBmd = source;
-				else if(this.width==0 || this.height==0)
+				else if(_contentWidth==0 || _contentHeight==0)
 					newBmd = null;
 				else
 					newBmd = ToolSet.scaleBitmapWith9Grid(source, 
-						_contentItem.scale9Grid, this.width, this.height, _contentItem.smoothing);
+						_contentItem.scale9Grid, _contentWidth, _contentHeight, _contentItem.smoothing, _contentItem.tileGridIndice);
 				
 				if(oldBmd!=newBmd)
 				{
@@ -585,26 +588,12 @@ package fairygui
 				
 				oldBmd = Bitmap(_content).bitmapData;
 				
-				if(source.width==this.width && source.height==this.height)
+				if(source.width==_contentWidth && source.height==_contentHeight)
 					newBmd = source;
-				else if(this.width==0 || this.height==0)
+				else if(_contentWidth==0 || _contentHeight==0)
 					newBmd = null;
 				else
-				{
-					newBmd = new BitmapData(this.width, this.height, source.transparent, 0);
-					var hc:int = Math.ceil(this.width/source.width);
-					var vc:int = Math.ceil(this.height/source.height);
-					var pt:Point = new Point();
-					for(var i:int=0;i<hc;i++)
-					{
-						for(var j:int=0;j<vc;j++)
-						{
-							pt.x = i*source.width;
-							pt.y = j*source.height;
-							newBmd.copyPixels(source, source.rect, pt);
-						}
-					}
-				}
+					newBmd = ToolSet.tileBitmap(source, source.rect, _contentWidth, _contentHeight);
 				
 				if(oldBmd!=newBmd)
 				{
@@ -639,7 +628,7 @@ package fairygui
 			
 			str = xml.@fill;
 			if(str)
-				_fill = FillType.parse(str);
+				_fill = LoaderFillType.parse(str);
 			
 			_autoSize = xml.@autoSize=="true";
 			

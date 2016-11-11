@@ -5,6 +5,7 @@ package fairygui.utils
 	import flash.display.Stage;
 	import flash.filters.ColorMatrixFilter;
 	import flash.geom.Matrix;
+	import flash.geom.Point;
 	import flash.geom.Rectangle;
 	
 	import fairygui.GObject;
@@ -127,8 +128,9 @@ package fairygui.utils
 			return defaultUBBParser.parse(text);
 		}
 		
+		private static var tileIndice:Array = [ -1, 0, -1, 2, 4, 3, -1, 1, -1 ];
 		public static function scaleBitmapWith9Grid(source:BitmapData, scale9Grid:Rectangle,
-													wantWidth:int, wantHeight:int, smoothing:Boolean=false):BitmapData {
+													wantWidth:int, wantHeight:int, smoothing:Boolean=false, tileGridIndice:int=0):BitmapData {
 			if(wantWidth==0 || wantHeight==0)
 			{
 				return new BitmapData(1,1,source.transparent, 0x00000000);
@@ -136,11 +138,28 @@ package fairygui.utils
 			
 			var bmpData : BitmapData = new BitmapData(wantWidth, wantHeight, source.transparent, 0x00000000);
 			
-			var rows : Array = [0, scale9Grid.top, scale9Grid.bottom, source.height];
-			var cols : Array = [0, scale9Grid.left, scale9Grid.right, source.width];
+			var rows:Array = [0, scale9Grid.top, scale9Grid.bottom, source.height];
+			var cols:Array = [0, scale9Grid.left, scale9Grid.right, source.width];
 			
-			var dRows : Array = [0, scale9Grid.top, wantHeight - (source.height - scale9Grid.bottom), wantHeight];
-			var dCols : Array = [0, scale9Grid.left, wantWidth - (source.width - scale9Grid.right), wantWidth];
+			var dRows:Array;
+			var dCols:Array;
+			if (wantHeight >= (source.height - scale9Grid.height))
+				dRows = [0, scale9Grid.top, wantHeight - (source.height - scale9Grid.bottom), wantHeight];
+			else
+			{
+				var tmp:Number = scale9Grid.top / (source.height - scale9Grid.bottom);
+				tmp = wantHeight * tmp / (1 + tmp);
+				dRows = [ 0, tmp, tmp, wantHeight];
+			}
+			
+			if (wantWidth >= (source.width - scale9Grid.width))
+				dCols = [0, scale9Grid.left, wantWidth - (source.width - scale9Grid.right), wantWidth];
+			else
+			{
+				tmp = scale9Grid.left / (source.width - scale9Grid.right);
+				tmp = wantWidth * tmp / (1 + tmp);
+				dCols = [ 0, tmp, tmp, wantWidth];
+			}			
 			
 			var origin : Rectangle;
 			var draw : Rectangle;
@@ -150,15 +169,51 @@ package fairygui.utils
 				for (var cy : int = 0 ;cy < 3; cy++) {
 					origin = new Rectangle(cols[cx], rows[cy], cols[cx + 1] - cols[cx], rows[cy + 1] - rows[cy]);
 					draw = new Rectangle(dCols[cx], dRows[cy], dCols[cx + 1] - dCols[cx], dRows[cy + 1] - dRows[cy]);
-					mat.identity();
-					mat.a = draw.width / origin.width;
-					mat.d = draw.height / origin.height;
-					mat.tx = draw.x - origin.x * mat.a;
-					mat.ty = draw.y - origin.y * mat.d;
-					bmpData.draw(source, mat, null, null, draw, smoothing);
+					
+					var i:int = tileIndice[cy*3+cx];
+					if(i!=-1 && (tileGridIndice & (1<<i))!=0)
+					{
+						var tmp2:BitmapData = tileBitmap(source, origin, draw.width, draw.height);
+						bmpData.copyPixels(tmp2, tmp2.rect, draw.topLeft);
+						tmp2.dispose();
+					}
+					else
+					{
+						mat.identity();
+						mat.a = draw.width / origin.width;
+						mat.d = draw.height / origin.height;
+						mat.tx = draw.x - origin.x * mat.a;
+						mat.ty = draw.y - origin.y * mat.d;
+						bmpData.draw(source, mat, null, null, draw, smoothing);
+					}
 				}
 			}
 			return bmpData;
+		}
+		
+		public static function tileBitmap(source:BitmapData, sourceRect:Rectangle,
+										  wantWidth:int, wantHeight:int):BitmapData
+		{
+			if(wantWidth==0 || wantHeight==0)
+			{
+				return new BitmapData(1,1,source.transparent, 0x00000000);
+			}
+			
+			var result:BitmapData = new BitmapData(wantWidth, wantHeight, source.transparent, 0);
+			var hc:int = Math.ceil(wantWidth/sourceRect.width);
+			var vc:int = Math.ceil(wantHeight/sourceRect.height);
+			var pt:Point = new Point();
+			for(var i:int=0;i<hc;i++)
+			{
+				for(var j:int=0;j<vc;j++)
+				{
+					pt.x = i*sourceRect.width;
+					pt.y = j*sourceRect.height;
+					result.copyPixels(source, sourceRect, pt);
+				}
+			}
+			
+			return result;
 		}
 		
 		public static function displayObjectToGObject(obj:DisplayObject):GObject
@@ -171,6 +226,24 @@ package fairygui.utils
 				obj = obj.parent;
 			}
 			return null;
+		}
+		
+		public static function clamp(value:Number, min:Number, max:Number):Number
+		{
+			if(value<min)
+				value = min;
+			else if(value>max)
+				value = max;
+			return value;
+		}
+		
+		public static function clamp01(value:Number):Number
+		{
+			if(value>1)
+				value = 1;
+			else if(value<0)
+				value = 0;
+			return value;
 		}
 	}
 }

@@ -27,6 +27,7 @@ package fairygui
 		public var scale9Grid:Rectangle;
 		public var scaleByTile:Boolean;
 		public var smoothing:Boolean;
+		public var tileGridIndice:int;
 		public var image:BitmapData;
 		
 		//movieclip
@@ -37,6 +38,7 @@ package fairygui
 		
 		//componenet
 		public var componentData:XML;
+		public var displayList:Vector.<DisplayListItem>;
 		
 		//sound
 		public var sound:Sound;

@@ -26,6 +26,7 @@ package fairygui
 	
 	[Event(name = "startDrag", type = "fairygui.event.DragEvent")]
 	[Event(name = "endDrag", type = "fairygui.event.DragEvent")]
+	[Event(name = "dragMoving", type = "fairygui.event.DragEvent")]
 	[Event(name = "beginGTouch", type = "fairygui.event.GTouchEvent")]
 	[Event(name = "endGTouch", type = "fairygui.event.GTouchEvent")]
 	[Event(name = "dragGTouch", type = "fairygui.event.GTouchEvent")]
@@ -33,6 +34,8 @@ package fairygui
 	public class GObject extends EventDispatcher
 	{
 		public var data:Object;
+		public var packageItem:PackageItem;
+		public static var draggingObject:GObject;
 		
 		private var _x:Number;
 		private var _y:Number;
@@ -77,9 +80,7 @@ package fairygui
 		internal var _initHeight:int;
 		internal var _id:String;
 		internal var _name:String;
-		internal var _packageItem:PackageItem;
 		internal var _underConstruct:Boolean;
-		internal var _constructingData:XML;
 		internal var _gearLocked:Boolean;
 		
 		internal static var _gInstanceCounter:uint;
@@ -172,6 +173,9 @@ package fairygui
 					_parent.setBoundsChangedFlag();
 					_dispatcher.dispatch(this, XY_CHANGED);
 				}
+				
+				if (draggingObject == this && !sUpdateInDragging)
+					this.localToGlobalRect(0,0,this.width,this.height,sGlobalRect);
 			}
 		}
 		
@@ -461,7 +465,7 @@ package fairygui
 			if(_grayed!=value)
 			{
 				_grayed = value;
-				handleGrayChanged();
+				handleGrayedChanged();
 				updateGear(3);
 			}
 		}
@@ -539,7 +543,10 @@ package fairygui
 				if(_displayObject)
 					_displayObject.visible = _visible;
 				if(_parent)
+				{
 					_parent.childStateChanged(this);
+					_parent.setBoundsChangedFlag();
+				}
 			}
 		}
 		
@@ -678,8 +685,8 @@ package fairygui
 		
 		final public function get resourceURL():String
 		{
-			if(_packageItem!=null)
-				return "ui://"+_packageItem.owner.id + _packageItem.id;
+			if(packageItem!=null)
+				return "ui://"+packageItem.owner.id + packageItem.id;
 			else
 				return null;
 		}
@@ -881,6 +888,11 @@ package fairygui
 			return this as GComboBox;
 		}
 		
+		final public function get asImage():GImage
+		{
+			return this as GImage;
+		}
+		
 		final public function get asMovieClip():GMovieClip
 		{
 			return this as GMovieClip;
@@ -1032,11 +1044,16 @@ package fairygui
 		
 		public function get dragging():Boolean
 		{
-			return sDragging==this;
+			return draggingObject==this;
 		}
 		
 		public function localToGlobal(ax:Number=0, ay:Number=0):Point
 		{
+			if(_pivotAsAnchor)
+			{
+				ax += _pivotX*_width;
+				ay += _pivotY*_height;
+			}
 			sHelperPoint.x = ax;
 			sHelperPoint.y = ay;
 			return _displayObject.localToGlobal(sHelperPoint);
@@ -1046,11 +1063,23 @@ package fairygui
 		{
 			sHelperPoint.x = ax;
 			sHelperPoint.y = ay;
-			return _displayObject.globalToLocal(sHelperPoint);
+			var pt:Point = _displayObject.globalToLocal(sHelperPoint);
+			if(_pivotAsAnchor)
+			{
+				pt.x -= _pivotX*_width;
+				pt.y -= _pivotY*_height;
+			}
+			return pt;
 		}
 		
 		public function localToRoot(ax:Number=0, ay:Number=0):Point
 		{
+			if(_pivotAsAnchor)
+			{
+				ax += _pivotX*_width;
+				ay += _pivotY*_height;
+			}
+			
 			sHelperPoint.x = ax;
 			sHelperPoint.y = ay;
 			var pt:Point = _displayObject.localToGlobal(sHelperPoint);
@@ -1065,7 +1094,13 @@ package fairygui
 			sHelperPoint.y = ay;
 			sHelperPoint.x *= GRoot.contentScaleFactor;
 			sHelperPoint.y *= GRoot.contentScaleFactor;
-			return _displayObject.globalToLocal(sHelperPoint);
+			var pt:Point = _displayObject.globalToLocal(sHelperPoint);
+			if(_pivotAsAnchor)
+			{
+				pt.x -= _pivotX*_width;
+				pt.y -= _pivotY*_height;
+			}
+			return pt;
 		}
 		
 		public function localToGlobalRect(ax:Number=0, ay:Number=0, aWidth:Number=0, aHeight:Number=0, 
@@ -1098,9 +1133,7 @@ package fairygui
 		
 		protected function createDisplayObject():void
 		{
-			
 		}
-		
 
 		protected function switchDisplayObject(newObj:DisplayObject):void
 		{
@@ -1187,7 +1220,7 @@ package fairygui
 			}
 		}
 		
-		protected function handleGrayChanged():void
+		protected function handleGrayedChanged():void
 		{
 			if(_displayObject)
 			{
@@ -1198,9 +1231,8 @@ package fairygui
 			}	
 		}
 		
-		public function constructFromResource(pkgItem:PackageItem):void
+		public function constructFromResource():void
 		{
-			_packageItem = pkgItem;
 		}
 
 		public function setup_beforeAdd(xml:XML):void
@@ -1489,11 +1521,11 @@ package fairygui
 		
 		//drag support
 		//-------------------------------------------------------------------
-		private static var sDragging:GObject;
 		private static var sGlobalDragStart:Point = new Point();
 		private static var sGlobalRect:Rectangle = new Rectangle();
 		private static var sHelperPoint:Point = new Point();
 		private static var sDragHelperRect:Rectangle = new Rectangle();
+		private static var sUpdateInDragging:Boolean;
 		
 		private function initDrag():void
 		{
@@ -1505,8 +1537,11 @@ package fairygui
 		
 		private function dragBegin(evt:GTouchEvent):void
 		{
-			if(sDragging!=null)
-				sDragging.stopDrag();
+			if(draggingObject!=null)
+			{
+				draggingObject.stopDrag();
+				draggingObject = null;
+			}
 			
 			if(evt!=null)
 			{
@@ -1519,7 +1554,7 @@ package fairygui
 				sGlobalDragStart.y = _displayObject.stage.mouseY;
 			}
 			this.localToGlobalRect(0,0,this.width,this.height,sGlobalRect);
-			sDragging = this;
+			draggingObject = this;
 			
 			addEventListener(GTouchEvent.DRAG, __dragging);
 			addEventListener(GTouchEvent.END, __dragEnd);
@@ -1527,12 +1562,12 @@ package fairygui
 		
 		private function dragEnd():void
 		{
-			if (sDragging==this)
+			if (draggingObject==this)
 			{
 				removeEventListener(GTouchEvent.DRAG, __dragStart);
 				removeEventListener(GTouchEvent.END, __dragEnd);
 				removeEventListener(GTouchEvent.DRAG, __dragging);
-				sDragging = null;
+				draggingObject = null;
 			}
 		}
 		
@@ -1592,13 +1627,22 @@ package fairygui
 				}
 			}
 			
+			sUpdateInDragging = true;
 			var pt:Point = this.parent.globalToLocal(xx, yy);
 			this.setXY(Math.round(pt.x), Math.round(pt.y));
+			sUpdateInDragging = false;
+			
+			
+			var dragEvent:DragEvent = new DragEvent(DragEvent.DRAG_MOVING);
+			dragEvent.stageX = evt.stageX;
+			dragEvent.stageY = evt.stageY;
+			dragEvent.touchPointID = evt.touchPointID;
+			dispatchEvent(dragEvent);
 		}
 		
 		private function __dragEnd(evt:GTouchEvent):void
 		{
-			if (sDragging==this)
+			if (draggingObject==this)
 			{
 				stopDrag();
 				

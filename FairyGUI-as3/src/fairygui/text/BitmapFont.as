@@ -41,19 +41,21 @@ package fairygui.text
 				case 8:
 					return BitmapDataChannel.ALPHA;
 				default:
-					return BitmapDataChannel.ALPHA;
+					return 0;
 			}
 		}
 		
-		private static var sHelperPoint:Point = new Point();
 		private static var sHelperRect:Rectangle = new Rectangle();
 		private static var sTransform:ColorTransform = new ColorTransform(0,0,0,1);
 		private static var sHelperMat:Matrix = new Matrix();
 		private static var sHelperBmd:BitmapData = new BitmapData(200,200,true,0);
+		private static var sPoint0:Point = new Point(0,0);
 		
 		public function draw(target:BitmapData, glyph:BMGlyph, charPosX:Number, charPosY:Number, color:uint, fontScale:Number):void
 		{
 			charPosX += Math.ceil(glyph.offsetX*fontScale);
+			
+			var drawBmd:BitmapData = null;
 			
 			if(ttf)
 			{
@@ -65,38 +67,40 @@ package fairygui.text
 					sHelperRect.y = 0;
 					sHelperRect.width = glyph.width;
 					sHelperRect.height = glyph.height;
-					sHelperBmd.fillRect(sHelperRect, 0xFF000000 + color);
+					
+					if(glyph.channel==0)
+						sHelperBmd.fillRect(sHelperRect, 0);
+					else
+						sHelperBmd.fillRect(sHelperRect, 0xFFFFFFFF);
 					
 					sHelperRect.x = glyph.x;
 					sHelperRect.y = glyph.y;
-					sHelperBmd.copyChannel(atlas, sHelperRect, sHelperPoint, glyph.channel, BitmapDataChannel.ALPHA);
 					
-					sHelperMat.identity();
-					sHelperMat.scale(fontScale, fontScale);
-					sHelperMat.translate(charPosX, charPosY);
-					sHelperRect.x = charPosX;
-					sHelperRect.y = charPosY;
-					sHelperRect.width = Math.ceil(glyph.width*fontScale);
-					sHelperRect.height = Math.ceil(glyph.height*fontScale);
-					target.draw(sHelperBmd, sHelperMat, null, null, sHelperRect, true);
+					if(glyph.channel==0)
+						sHelperBmd.copyPixels(atlas, sHelperRect, sPoint0);
+					else
+						sHelperBmd.copyChannel(atlas, sHelperRect, sPoint0, glyph.channel, BitmapDataChannel.ALPHA);
 				}
 			}
 			else if(glyph.imageItem!=null)
+				drawBmd = glyph.imageItem.image;
+			
+			if(drawBmd!=null)
 			{
-				var bmd:BitmapData = glyph.imageItem.image;
-				if(bmd!=null)
+				sHelperMat.identity();
+				sHelperMat.scale(fontScale, fontScale);
+				sHelperMat.translate(charPosX, charPosY);
+				sHelperRect.x = charPosX;
+				sHelperRect.y = charPosY;
+				sHelperRect.width = Math.ceil(glyph.width*fontScale);
+				sHelperRect.height = Math.ceil(glyph.height*fontScale);
+				if(colored)
 				{
-					sHelperMat.identity();
-					sHelperMat.scale(fontScale, fontScale);
-					sHelperMat.translate(charPosX, charPosY);
-					if(colored)
-					{
-						sTransform.color = color;
-						target.draw(bmd, sHelperMat, sTransform, null, null, true);
-					}
-					else
-						target.draw(bmd, sHelperMat, null, null, null, true);
+					sTransform.color = color;
+					target.draw(drawBmd, sHelperMat, sTransform, null, sHelperRect, true);
 				}
+				else
+					target.draw(drawBmd, sHelperMat, null, null, sHelperRect, true);
 			}
 		}
 	}

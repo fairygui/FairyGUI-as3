@@ -1,5 +1,6 @@
 package fairygui
 {
+	import flash.display.Stage;
 	import flash.geom.Point;
 	
 	import fairygui.event.DragEvent;
@@ -24,6 +25,7 @@ package fairygui
 			_agent.draggable = true;
 			_agent.touchable = false;//important
 			_agent.setSize(100,100);
+			_agent.setPivot(0.5, 0.5, true);
 			_agent.sortingOrder = int.MAX_VALUE;
 			_agent.addEventListener(DragEvent.DRAG_END, __dragEnd);
 		}
@@ -46,7 +48,7 @@ package fairygui
 			_sourceData = sourceData;
 			_agent.url = icon;
 			GRoot.inst.addChild(_agent);
-			var pt:Point = source.localToRoot();
+			var pt:Point = GRoot.inst.globalToLocal(source.displayObject.stage.mouseX, source.displayObject.stage.mouseY);
 			_agent.setXY(pt.x, pt.y);
 			_agent.startDrag(touchPointId);
 		}

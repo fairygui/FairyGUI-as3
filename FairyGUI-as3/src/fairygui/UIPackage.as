@@ -93,10 +93,10 @@ package fairygui
 		{
 			var pi:PackageItem = getItemByURL(url);
 			if(pi)
-				return pi.owner.createObject2(pi, userClass);
+				return pi.owner.internalCreateObject(pi, userClass);
 			else
 				return null;
-		}
+		}		
 		
 		public static function getItemURL(pkgName:String, resName:String):String
 		{
@@ -218,6 +218,10 @@ package fairygui
 							pi.scale9Grid.y = arr[1];
 							pi.scale9Grid.width = arr[2];
 							pi.scale9Grid.height = arr[3];
+							
+							str = cxml.@gridTile;
+							if(str)
+								pi.tileGridIndice = parseInt(str);
 						}
 						else if(str=="tile")
 						{
@@ -316,16 +320,17 @@ package fairygui
 		{
 			var pi:PackageItem = _itemsByName[resName];
 			if(pi)
-				return createObject2(pi, userClass);
+				return internalCreateObject(pi, userClass);
 			else
 				return null;
 		}
 		
-		internal function createObject2(pi:PackageItem, userClass:Object=null):GObject
+		
+		private function internalCreateObject(item:PackageItem, userClass:Object):GObject
 		{
-			var g:GObject;
-			if(pi.type==PackageItemType.Component)
-			{				
+			var g:GObject = null;
+			if (item.type == PackageItemType.Component)
+			{
 				if(userClass!=null)
 				{
 					if(userClass is Class)
@@ -334,20 +339,21 @@ package fairygui
 						g = GObject(userClass);
 				}
 				else
-					g = UIObjectFactory.newObject(pi);
+					g = UIObjectFactory.newObject(item);
 			}
 			else
-				g = UIObjectFactory.newObject(pi);
+				g = UIObjectFactory.newObject(item);
 			
-			if(g==null)
+			if (g == null)
 				return null;
 			
 			_constructing++;
-			g.constructFromResource(pi);
+			g.packageItem = item;
+			g.constructFromResource();
 			_constructing--;
 			return g;
 		}
-		
+
 		public function getItemById(itemId:String):PackageItem
 		{
 			return _itemsById[itemId];
@@ -395,9 +401,57 @@ package fairygui
 				}
 				
 				item.componentData = xml;
+				
+				loadComponentChildren(item);
 			}
 			
 			return item.componentData;
+		}
+		
+		private function loadComponentChildren(item:PackageItem):void
+		{
+			var listNode:XML = item.componentData.displayList[0];
+			if (listNode != null)
+			{
+				var col:XMLList = listNode.elements();
+				var dcnt:int = col.length();
+				item.displayList = new Vector.<DisplayListItem>(dcnt);
+				var di:DisplayListItem;
+				for (var i:int = 0; i < dcnt; i++)
+				{
+					var cxml:XML = col[i];
+					var tagName:String = cxml.name().localName;
+					
+					var src:String = cxml.@src;
+					if (src)
+					{
+						var pkgId:String = cxml.@pkg;
+						var pkg:UIPackage;
+						if (pkgId && pkgId != item.owner.id)
+							pkg = UIPackage.getById(pkgId);
+						else
+							pkg = item.owner;
+						
+						var pi:PackageItem = pkg != null ? pkg.getItemById(src) : null;
+						if (pi != null)
+							di = new DisplayListItem(pi, null);
+						else
+							di = new DisplayListItem(null, tagName);
+					}
+					else
+					{
+						if (tagName == "text" && cxml.@input=="true")
+							di = new DisplayListItem(null, "inputtext");
+						else
+							di = new DisplayListItem(null, tagName);
+					}
+					
+					di.desc = cxml;
+					item.displayList[i] = di;
+				}
+			}
+			else
+				item.displayList =new Vector.<DisplayListItem>(0);
 		}
 		
 		private function translateComponent(xml:XML, strings:Object):void
@@ -637,7 +691,14 @@ package fairygui
 				frame.addDelay = parseInt(str);
 				item.frames[i] = frame;
 				
-				str = item.id + "_" + i + ".png";
+				if (frame.rect.width == 0)
+					continue;
+				
+				str = frameNode.@sprite;
+				if (str)
+					str = item.id + "_" + str + ".png";
+				else				
+					str = item.id + "_" + i + ".png";
 				var ba:ByteArray = _reader.readResFile(str);
 				if(ba)
 				{
@@ -694,6 +755,7 @@ package fairygui
 			var xadvance:int = 0;
 			var resizable:Boolean = false;
 			var colored:Boolean = false;
+			var lineHeight:int = 0;
 			
 			for(i=0;i<lineCount;i++)
 			{
@@ -738,7 +800,7 @@ package fairygui
 					}
 					
 					if(ttf)
-						bg.lineHeight = size;
+						bg.lineHeight = lineHeight;
 					else
 					{
 						if(bg.advance==0)
@@ -748,9 +810,8 @@ package fairygui
 							else
 								bg.advance = xadvance;
 						}
-						
 						bg.lineHeight = bg.offsetY < 0 ? bg.height : (bg.offsetY + bg.height);
-						if(bg.lineHeight < size)
+						if(size>0 && bg.lineHeight<size)
 							bg.lineHeight = size;
 					}
 					
@@ -777,8 +838,11 @@ package fairygui
 				}
 				else if(str=="common")
 				{
+					lineHeight = kv.lineHeight;
 					if(size==0)
-						size = kv.lineHeight;
+						size = lineHeight;
+					else if(lineHeight==0)
+						lineHeight = size;
 					xadvance = kv.xadvance;
 				}
 			}

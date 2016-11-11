@@ -74,22 +74,20 @@ package fairygui
 		
 		override public function dispose():void
 		{
-			_packageItem.owner.removeItemCallback(_packageItem, __swfLoaded);
+			packageItem.owner.removeItemCallback(packageItem, __swfLoaded);
 			super.dispose();
 		}
 
-		override public function constructFromResource(pkgItem:PackageItem):void
+		override public function constructFromResource():void
 		{
-			_packageItem = pkgItem;
-			
-			_sourceWidth = _packageItem.width;
-			_sourceHeight = _packageItem.height;
+			_sourceWidth = packageItem.width;
+			_sourceHeight = packageItem.height;
 			_initWidth = _sourceWidth;
 			_initHeight = _sourceHeight;
 			
 			setSize(_sourceWidth, _sourceHeight);
 			
-			_packageItem.owner.addItemCallback(_packageItem, __swfLoaded);
+			packageItem.owner.addItemCallback(packageItem, __swfLoaded);
 		}
 		
 		private function __swfLoaded(content:Object):void

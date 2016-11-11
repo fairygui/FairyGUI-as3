@@ -10,6 +10,7 @@ package fairygui.event
 		
 		public static const DRAG_START:String = "startDrag";
 		public static const DRAG_END:String = "endDrag";
+		public static const DRAG_MOVING:String = "dragMoving";
 		
 		public function DragEvent(type:String, stageX:Number=0, stageY:Number=0, touchPointID:int=-1)
 		{
