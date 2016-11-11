@@ -3,7 +3,7 @@ package fairygui
 	import flash.utils.getTimer;
 	
 	import fairygui.utils.GTimers;
-
+	
 	public class AsyncOperation
 	{
 		/**
@@ -21,7 +21,7 @@ package fairygui
 			_objectPool = new Vector.<GObject>();
 		}
 		
-		public function CreateObject(pkgName:String, resName:String):void
+		public function createObject(pkgName:String, resName:String):void
 		{
 			var pkg:UIPackage = UIPackage.getByName(pkgName);
 			if(pkg)
@@ -30,7 +30,7 @@ package fairygui
 				if(!pi)
 					throw new Error("resource not found: " + resName);
 				
-				createObject(pi);
+				internalCreateObject(pi);
 			}
 			else
 				throw new Error("package not found: " + pkgName);
@@ -40,7 +40,7 @@ package fairygui
 		{
 			var pi:PackageItem = UIPackage.getItemByURL(url);
 			if(pi)
-				createObject(pi);
+				internalCreateObject(pi);
 			else
 				throw new Error("resource not found: " + url);
 		}
@@ -49,10 +49,17 @@ package fairygui
 		{
 			GTimers.inst.remove(run);
 			_itemList.length = 0;
-			_objectPool.length = 0;
+			if(_objectPool.length>0)
+			{
+				for each(var obj:GObject in _objectPool)
+				{
+					obj.dispose();
+				}
+				_objectPool.length = 0;
+			}
 		}
-
-		private function createObject(item:PackageItem):void
+		
+		private function internalCreateObject(item:PackageItem):void
 		{
 			_itemList.length = 0;
 			_objectPool.length = 0;
