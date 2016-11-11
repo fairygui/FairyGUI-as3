@@ -590,7 +590,7 @@ package fairygui
 			_isMouseMoved = false;
 		}
 		
-		internal function OnOwnerSizeChanged():void
+		internal function onOwnerSizeChanged():void
 		{
 			setSize(_owner.width, _owner.height);
 			posChanged(false);
@@ -916,7 +916,7 @@ package fairygui
 			}
 			else if(_snapToItem)
 			{
-				var pt:Point = _owner.GetSnappingPosition(_xPerc==1?0:_xPos, _yPerc==1?0:_yPos, sHelperPoint);
+				var pt:Point = _owner.getSnappingPosition(_xPerc==1?0:_xPos, _yPerc==1?0:_yPos, sHelperPoint);
 				if (_xPerc != 1 && pt.x!=_xPos)
 				{
 					_xPos = pt.x;
@@ -1369,7 +1369,7 @@ package fairygui
 			{
 				endX = -endX;
 				endY = -endY;
-				var pt:Point = _owner.GetSnappingPosition(endX, endY, sHelperPoint);
+				var pt:Point = _owner.getSnappingPosition(endX, endY, sHelperPoint);
 				endX = -pt.x;
 				endY = -pt.y;
 				change1.x = endX - _container.x;

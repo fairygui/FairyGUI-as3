@@ -819,7 +819,7 @@ package fairygui
 		override protected function handleSizeChanged():void
 		{
 			if(_scrollPane)
-				_scrollPane.OnOwnerSizeChanged();
+				_scrollPane.onOwnerSizeChanged();
 			if(_clipMask)
 				updateMask();
 			
@@ -951,7 +951,7 @@ package fairygui
 				this.height = value + _margin.top + _margin.bottom;
 		}
 		
-		public function GetSnappingPosition(xValue:Number, yValue:Number, resultPoint:Point=null):Point
+		public function getSnappingPosition(xValue:Number, yValue:Number, resultPoint:Point=null):Point
 		{
 			if(!resultPoint)
 				resultPoint = new Point();
