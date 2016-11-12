@@ -1187,6 +1187,10 @@ package fairygui
 				child.setup_afterAdd(displayList[i].desc);
 				child._underConstruct = false;
 			}
+			
+			str = xml.@mask;
+			if(str)
+				this.mask = getChildById(str).displayObject;
 
 			col = xml.transition;
 			var trans:Transition;
