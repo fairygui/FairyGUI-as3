@@ -173,7 +173,7 @@ package fairygui
 			if ((_options & OPTION_IGNORE_DISPLAY_CONTROLLER) != 0 && item.target != _owner)
 				item.target.internalVisible--;
 			
-			if (item.type == TransitionActionType.ColorFilter)
+			if (item.type == TransitionActionType.ColorFilter && item.filterCreated)
 				item.target.filters = null;
 			
 			if(item.completed)
@@ -907,13 +907,15 @@ package fairygui
 			var str:String = xml.@options;
 			if(str)
 				_options = parseInt(str); 
-			this.autoPlay = xml.@autoPlay=="true";
-			str = xml.@autoPlayRepeat;
-			if(str)
-				this.autoPlayRepeat = parseInt(str);
-			str = xml.@autoPlayDelay;
-			if(str)
-				this.autoPlayDelay = parseFloat(str);
+			this._autoPlay = xml.@autoPlay=="true";
+			if(this._autoPlay) {
+				str = xml.@autoPlayRepeat;
+				if(str)
+					this.autoPlayRepeat = parseInt(str);
+				str = xml.@autoPlayDelay;
+				if(str)
+					this.autoPlayDelay = parseFloat(str);
+			}
 			
 			var col:XMLList = xml.item;
 			for each (var cxml:XML in col)
