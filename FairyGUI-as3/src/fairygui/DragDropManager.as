@@ -53,6 +53,19 @@ package fairygui
 			_agent.startDrag(touchPointId);
 		}
 		
+		public function startDragOffset(source:GObject, icon:String, sourceData:Object, offset:Point, touchPointId:int = -1):void
+		{
+			if(_agent.parent!=null)
+				return;
+			
+			_sourceData = sourceData;
+			_agent.url = icon;
+			GRoot.inst.addChild(_agent);
+			var pt:Point = GRoot.inst.globalToLocal(source.displayObject.stage.mouseX, source.displayObject.stage.mouseY);
+			_agent.setXY(pt.x + offset.x, pt.y + offset);
+			_agent.startDrag(touchPointId);
+		}
+		
 		public function cancel():void
 		{
 			if(_agent.parent!=null)

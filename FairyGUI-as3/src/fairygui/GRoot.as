@@ -418,8 +418,8 @@ package fairygui
 			}
 			if(yy+_tooltipWin.height>this.height) {
 				yy = yy - _tooltipWin.height - 1;
-				if(xx - _tooltipWin.width - 1 > 0)
-					xx = xx - _tooltipWin.width - 1;
+				/*if(xx - _tooltipWin.width - 1 > 0)
+					xx = xx - _tooltipWin.width - 1;*/
 				if(yy<0)
 					yy = 10;
 			}

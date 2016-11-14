@@ -13,8 +13,9 @@ package fairygui
 	import fairygui.text.BitmapFont;
 	import fairygui.utils.CharSize;
 	import fairygui.utils.FontUtils;
-	import fairygui.utils.GTimers;
 	import fairygui.utils.ToolSet;
+	
+	import once.GameApp;
 
 	public class GTextField extends GObject implements IColorGear
 	{
@@ -110,15 +111,18 @@ package fairygui
 
 		override public function set text(value:String):void
 		{
-			_text = value;
-			if(_text==null)
-				_text = "";
-			updateGear(6);
-			
-			if(parent && parent._underConstruct)
-				renderNow();
-			else
-				render();
+			if(value!=_text)
+			{
+				_text = value;
+				if(_text==null)
+					_text = "";
+				updateGear(6);
+				
+				if(parent && parent._underConstruct)
+					renderNow();
+				else
+					render();
+			}
 		}
 		
 		override public function get text():String
@@ -444,7 +448,7 @@ package fairygui
 			if(!_requireRender)
 			{
 				_requireRender = true;
-				GTimers.inst.add(0, 1, __render);
+				GameApp.render.callLater(__render);
 			}
 			
 			if(!_sizeDirty && (_widthAutoSize || _heightAutoSize))
@@ -491,7 +495,7 @@ package fairygui
 			_textField.filters = _textFilters;
 			
 			if(_ubbEnabled)
-				_textField.htmlText = ToolSet.parseUBB(ToolSet.encodeHTML(_text));
+				_textField.htmlText = _text;//ToolSet.parseUBB(ToolSet.encodeHTML(_text));
 			else
 				_textField.text = _text;
 			

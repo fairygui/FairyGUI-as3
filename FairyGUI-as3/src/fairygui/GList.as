@@ -11,7 +11,8 @@ package fairygui
 	import fairygui.display.UIDisplayObject;
 	import fairygui.event.GTouchEvent;
 	import fairygui.event.ItemEvent;
-	import fairygui.utils.GTimers;
+	
+	import once.GameApp;
 
 	[Event(name = "itemClick", type = "fairygui.event.ItemEvent")]
 	public class GList extends GComponent
@@ -800,12 +801,12 @@ package fairygui
 			if(_autoResizeItem)
 				adjustItemsSize();
 			
-			if(_layout==ListLayoutType.FlowHorizontal || _layout==ListLayoutType.FlowVertical)
-			{
+			/*if(_layout==ListLayoutType.FlowHorizontal || _layout==ListLayoutType.FlowVertical)
+			{*/
 				setBoundsChangedFlag();
 				if (_virtual)
 					setVirtualListChangedFlag(true);
-			}
+			//}
 		}
 		
 		public function adjustItemsSize():void
@@ -1091,7 +1092,7 @@ package fairygui
 				}
 				
 				if (this._virtualListChanged != 0)
-					GTimers.inst.remove(_refreshVirtualList);
+					GameApp.render.callLaterGc(_refreshVirtualList);
 				
 				//立即刷新
 				_refreshVirtualList();
@@ -1131,7 +1132,7 @@ package fairygui
 		{
 			if(this._virtualListChanged!=0) { 
 				this._refreshVirtualList();
-				GTimers.inst.remove(_refreshVirtualList);
+				GameApp.render.callLater(_refreshVirtualList);
 			}
 		}
 		
@@ -1142,7 +1143,7 @@ package fairygui
 			else if (_virtualListChanged == 0)
 				_virtualListChanged = 1;
 			
-			GTimers.inst.callLater(_refreshVirtualList);
+			GameApp.render.callLater(_refreshVirtualList);
 		}
 		
 		private function _refreshVirtualList():void

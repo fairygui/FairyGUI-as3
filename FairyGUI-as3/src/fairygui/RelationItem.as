@@ -514,6 +514,7 @@ package fairygui
 		private function __targetSizeWillChange(target:GObject):void
 		{
 			_owner.relations.sizeDirty = true;
+			_owner._dispatcher.dispatch(_owner, GObject.SIZE_DELAY_CHANGE);
 		}
 	}
 }

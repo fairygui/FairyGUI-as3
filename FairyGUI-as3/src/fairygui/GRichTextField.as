@@ -55,7 +55,7 @@ package fairygui
 			_richTextField.defaultTextFormat = _textFormat;
 			_richTextField.multiline = !_singleLine;
 			if(_ubbEnabled)
-				_richTextField.text = ToolSet.parseUBB(_text);
+				_richTextField.text = _text;//ToolSet.parseUBB(_text);
 			else
 				_richTextField.text = _text;
 			
