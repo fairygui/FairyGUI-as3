@@ -173,7 +173,7 @@ package fairygui
 			if ((_options & OPTION_IGNORE_DISPLAY_CONTROLLER) != 0 && item.target != _owner)
 				item.target.internalVisible--;
 			
-			if (item.type == TransitionActionType.ColorFilter)
+			if (item.type == TransitionActionType.ColorFilter && item.filterCreated)
 				item.target.filters = null;
 			
 			if(item.completed)
@@ -383,7 +383,7 @@ package fairygui
 			}
 		}
 		
-		public function SetDuration(label:String, value:Number):void
+		public function setDuration(label:String, value:Number):void
 		{
 			var cnt:int = _items.length;
 			for (var i:int = 0; i < cnt; i++)
@@ -453,9 +453,7 @@ package fairygui
 			var i:int;
 			var item:TransitionItem;
 			var startTime:Number;
-			var startValue:TransitionValue;
-			var endValue:TransitionValue;
-			
+
 			for (i = 0; i < cnt; i++)
 			{
 				item = _items[i];
@@ -468,105 +466,20 @@ package fairygui
 				
 				if (item.tween)
 				{
-					item.completed = false;
 					if(_reversed)
 						startTime = delay + _maxTime - item.time - item.duration;
 					else
 						startTime = delay + item.time;
-					switch (item.type)
+					if(startTime>0 && (item.type==TransitionActionType.XY || item.type==TransitionActionType.Size))
 					{
-						case TransitionActionType.XY:
-						case TransitionActionType.Size:
-							_totalTasks++;
-							if (startTime == 0)
-								startTween(item);
-							else
-							{
-								item.tweener = TweenMax.delayedCall(startTime, __delayCall, item.params);
-								if(_timeScale!=1)
-									item.tweener.timeScale(_timeScale);
-							}
-							break;
-						
-						case TransitionActionType.Scale:
-						case TransitionActionType.Alpha:
-						case TransitionActionType.Rotation:
-						case TransitionActionType.Skew:
-						case TransitionActionType.Color:
-						case TransitionActionType.ColorFilter:
-							_totalTasks++;
-							parms = {};
-							if(_reversed)
-							{
-								startValue = item.endValue;
-								endValue = item.startValue;
-							}
-							else
-							{
-								startValue = item.startValue;
-								endValue = item.endValue;
-							}
-	
-							switch(item.type)
-							{
-								case TransitionActionType.Scale:
-								case TransitionActionType.Skew:
-									item.value.f1 = startValue.f1;
-									item.value.f2 = startValue.f2;
-									parms.f1 = endValue.f1;
-									parms.f2 = endValue.f2;
-									break;
-								
-								case TransitionActionType.Alpha:
-									item.value.f1 = startValue.f1;
-									parms.f1 = endValue.f1;
-									break;
-								
-								case TransitionActionType.Rotation:
-									item.value.i = startValue.i;
-									parms.i = endValue.i;							
-									break;
-								
-								case TransitionActionType.Color:
-									item.value.c = startValue.c;
-									parms.hexColors = { c:endValue.c};
-									break;
-								
-								case TransitionActionType.ColorFilter:
-									item.value.f1 = startValue.f1;
-									item.value.f2 = startValue.f2;
-									item.value.f3 = startValue.f3;
-									item.value.f4 = startValue.f4;
-									parms.f1 = endValue.f1;
-									parms.f2 = endValue.f2;
-									parms.f3 = endValue.f3;
-									parms.f4 = endValue.f4;
-									break;
-							}
-							parms.ease = item.easeType;
-							parms.onStart = __tweenStart;
-							parms.onStartParams = item.params;
-							parms.onUpdate = __tweenUpdate;
-							parms.onUpdateParams = item.params;
-							parms.onComplete = __tweenComplete;
-							parms.onCompleteParams = item.params;
-							if (startTime > 0)
-								parms.delay = startTime;
-							else
-								applyValue(item, item.value);
-							if (item.repeat != 0)
-							{
-								if(item.repeat==-1)
-									parms.repeat = int.MAX_VALUE;
-								else
-									parms.repeat = item.repeat;
-								parms.yoyo = item.yoyo;
-							}							
-							item.tweener = TweenMax.to(item.value, item.duration, parms);
-							if(_timeScale!=1)
-								item.tweener.timeScale(_timeScale);
-							break;
+						_totalTasks++;
+						item.completed = false;
+						item.tweener = TweenMax.delayedCall(startTime, __delayCall, item.params);
+						if(_timeScale!=1)
+							item.tweener.timeScale(_timeScale);
 					}
+					else
+						startTween(item, startTime);
 				}
 				else
 				{
@@ -589,60 +502,111 @@ package fairygui
 			}
 		}
 		
-		private function startTween(item:TransitionItem):void
+		private function startTween(item:TransitionItem, delay:Number):void
 		{
 			var parms:Object = {};
-			parms.ease = item.easeType;
+			parms.onStart = __tweenStart;
+			parms.onStartParams = item.params;
 			parms.onUpdate = __tweenUpdate;
 			parms.onUpdateParams = item.params;
 			parms.onComplete = __tweenComplete;
 			parms.onCompleteParams = item.params;
+			parms.ease = item.easeType;
 			
+			var startValue:TransitionValue;
+			var endValue:TransitionValue;
 			if(_reversed)
 			{
-				item.value.f1 = item.endValue.f1;
-				item.value.f2 = item.endValue.f2;				
-				parms.f1 = item.startValue.f1;
-				parms.f2 = item.startValue.f2;
+				startValue = item.endValue;
+				endValue = item.startValue;
 			}
 			else
 			{
-				if (item.type == TransitionActionType.XY)
-				{
-					if (item.target == _owner)
+				startValue = item.startValue;
+				endValue = item.endValue;
+			}
+			
+			switch(item.type)
+			{
+				case TransitionActionType.XY:
+				case TransitionActionType.Size:
+					if(item.type==TransitionActionType.XY)
 					{
-						if(!item.startValue.b1)
-							item.startValue.f1 = 0;
-						if(!item.startValue.b2)
-							item.startValue.f2 = 0;
+						if (item.target == _owner)
+						{
+							if(!startValue.b1)
+								startValue.f1 = 0;
+							if(!startValue.b2)
+								startValue.f2 = 0;
+						}
+						else
+						{
+							if(!startValue.b1)
+								startValue.f1 = item.target.x;
+							if(!startValue.b2)
+								startValue.f2 = item.target.y;
+						}
 					}
 					else
 					{
-						if(!item.startValue.b1)
-							item.startValue.f1 = item.target.x;
-						if(!item.startValue.b2)
-							item.startValue.f2 = item.target.y;
+						if(!startValue.b1)
+							startValue.f1 = item.target.width;
+						if(!startValue.b2)
+							startValue.f2 = item.target.height;
 					}
-				}
-				else
-				{
-					if(!item.startValue.b1)
-						item.startValue.f1 = item.target.width;
-					if(!item.startValue.b2)
-						item.startValue.f2 = item.target.height;
-				}
+					item.value.f1 = startValue.f1;
+					item.value.f2 = startValue.f2;
+					item.value.b1 = startValue.b1;
+					item.value.b2 = startValue.b2;
+					
+					if(!endValue.b1)
+						endValue.f1 = item.value.f1;
+					if(!endValue.b2)
+						endValue.f2 = item.value.f2;
+					
+					parms.f1 = endValue.f1;
+					parms.f2 = endValue.f2;
+					break;
 				
-				item.value.f1 = item.startValue.f1;
-				item.value.f2 = item.startValue.f2;
+				case TransitionActionType.Scale:
+				case TransitionActionType.Skew:
+					item.value.f1 = startValue.f1;
+					item.value.f2 = startValue.f2;
+					parms.f1 = endValue.f1;
+					parms.f2 = endValue.f2;
+					break;
 				
-				if(!item.endValue.b1)
-					item.endValue.f1 = item.value.f1;
-				if(!item.endValue.b2)
-					item.endValue.f2 = item.value.f2;
-			
-				parms.f1 = item.endValue.f1;
-				parms.f2 = item.endValue.f2;
+				case TransitionActionType.Alpha:
+					item.value.f1 = startValue.f1;
+					parms.f1 = endValue.f1;
+					break;
+				
+				case TransitionActionType.Rotation:
+					item.value.i = startValue.i;
+					parms.i = endValue.i;							
+					break;
+				
+				case TransitionActionType.Color:
+					item.value.c = startValue.c;
+					parms.hexColors = { c:endValue.c};
+					break;
+				
+				case TransitionActionType.ColorFilter:
+					item.value.f1 = startValue.f1;
+					item.value.f2 = startValue.f2;
+					item.value.f3 = startValue.f3;
+					item.value.f4 = startValue.f4;
+					parms.f1 = endValue.f1;
+					parms.f2 = endValue.f2;
+					parms.f3 = endValue.f3;
+					parms.f4 = endValue.f4;
+					break;
 			}
+			
+			if (delay > 0)
+				parms.delay = delay;
+			else
+				applyValue(item, item.value);
 			
 			if (item.repeat != 0)
 			{
@@ -653,20 +617,20 @@ package fairygui
 				parms.yoyo = item.yoyo;
 			}
 			
-			applyValue(item, item.value);
+			_totalTasks++;
+			item.completed = false;
+			
 			item.tweener = TweenMax.to(item.value, item.duration, parms);
 			if(_timeScale!=1)
 				item.tweener.timeScale(_timeScale);
-			
-			if (item.hook != null)
-				item.hook();
 		}
 		
 		private function __delayCall(item:TransitionItem):void
 		{
 			item.tweener = null;
+			_totalTasks--;
 			
-			startTween(item);
+			startTween(item, 0);
 		}
 		
 		private function __delayCall2(item:TransitionItem):void
@@ -698,6 +662,7 @@ package fairygui
 			item.tweener = null;
 			_totalTasks--;
 			item.completed = true;
+			
 			if (item.hook2 != null)
 				item.hook2();
 			
@@ -708,6 +673,7 @@ package fairygui
 		{
 			_totalTasks--;
 			item.completed = true;
+			
 			checkAllComplete();
 		}
 		
@@ -941,13 +907,15 @@ package fairygui
 			var str:String = xml.@options;
 			if(str)
 				_options = parseInt(str); 
-			this.autoPlay = xml.@autoPlay=="true";
-			str = xml.@autoPlayRepeat;
-			if(str)
-				this.autoPlayRepeat = parseInt(str);
-			str = xml.@autoPlayDelay;
-			if(str)
-				this.autoPlayDelay = parseFloat(str);
+			this._autoPlay = xml.@autoPlay=="true";
+			if(this._autoPlay) {
+				str = xml.@autoPlayRepeat;
+				if(str)
+					this.autoPlayRepeat = parseInt(str);
+				str = xml.@autoPlayDelay;
+				if(str)
+					this.autoPlayDelay = parseFloat(str);
+			}
 			
 			var col:XMLList = xml.item;
 			for each (var cxml:XML in col)

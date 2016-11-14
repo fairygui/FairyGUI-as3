@@ -34,7 +34,10 @@ package fairygui.display
 			if (_curFrameDelay < interval)
 				return;
 			
-			_curFrameDelay = 0;			
+			_curFrameDelay -= interval;
+			if(_curFrameDelay>mc.interval)
+				_curFrameDelay = mc.interval;
+			
 			if (mc.swing)
 			{
 				if(reversed)

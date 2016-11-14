@@ -615,6 +615,9 @@ package fairygui
 
 		private function __clickItem(evt:GTouchEvent):void
 		{
+			if (this._scrollPane != null && this._scrollPane.isDragged)
+				return;
+			
 			var item:GObject = GObject(evt.currentTarget);
 			setSelectionOnEvent(item);
 			
@@ -833,7 +836,7 @@ package fairygui
 			}
 		}
 		
-		override public function GetSnappingPosition(xValue:Number, yValue:Number, resultPoint:Point=null):Point
+		override public function getSnappingPosition(xValue:Number, yValue:Number, resultPoint:Point=null):Point
 		{
 			if (_virtual)
 			{
@@ -875,7 +878,7 @@ package fairygui
 				return resultPoint;
 			}
 			else
-				return super.GetSnappingPosition(xValue, yValue, resultPoint);
+				return super.getSnappingPosition(xValue, yValue, resultPoint);
 		}
 		
 		public function scrollToView(index:int, ani:Boolean=false, setFirst:Boolean=false):void
