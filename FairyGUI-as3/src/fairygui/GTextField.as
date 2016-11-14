@@ -434,7 +434,9 @@ package fairygui
 			_textFormat.bold = _bold;
 			_textFormat.underline = _underline;
 			_textFormat.italic = _italic;
-
+			if(_textField)
+				_textField.defaultTextFormat = _textFormat;
+			
 			if(!_underConstruct)
 				render();
 		}

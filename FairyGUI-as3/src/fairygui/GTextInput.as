@@ -113,13 +113,6 @@ package fairygui
 			renderNow(true);
 		}
 		
-		override protected function updateTextFormat():void
-		{
-			super.updateTextFormat();
-			
-			_textField.defaultTextFormat = _textFormat;
-		}
-		
 		override protected function renderNow(updateBounds:Boolean=true):void
 		{
 			_textField.width = this.width;
