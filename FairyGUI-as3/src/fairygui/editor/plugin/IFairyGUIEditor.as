@@ -1,7 +1,5 @@
 package fairygui.editor.plugin
 {
-	import flash.filesystem.File;
-	
 	import fairygui.GRoot;
 	
 	/**
