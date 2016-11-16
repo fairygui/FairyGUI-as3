@@ -3,13 +3,10 @@ package fairygui.utils
 	public class SimpleDispatcher 
 	{
 		private var _elements:Array;
-		private var _enumI:int;
-		
-		public var _dispatchingType:int;
+		private var _dispatching:int;
 		
 		public function SimpleDispatcher():void {
 			_elements = [];
-			_dispatchingType = -1;
 		}
 		
 		public function addListener(type:int, e:Function):void {
@@ -28,11 +25,8 @@ package fairygui.utils
 			var arr:Array = _elements[type];
 			if(arr) {
 				var i:int = arr.indexOf(e);
-				if(i!=-1) {
-					arr.splice(i,1);
-					if(type==_dispatchingType && i<=_enumI)
-						_enumI--;
-				}
+				if(i!=-1)
+					arr[i] = null;
 			}
 		}
 		
@@ -46,29 +40,42 @@ package fairygui.utils
 		
 		public function dispatch(source:Object, type:int):void {
 			var arr:Array = _elements[type];
-			if(!arr || arr.length==0 || _dispatchingType==type)
+			if(!arr || arr.length==0)
 				return;
 			
-			_enumI = 0;
-			_dispatchingType = type;
-			while(_enumI<arr.length) {
-				var e:Function = arr[_enumI];
-				if(e.length==1)
-					e(source);
+			var hasDeleted:Boolean;
+			var i:int = 0;
+			_dispatching++;
+			while(i<arr.length) {
+				var e:Function = arr[i];
+				if(e!=null)
+				{
+					if(e.length==1)
+						e(source);
+					else
+						e();
+				}
 				else
-					e();
-				_enumI++;
+					hasDeleted = true;
+				i++;
 			}
-			_dispatchingType = -1;
+			_dispatching--;
+			
+			if(hasDeleted && _dispatching==0)
+			{
+				i = 0;
+				while(i<arr.length) {
+					e = arr[i];
+					if(e==null)
+						arr.splice(i, 1);
+					else
+						i++;
+				}
+			}
 		}
 		
 		public function clear():void {
 			_elements.length = 0;
 		}
-		
-		public function copy(source:SimpleDispatcher):void {
-			_elements = source._elements.concat();
-		}
-		
 	}
 }

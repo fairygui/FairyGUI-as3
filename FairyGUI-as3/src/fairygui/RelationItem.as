@@ -421,8 +421,7 @@ package fairygui
 		
 		private function __targetXYChanged(target:GObject):void
 		{
-			if (_owner.relations.handling!=null || _owner.group!=null && _owner.group._updating
-				|| _owner._dispatcher._dispatchingType==GObject.XY_CHANGED)
+			if (_owner.relations.handling!=null || _owner.group!=null && _owner.group._updating)
 			{
 				_targetX = _target.x;
 				_targetY = _target.y;
@@ -463,8 +462,7 @@ package fairygui
 		
 		private function __targetSizeChanged(target:GObject):void
 		{
-			if (_owner.relations.handling!=null 
-				|| _owner._dispatcher._dispatchingType==GObject.SIZE_CHANGED)
+			if (_owner.relations.handling!=null)
 			{
 				_targetWidth = _target._rawWidth;
 				_targetHeight = _target._rawHeight;

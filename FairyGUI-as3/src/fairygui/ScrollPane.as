@@ -689,8 +689,13 @@ package fairygui
 				_xOffset += deltaPosX;
 				_yOffset += deltaPosY;
 				
-				_y1 = _y2 = _container.y;
-				_x1 = _x2 = _container.x;
+				var tmp:Number = _y2 - _y1;
+				_y1 = _container.y;
+				_y2 = _y1 + tmp;
+				
+				tmp = _x2 - _x1;
+				_x1 = _container.x;
+				_x2 = _x1 + tmp;
 				
 				_yPos = -_container.y;
 				_xPos = -_container.x;
@@ -1267,8 +1272,8 @@ package fairygui
 			var time:Number = (getTimer() - _time2) / 1000;
 			if(time==0)
 				time = 0.001;
-			var yVelocity:Number = (_container.y - _y2) / time;
-			var xVelocity:Number = (_container.x - _x2) / time;
+			var yVelocity:Number = (_container.y - _y2) / time * 2 * UIConfig.defaultTouchScrollSpeedRatio;
+			var xVelocity:Number = (_container.x - _x2) / time * 2 * UIConfig.defaultTouchScrollSpeedRatio;
 			var duration:Number = 0.3;
 			
 			_throwTween.start.x = _container.x;
