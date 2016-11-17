@@ -29,6 +29,8 @@ package fairygui
 		public static var verticalScrollBar:String;
 		//Scrolling step in pixels
 		public static var defaultScrollSpeed:int = 25;
+		// Speed ratio of scrollpane when its touch dragging.
+		public static var defaultTouchScrollSpeedRatio:Number = 1;
 		//Default scrollbar display mode. Recommened visible for Desktop and Auto for mobile.
 		public static var defaultScrollBarDisplay:int = ScrollBarDisplayType.Visible;
 		//Allow dragging the content to scroll. Recommeded true for mobile.

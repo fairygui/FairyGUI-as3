@@ -5,7 +5,7 @@ package fairygui
 		private var _owner:GObject;
 		private var _items:Vector.<RelationItem>;
 		
-		internal var handling:GObject;
+		public var handling:GObject;
 		internal var sizeDirty:Boolean;
 		
 		private static const RELATION_NAMES:Array = 

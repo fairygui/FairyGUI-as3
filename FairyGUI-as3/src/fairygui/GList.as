@@ -1506,7 +1506,7 @@ package fairygui
 					
 					if (ii.obj != null && ii.obj.resourceURL != url)
 					{
-						removeChild(ii.obj);
+						removeChildToPool(ii.obj);
 						ii.obj = null;
 					}
 				}
@@ -1601,7 +1601,7 @@ package fairygui
 				ii = _virtualItems[oldFirstIndex + i];
 				if (ii.updateFlag != itemInfoVer && ii.obj != null)
 				{
-					removeChild(ii.obj);
+					removeChildToPool(ii.obj);
 					ii.obj = null;
 				}
 			}
@@ -1667,7 +1667,7 @@ package fairygui
 					
 					if (ii.obj != null && ii.obj.resourceURL != url)
 					{
-						removeChild(ii.obj);
+						removeChildToPool(ii.obj);
 						ii.obj = null;
 					}
 				}
@@ -1761,7 +1761,7 @@ package fairygui
 				ii = _virtualItems[oldFirstIndex + i];
 				if (ii.updateFlag != itemInfoVer && ii.obj != null)
 				{
-					removeChild(ii.obj);
+					removeChildToPool(ii.obj);
 					ii.obj = null;
 				}
 			}
@@ -1902,7 +1902,7 @@ package fairygui
 				ii = _virtualItems[i];
 				if (ii.updateFlag != itemInfoVer && ii.obj != null)
 				{
-					removeChild(ii.obj);
+					removeChildToPool(ii.obj);
 					ii.obj = null;
 				}
 			}
