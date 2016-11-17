@@ -9,7 +9,8 @@ package fairygui
 	import flash.geom.Point;
 	
 	import fairygui.display.UISprite;
-	import fairygui.utils.GTimers;
+	
+	import once.GameApp;
 
 	[Event(name = "dropEvent", type = "fairygui.event.DropEvent")]
 	public class GComponent extends GObject
@@ -174,7 +175,7 @@ package fairygui
 					_container.removeChild(child.displayObject);
 					
 					if (_childrenRenderOrder == ChildrenRenderOrder.Arch)
-						GTimers.inst.callLater(buildNativeDisplayList);
+						GameApp.render.callLater(buildNativeDisplayList);
 				}
 				
 				if(dispose)
@@ -347,7 +348,7 @@ package fairygui
 				}
 				else
 				{
-					GTimers.inst.callLater(buildNativeDisplayList);
+					GameApp.render.callLater(buildNativeDisplayList);
 				}
 
 				setBoundsChangedFlag();
@@ -496,7 +497,7 @@ package fairygui
 					{
 						_container.addChild(child.displayObject);
 						
-						GTimers.inst.callLater(buildNativeDisplayList);
+						GameApp.render.callLater(buildNativeDisplayList);
 					}
 				}
 			}
@@ -507,7 +508,7 @@ package fairygui
 					_container.removeChild(child.displayObject);
 					if (_childrenRenderOrder == ChildrenRenderOrder.Arch)
 					{
-						GTimers.inst.callLater(buildNativeDisplayList);
+						GameApp.render.callLater(buildNativeDisplayList);
 					}
 				}
 			}
@@ -852,7 +853,7 @@ package fairygui
 			if(!_boundsChanged)
 			{
 				_boundsChanged = true;
-				GTimers.inst.add(0, 1, __render);
+				GameApp.render.callLater(__render);
 			}
 		}
 
