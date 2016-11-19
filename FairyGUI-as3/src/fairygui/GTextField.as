@@ -50,7 +50,6 @@ package fairygui
 		protected var _textWidth:int;
 		protected var _textHeight:int;
 		protected var _fontAdjustment:int;
-		protected var _minHeight:int; 
 		
 		protected var _bitmapFont:BitmapFont;
 		protected var _lines:Vector.<LineInfo>;
@@ -399,7 +398,6 @@ package fairygui
 			{
 				_bitmapFont = UIPackage.getBitmapFontByURL(_font);
 				_fontAdjustment = 0;
-				_minHeight = int.MAX_VALUE;
 			}
 			else
 			{
@@ -418,8 +416,6 @@ package fairygui
 					_fontAdjustment = Math.ceil(v2/2);
 				else
 					_fontAdjustment = 0;
-				
-				_minHeight = v+4-_fontAdjustment;
 			}
 			
 			if(this.grayed)
@@ -526,14 +522,8 @@ package fairygui
 			else
 			{
 				h = this.height;
-				var h2:int = h;
-				if(h2>0 && h2<_minHeight)
-				{
-					h2 = _minHeight;
-					h = h2;
-				}
-				if(_textHeight>h2)
-					_textHeight = h2;
+				if(_textHeight>h)
+					_textHeight = h;
 				_textField.height = _textHeight+_fontAdjustment+3;
 			}
 
