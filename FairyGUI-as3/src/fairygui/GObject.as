@@ -42,7 +42,7 @@ package fairygui
 		private var _width:Number;
 		private var _height:Number;
 		private var _alpha:Number;
-		private var _rotation:int;
+		private var _rotation:Number;
 		private var _visible:Boolean;
 		private var _touchable:Boolean;
 		private var _grayed:Boolean;
@@ -481,12 +481,12 @@ package fairygui
 			this.touchable = value; 
 		}
 		
-		final public function get rotation():int
+		final public function get rotation():Number
 		{
 			return _rotation;
 		}
 		
-		public function set rotation(value:int):void
+		public function set rotation(value:Number):void
 		{
 			if(_rotation!=value)
 			{
@@ -499,9 +499,9 @@ package fairygui
 			}
 		}
 		
-		public function get normalizeRotation():int
+		public function get normalizeRotation():Number
 		{
-			var rot:int = _rotation%360;
+			var rot:Number = _rotation%360;
 			if(rot>180)
 				rot = rot-360;
 			else if(rot<-180)
