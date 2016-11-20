@@ -392,17 +392,10 @@ package fairygui
 			if(!item.componentData)
 			{
 				var xml:XML = getXMLDesc(item.id+".xml");
-				
-				if(_stringsSource!=null)
-				{
-					var col:Object = _stringsSource[this.id + item.id];
-					if(col!=null)
-						translateComponent(xml, col);
-				}
-				
 				item.componentData = xml;
 				
 				loadComponentChildren(item);
+				translateComponent(item);
 			}
 			
 			return item.componentData;
@@ -454,12 +447,21 @@ package fairygui
 				item.displayList =new Vector.<DisplayListItem>(0);
 		}
 		
-		private function translateComponent(xml:XML, strings:Object):void
+		private function translateComponent(item:PackageItem):void
 		{
-			var displayList:Object = xml.displayList.elements();
+			if(_stringsSource==null)
+				return;
+			
+			var strings:Object = _stringsSource[this.id + item.id];
+			if(strings==null)
+				return;
+
+			var cnt:int = item.displayList.length;
 			var value:*;
-			for each(var cxml:XML in displayList)
+			var cxml:XML, dxml:XML;
+			for(var i:int=0;i<cnt;i++)
 			{
+				cxml = item.displayList[i].desc;
 				var ename:String = cxml.name().localName;
 				var elementId:String = cxml.@id;
 				
@@ -468,6 +470,18 @@ package fairygui
 					value = strings[elementId+"-tips"];
 					if(value!=undefined)
 						cxml.@tooltips = value;
+				}
+				
+				dxml = cxml.gearText[0];
+				if (dxml)
+				{
+					value = strings[elementId+"-texts"];
+					if(value!=undefined)
+						dxml.@values = value;
+					
+					value = strings[elementId+"-texts_def"];
+					if(value!=undefined)
+						dxml.@["default"] = value;
 				}
 				
 				if(ename=="text" || ename=="richtext")
@@ -493,7 +507,7 @@ package fairygui
 				}
 				else if(ename=="component")
 				{
-					var dxml:XML = cxml.Button[0];
+					dxml = cxml.Button[0];
 					if(dxml)
 					{
 						value = strings[elementId];
@@ -502,36 +516,35 @@ package fairygui
 						value = strings[elementId+"-0"];
 						if(value!=undefined)
 							dxml.@selectedTitle = value;
+						continue;
 					}
-					else
-					{						
-						dxml = cxml.Label[0];
-						if(dxml)
+					
+					dxml = cxml.Label[0];
+					if(dxml)
+					{
+						value = strings[elementId];
+						if(value!=undefined)
+							dxml.@title = value;
+						continue;
+					}
+
+					dxml = cxml.ComboBox[0];
+					if(dxml)
+					{
+						value = strings[elementId];
+						if(value!=undefined)
+							dxml.@title = value;
+						
+						items = dxml.item;
+						j = 0;
+						for each(exml in items)
 						{
-							value = strings[elementId];
+							value = strings[elementId+"-"+j];
 							if(value!=undefined)
-								dxml.@title = value;
+								exml.@title = value;
+							j++;
 						}
-						else
-						{
-							dxml = cxml.ComboBox[0];
-							if(dxml)
-							{
-								value = strings[elementId];
-								if(value!=undefined)
-									dxml.@title = value;
-								
-								items = dxml.item;
-								j = 0;
-								for each(exml in items)
-								{
-									value = strings[elementId+"-"+j];
-									if(value!=undefined)
-										exml.@title = value;
-									j++;
-								}
-							}
-						}
+						continue;
 					}
 				}
 			}
