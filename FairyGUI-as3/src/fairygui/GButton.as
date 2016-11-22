@@ -11,7 +11,7 @@ package fairygui
 	import fairygui.utils.ToolSet;
 	
 	[Event(name = "stateChanged", type = "fairygui.event.StateChangeEvent")]
-	public class GButton extends GComponent
+	public class GButton extends GComponentExtention
 	{
 		protected var _titleObject:GObject;
 		protected var _iconObject:GObject;

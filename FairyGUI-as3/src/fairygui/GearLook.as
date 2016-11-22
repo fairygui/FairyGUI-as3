@@ -147,10 +147,10 @@ package fairygui
 class GearLookValue
 {
 	public var alpha:Number;
-	public var rotation:int;
+	public var rotation:Number;
 	public var grayed:Boolean;
 	
-	public function GearLookValue(alpha:Number=0, rotation:int=0, grayed:Boolean=false)
+	public function GearLookValue(alpha:Number=0, rotation:Number=0, grayed:Boolean=false)
 	{
 		this.alpha = alpha;
 		this.rotation = rotation;

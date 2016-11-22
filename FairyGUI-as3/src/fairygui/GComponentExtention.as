@@ -21,6 +21,8 @@ package fairygui
 		public static const STATE_DISPLAY_REMOVED:uint = 2;
 		protected var _showMethod:Method;
 		private var _inited:Boolean = false;
+		private var _stopEventTargets:Array;
+		private var _stopEventStrs:Array;
 		public function GComponentExtention()
 		{
 			super();
@@ -88,6 +90,33 @@ package fairygui
 			HideImmediately();
 		}
 		
+		protected function stopEventPropagation(targets:Array, eventStrs:Array):void
+		{
+			_stopEventTargets = targets;
+			_stopEventStrs = eventStrs;
+			for each(var target:GObject in targets)
+			{
+				for each(var eventStr:String in eventStrs)
+				{
+					target.addEventListener(eventStr, OnStopEvent, false, int.MAX_VALUE);
+					target.addEventListener(eventStr, OnStopEvent, true, int.MAX_VALUE);
+				}
+			}
+		}
+		protected function unStopEventPropagation(targets:Array, eventStrs:Array):void
+		{
+			for each(var target:GObject in targets)
+			{
+				_stopEventTargets.splice(_stopEventTargets.indexOf(target), 1);
+				for each(var eventStr:String in eventStrs)
+				{
+					_stopEventStrs.splice(_stopEventStrs.indexOf(eventStr), 1);
+					target.removeEventListener(eventStr, OnStopEvent);
+					target.removeEventListener(eventStr, OnStopEvent, true);
+				}
+			}
+		}
+		
 		protected function get underConstruct():Boolean
 		{
 			return _underConstruct;
@@ -115,6 +144,11 @@ package fairygui
 		//***************
 		//eventHandler
 		//***************
+		private function OnStopEvent(e:Event):void
+		{
+			e.stopImmediatePropagation();
+			e.stopPropagation();
+		}
 		private function FirstAdded(e:Event):void
 		{
 			if(e.target==displayObject)
@@ -171,6 +205,16 @@ package fairygui
 		}
 		override public function dispose():void
 		{
+			for each(var target:GObject in _stopEventTargets)
+			{
+				for each(var eventStr:String in _stopEventStrs)
+				{
+					target.removeEventListener(eventStr, OnStopEvent);
+					target.removeEventListener(eventStr, OnStopEvent, true);
+				}
+			}
+			_stopEventTargets = null;
+			_stopEventStrs = null;
 			_showMethod && Method.Return(_showMethod);
 			_showMethod = null;
 			delEvents();

@@ -120,7 +120,7 @@ package fairygui.extention.win
 				else
 				{
 					winOpen._openArgs = args;
-					winOpen.ReOpen();
+					winOpen.Refresh();
 					winOpen.bringToFront();
 					return winOpen;
 				}

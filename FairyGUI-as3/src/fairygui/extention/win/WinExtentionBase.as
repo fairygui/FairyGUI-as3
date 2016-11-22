@@ -7,14 +7,12 @@ package fairygui.extention.win
 	 * createTime: 2016-8-10下午8:12:51 <br/>
 	 **/
 	import com.greensock.TweenLite;
-	import com.greensock.easing.Quad;
 	
 	import flash.geom.Point;
 	
 	import fairygui.GComponent;
 	import fairygui.GLabel;
 	import fairygui.GObject;
-	import fairygui.PackageItem;
 	import fairygui.RelationType;
 	import fairygui.UIPackage;
 	import fairygui.Window;
@@ -67,6 +65,13 @@ package fairygui.extention.win
 			_updateMethod && _updateMethod.apply(null, _openArgs);
 			_openArgs = null;
 		}
+		/**窗口已经打开，再次打开此窗口并且打开参数不为空的时候会选择刷新该窗口**/
+		internal function Refresh():void
+		{
+			_updateMethod && _updateMethod.apply(null, _openArgs);
+			_openArgs = null;
+		}
+			
 		internal function get modalWaiteStr():String
 		{
 			return _modalWaiteStr;
@@ -91,26 +96,37 @@ package fairygui.extention.win
 		{
 			
 		}
+		/**重新打开**/
 		protected function initializeReopen():void
 		{
 			
 		}
+		/**第一次打开或者每次重新打开都会调用的**/
 		protected function initializeAways():void
 		{
 			
 		}
+		/**只有第一次打开会调用**/
 		protected function initialize():void
 		{
 			
 		}
+		/**只有在窗口已经打开,并且又触发了此窗口的打开逻辑,并且打开参数不为空时调用**/
+		protected function onRefresh():void
+		{
+			
+		}
+		/**被移除的时候调用**/
 		protected function removed():void
 		{
 			
 		}
+		/**每次打开都调用**/
 		protected function addEvents():void
 		{
 			
 		}
+		/**每次被移除都调用**/
 		protected function delEvents():void
 		{
 			

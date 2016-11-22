@@ -297,7 +297,7 @@ package fairygui
 						break;
 					
 					case TransitionActionType.Rotation:
-						value.i = parseInt(args[0]);
+						value.f1 = parseInt(args[0]);
 						break;
 					
 					case TransitionActionType.Color:
@@ -562,6 +562,9 @@ package fairygui
 					if(!endValue.b2)
 						endValue.f2 = item.value.f2;
 					
+					item.value.b1 = startValue.b1 || endValue.b1;
+					item.value.b2 = startValue.b2 || endValue.b2;
+					
 					parms.f1 = endValue.f1;
 					parms.f2 = endValue.f2;
 					break;
@@ -580,8 +583,8 @@ package fairygui
 					break;
 				
 				case TransitionActionType.Rotation:
-					item.value.i = startValue.i;
-					parms.i = endValue.i;							
+					item.value.f1 = startValue.f1;
+					parms.f1 = endValue.f1;							
 					break;
 				
 				case TransitionActionType.Color:
@@ -773,7 +776,7 @@ package fairygui
 					break;
 				
 				case TransitionActionType.Rotation:
-					item.target.rotation = value.i;
+					item.target.rotation = value.f1;
 					break;
 				
 				case TransitionActionType.Scale: 
@@ -1057,7 +1060,7 @@ package fairygui
 					break;
 				
 				case TransitionActionType.Rotation:
-					value.i = parseInt(str);
+					value.f1 = parseInt(str);
 					break;
 				
 				case TransitionActionType.Scale:
@@ -1195,11 +1198,11 @@ class TransitionItem
 
 class TransitionValue
 {
-	public var f1:Number;//x, scalex, pivotx,alpha,shakeAmplitude
+	public var f1:Number;//x, scalex, pivotx,alpha,shakeAmplitude,rotation
 	public var f2:Number;//y, scaley, pivoty, shakePeriod
 	public var f3:Number;
 	public var f4:Number;
-	public var i:int;//rotation,frame
+	public var i:int;//frame
 	public var c:uint;//color
 	public var b:Boolean;//playing
 	public var s:String;//sound,transName
