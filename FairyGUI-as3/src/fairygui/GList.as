@@ -883,12 +883,18 @@ package fairygui
 		
 		public function scrollToView(index:int, ani:Boolean=false, setFirst:Boolean=false):void
 		{
+			if(_numItems==0)
+				return;
+			
 			if (_virtual)
 			{
 				checkVirtualList();
 				
 				if (index >= _virtualItems.length)
 					throw new Error("Invalid child index: " + index + ">" + _virtualItems.length);
+				
+				if(_loop)
+					index = Math.floor(_firstIndex/_numItems)*_numItems+index;
 				
 				var rect:Rectangle;
 				var ii:ItemInfo = _virtualItems[index];
@@ -1998,6 +2004,9 @@ package fairygui
 		
 		override protected function updateBounds():void
 		{
+			if(_virtual)
+				return;
+			
 			var i:int;
 			var child:GObject;
 			var curX:int;

@@ -4,6 +4,7 @@ package fairygui
 	import com.greensock.easing.Ease;
 	import com.greensock.easing.EaseLookup;
 	
+	import flash.display.DisplayObject;
 	import flash.display.Graphics;
 	import flash.display.Sprite;
 	import flash.events.Event;
@@ -332,9 +333,12 @@ package fairygui
 		
 		public function setPosX(value:Number, ani:Boolean=false):void
 		{
+			_owner.ensureBoundsCorrect();
+			
+			value = ToolSet.clamp(value, 0, _xOverlap);
 			if(value!=_xPos)
 			{
-				_xPos = ToolSet.clamp(value, 0, _xOverlap);
+				_xPos = value;
 				_xPerc = _xOverlap==0?0:_xPos/_xOverlap;
 				
 				posChanged(ani);
@@ -353,9 +357,12 @@ package fairygui
 		
 		public function setPosY(value:Number, ani:Boolean=false):void
 		{
+			_owner.ensureBoundsCorrect();
+			
+			value = ToolSet.clamp(value, 0, _yOverlap);
 			if(value!=_yPos)
 			{
-				_yPos = ToolSet.clamp(value, 0, _yOverlap);
+				_yPos = value;
 				_yPerc = _yOverlap==0?0:_yPos/_yOverlap;
 				
 				posChanged(ani);
@@ -1420,7 +1427,10 @@ package fairygui
 		
 		private function __mouseWheel(evt:MouseEvent):void
 		{
-			if(!_mouseWheelEnabled)
+			if(!_mouseWheelEnabled
+				&& (!_vtScrollBar || !_vtScrollBar._rootContainer.hitTestObject(DisplayObject(evt.target)))
+				&& (!_hzScrollBar || !_hzScrollBar._rootContainer.hitTestObject(DisplayObject(evt.target)))
+				)
 				return;
 			
 			var delta:Number = evt.delta;
