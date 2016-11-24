@@ -325,8 +325,7 @@ package fairygui
 				return null;
 		}
 		
-		
-		private function internalCreateObject(item:PackageItem, userClass:Object):GObject
+		internal function internalCreateObject(item:PackageItem, userClass:Object):GObject
 		{
 			var g:GObject = null;
 			if (item.type == PackageItemType.Component)
