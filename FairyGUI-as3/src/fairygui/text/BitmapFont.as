@@ -80,6 +80,8 @@ package fairygui.text
 						sHelperBmd.copyPixels(atlas, sHelperRect, sPoint0);
 					else
 						sHelperBmd.copyChannel(atlas, sHelperRect, sPoint0, glyph.channel, BitmapDataChannel.ALPHA);
+					
+					drawBmd = sHelperBmd;
 				}
 			}
 			else if(glyph.imageItem!=null)
