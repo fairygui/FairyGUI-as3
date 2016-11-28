@@ -25,6 +25,7 @@ package fairygui.extention
 		private var _animate:Animate;
 		private var _dragEndCallBack:Method;
 		private var _dragData:Object;
+		private var _source:GObject;
 		public static const Instance:AnimateDragManager = new AnimateDragManager();
 		public function AnimateDragManager()
 		{
@@ -58,6 +59,7 @@ package fairygui.extention
 				_animate.Release();
 				_animate = null;
 			}
+			if(_source) _source.alpha = 1;
 			
 			var sourceData:Object = _dragData;
 			_dragData = null;
@@ -100,6 +102,8 @@ package fairygui.extention
 		}*/
 		public function StartDrag(source:GObject, swfUrl:String, dragData:Object=null, offset:Point=null, dragEndCallBack:Method=null):void
 		{
+			_source = source;
+			if(source!=null) source.alpha = 0.5;
 			_dragData = dragData;
 			_dragEndCallBack = dragEndCallBack;
 			if(_animate==null)

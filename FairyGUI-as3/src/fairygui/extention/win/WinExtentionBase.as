@@ -106,6 +106,11 @@ package fairygui.extention.win
 		{
 			
 		}
+		/**只有第一次打开会调用，并且最先调用**/
+		protected function initlializePrev():void
+		{
+			
+		}
 		/**只有第一次打开会调用**/
 		protected function initialize():void
 		{
@@ -157,6 +162,7 @@ package fairygui.extention.win
 		override final protected function onInit():void
 		{
 			super.onInit();
+			initlializePrev();
 			addEvents();
 			initialize();
 			initializeAways();

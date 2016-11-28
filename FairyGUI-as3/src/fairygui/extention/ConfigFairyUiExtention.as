@@ -18,5 +18,6 @@ package fairygui.extention
 		public static const BUTTON_LABEL_COST:String = "立即完成";
 		
 		public static var windowModalClass:Class = null;
+		public static var windowRemaindUrl:String = "";
 	}
 }
