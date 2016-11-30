@@ -54,6 +54,7 @@ package fairygui.text
 		public function draw(target:BitmapData, glyph:BMGlyph, charPosX:Number, charPosY:Number, color:uint, fontScale:Number):void
 		{
 			charPosX += Math.ceil(glyph.offsetX*fontScale);
+			charPosY += Math.ceil(glyph.offsetY*fontScale);
 			
 			var drawBmd:BitmapData = null;
 			
