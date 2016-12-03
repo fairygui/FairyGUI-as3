@@ -29,7 +29,7 @@ package fairygui.utils
 				var isBold:Boolean = style == FontStyle.BOLD || style == FontStyle.BOLD_ITALIC;
 				var isItalic:Boolean = style == FontStyle.ITALIC || style == FontStyle.BOLD_ITALIC;
 				
-				if (format.font == font.fontName && format.italic == isItalic && format.bold == isBold)
+				if (format.font == font.fontName /*&& format.italic == isItalic && format.bold == isBold*/)
 					return true;
 			}
 			

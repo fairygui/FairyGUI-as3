@@ -1899,7 +1899,7 @@ package fairygui
 					itemRenderer(i % _numItems, ii.obj);
 				
 				ii.obj.setXY((int)(i / pageSize) * viewWidth + col * (ii.width + _columnGap),
-					(i / _curLineItemCount) % _curLineItemCount2 * (ii.height + _lineGap));
+					(int)(i / _curLineItemCount) % _curLineItemCount2 * (ii.height + _lineGap));
 			}
 			
 			//释放未使用的

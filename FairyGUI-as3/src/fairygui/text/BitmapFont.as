@@ -54,6 +54,7 @@ package fairygui.text
 		public function draw(target:BitmapData, glyph:BMGlyph, charPosX:Number, charPosY:Number, color:uint, fontScale:Number):void
 		{
 			charPosX += Math.ceil(glyph.offsetX*fontScale);
+			charPosY += Math.ceil(glyph.offsetY*fontScale);
 			
 			var drawBmd:BitmapData = null;
 			
@@ -80,6 +81,8 @@ package fairygui.text
 						sHelperBmd.copyPixels(atlas, sHelperRect, sPoint0);
 					else
 						sHelperBmd.copyChannel(atlas, sHelperRect, sPoint0, glyph.channel, BitmapDataChannel.ALPHA);
+					
+					drawBmd = sHelperBmd;
 				}
 			}
 			else if(glyph.imageItem!=null)
