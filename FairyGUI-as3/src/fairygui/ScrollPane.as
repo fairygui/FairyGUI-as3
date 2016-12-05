@@ -754,7 +754,7 @@ package fairygui
 						if(!_hScrollNone)
 						{
 							_hScrollNone = true;
-							_viewHeight += _vtScrollBar.height;
+							_viewHeight += _hzScrollBar.height;
 						}
 					}
 					else
@@ -762,7 +762,7 @@ package fairygui
 						if(_hScrollNone)
 						{
 							_hScrollNone = false;
-							_viewHeight -= _vtScrollBar.height;
+							_viewHeight -= _hzScrollBar.height;
 						}
 					}
 				}
