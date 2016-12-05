@@ -619,6 +619,19 @@ package fairygui
 			_maskContainer.y = my;
 		}
 		
+		internal function updateMaskGraphic():void
+		{
+			if (!_maskDisabled)
+			{
+				var g:Graphics = _mask.graphics;
+				g.clear();
+				g.lineStyle(0,0,0);
+				g.beginFill(0, 0);
+				g.drawRect(-_owner._alignOffset.x,-_owner._alignOffset.y, _viewWidth, _viewHeight);
+				g.endFill();	
+			}
+		}
+		
 		private function setSize(aWidth:Number, aHeight:Number):void 
 		{
 			adjustMaskContainer();
@@ -796,15 +809,7 @@ package fairygui
 				}
 			}
 			
-			if (!_maskDisabled)
-			{
-				var g:Graphics = _mask.graphics;
-				g.clear();
-				g.lineStyle(0,0,0);
-				g.beginFill(0, 0);
-				g.drawRect(-_owner._alignOffset.x,-_owner._alignOffset.y, _viewWidth, _viewHeight);
-				g.endFill();	
-			}
+			updateMaskGraphic();
 
 			if (_scrollType == ScrollType.Horizontal || _scrollType == ScrollType.Both)
 				_xOverlap = Math.ceil(Math.max(0, _contentWidth - _viewWidth));

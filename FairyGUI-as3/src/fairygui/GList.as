@@ -1993,7 +1993,10 @@ package fairygui
 			{
 				_alignOffset.setTo(newOffsetX, newOffsetY);
 				if (scrollPane != null)
+				{
 					scrollPane.adjustMaskContainer();
+					scrollPane.updateMaskGraphic();
+				}
 				else
 				{
 					_container.x = _margin.left + _alignOffset.x;
