@@ -42,6 +42,7 @@ package fairygui
 		
 		private var _loading:int;
 		private var _externalLoader:Loader;
+		private var _initExternalURLBeforeLoadSuccess:String;
 		
 		private static var _errorSignPool:GObjectPool = new GObjectPool();
 		
@@ -245,7 +246,10 @@ package fairygui
 			if(ToolSet.startsWith(_url, "ui://"))
 				loadFromPackage(_url);
 			else
+			{
+				_initExternalURLBeforeLoadSuccess = _url;
 				loadExternal();
+			}
 		}
 		
 		protected function loadFromPackage(itemURL:String):void
@@ -379,7 +383,7 @@ package fairygui
 		
 		protected function freeExternal(content:DisplayObject):void
 		{
-			
+			_initExternalURLBeforeLoadSuccess = null;
 		}
 		
 		final protected function onExternalLoadSuccess(content:DisplayObject):void
@@ -406,7 +410,10 @@ package fairygui
 		
 		private function __externalLoadCompleted(evt:Event):void
 		{
-			onExternalLoadSuccess(_externalLoader.content);
+			if (_initExternalURLBeforeLoadSuccess == _url)
+			{
+				onExternalLoadSuccess(_externalLoader.content);
+			}
 		}
 		
 		private function __externalLoadFailed(evt:Event):void
