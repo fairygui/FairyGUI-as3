@@ -1277,10 +1277,13 @@ package fairygui
 			if (!isDragged || !_touchEffect || _inertiaDisabled)
 			{
 				isDragged = false;
+				_maskContainer.mouseChildren = true;
 				return;
 			}
 			
 			isDragged = false;
+			_maskContainer.mouseChildren = true;
+			
 			var time:Number = (getTimer() - _time2) / 1000;
 			if(time==0)
 				time = 0.001;
