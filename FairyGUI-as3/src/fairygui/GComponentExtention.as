@@ -38,6 +38,10 @@ package fairygui
 		//***************
 		//protected
 		//***************
+		protected function get quotePkgs():Array
+		{
+			return null;
+		}
 		protected function get url():String
 		{
 			return "";

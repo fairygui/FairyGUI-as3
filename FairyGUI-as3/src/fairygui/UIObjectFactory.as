@@ -4,6 +4,7 @@ package fairygui
 	{
 		internal static var packageItemExtensions:Object = {};
 		private static var loaderExtension:Class;
+		private static var glistExtension:Class = GList;
 		
 		public function UIObjectFactory()
 		{
@@ -17,6 +18,11 @@ package fairygui
 		public static function setLoaderExtension(type:Class):void
 		{
 			loaderExtension = type;
+		}
+		
+		public static function setGListExtension(type:Class):void
+		{
+			glistExtension = type;
 		}
 		
 		public static function newObject(pi:PackageItem):GObject
@@ -102,7 +108,7 @@ package fairygui
 					return new GGroup();
 					
 				case "list":
-					return new GList();
+					return new glistExtension();
 					
 				case "graph":
 					return new GGraph();
