@@ -14,6 +14,7 @@ package fairygui
 	import fairygui.text.BMGlyph;
 	import fairygui.text.BitmapFont;
 	import fairygui.utils.GTimers;
+	import fairygui.utils.PixelHitTestData;
 	import fairygui.utils.ToolSet;
 	
 	public class UIPackage
@@ -24,6 +25,7 @@ package fairygui
 		private var _items:Vector.<PackageItem>;
 		private var _itemsById:Object;
 		private var _itemsByName:Object;
+		private var _hitTestDatas:Object;
 		private var _customId:String;
 		
 		private var _reader:IUIPackageReader;
@@ -39,6 +41,7 @@ package fairygui
 		public function UIPackage()
 		{
 			_items = new Vector.<PackageItem>();
+			_hitTestDatas = {};
 		}
 		
 		public static function getById(id:String):UIPackage
@@ -175,7 +178,7 @@ package fairygui
 		private function create(reader:IUIPackageReader):void
 		{
 			_reader = reader;
-
+			
 			var str:String = _reader.readDescFile("package.xml");
 			
 			var ignoreWhitespace:Boolean = XML.ignoreWhitespace;
@@ -240,6 +243,17 @@ package fairygui
 					_itemsByName[pi.name] = pi;
 			}
 			
+			var ba:ByteArray = _reader.readResFile("hittest.bytes");
+			if(ba!=null)
+			{
+				while(ba.bytesAvailable)
+				{
+					var hitTestData:PixelHitTestData = new PixelHitTestData();
+					_hitTestDatas[ba.readUTF()] = hitTestData;
+					hitTestData.load(ba);
+				}
+			}
+
 			var cnt:int = _items.length;
 			for (var i:int = 0; i < cnt; i++)
 			{
@@ -384,6 +398,11 @@ package fairygui
 				return pi.image;
 			else
 				return null;
+		}
+		
+		public function getPixelHitTestData(itemId:String):PixelHitTestData
+		{
+			return _hitTestDatas[itemId];
 		}
 		
 		public function getComponentData(item:PackageItem):XML

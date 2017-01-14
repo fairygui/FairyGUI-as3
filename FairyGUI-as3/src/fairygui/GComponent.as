@@ -10,12 +10,15 @@ package fairygui
 	
 	import fairygui.display.UISprite;
 	import fairygui.utils.GTimers;
+	import fairygui.utils.PixelHitTest;
+	import fairygui.utils.PixelHitTestData;
 
 	[Event(name = "dropEvent", type = "fairygui.event.DropEvent")]
 	public class GComponent extends GObject
 	{
 		private var _sortingChildCount:int;
 		private var _opaque:Boolean;
+		private var _hitArea:PixelHitTest;
 		
 		protected var _margin:Margin;
 		protected var _trackBounds:Boolean;
@@ -664,15 +667,43 @@ package fairygui
 			if(_opaque!=value)
 			{
 				_opaque = value;
-				if(_opaque) {
-					Sprite(this.displayObject).mouseEnabled = this.touchable;
+				if(_opaque)
 					updateOpaque();
-				}
-				else {
-					Sprite(this.displayObject).mouseEnabled = false;
+				else
 					_rootContainer.graphics.clear();
-				}
+				_rootContainer.mouseEnabled = this.touchable && (_opaque || _hitArea!=null);
 			}
+		}
+		
+		final public function get hitArea():PixelHitTest
+		{
+			return _hitArea;
+		}
+		
+		public function set hitArea(value:PixelHitTest):void
+		{
+			if(_rootContainer.hitArea!=null)
+				_rootContainer.removeChild(_rootContainer.hitArea);
+
+			_hitArea = value;
+			if(_hitArea!=null)
+			{
+				_rootContainer.hitArea = _hitArea.createHitAreaSprite();
+				_rootContainer.addChild(_rootContainer.hitArea);
+				_rootContainer.mouseChildren = false;
+			}
+			else
+			{
+				_rootContainer.hitArea = null;
+				_rootContainer.mouseChildren = this.touchable;
+			}
+			_rootContainer.mouseEnabled = this.touchable && (_opaque || _hitArea!=null);
+		}
+		
+		internal function handleTouchable(val:Boolean):void
+		{
+			_rootContainer.mouseEnabled = val && (_opaque || _hitArea!=null);
+			_rootContainer.mouseChildren = val && _hitArea==null;
 		}
 		
 		public function get margin():Margin
@@ -1088,6 +1119,15 @@ package fairygui
 			str = xml.@opaque;
 			if(str!="false")
 				this.opaque = true;
+			
+			str = xml.@hitTest;
+			if(str)
+			{
+				arr = str.split(",");
+				var hitTestData:PixelHitTestData = packageItem.owner.getPixelHitTestData(arr[0]);
+				if (hitTestData != null)
+					this.hitArea = new PixelHitTest(hitTestData, parseInt(arr[1]), parseInt(arr[2]));
+			}
 			
 			var overflow:int;
 			str = xml.@overflow;

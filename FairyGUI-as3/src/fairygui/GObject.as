@@ -447,11 +447,15 @@ package fairygui
 			if(_displayObject is InteractiveObject)
 			{
 				if(this is GComponent)
-					InteractiveObject(_displayObject).mouseEnabled = _touchable && GComponent(this).opaque;
+				{
+					GComponent(this).handleTouchable(_touchable);
+				}
 				else
+				{
 					InteractiveObject(_displayObject).mouseEnabled = _touchable;
-				if(_displayObject is DisplayObjectContainer)
-					DisplayObjectContainer(_displayObject).mouseChildren = _touchable;
+					if(_displayObject is DisplayObjectContainer)
+						DisplayObjectContainer(_displayObject).mouseChildren = _touchable;
+				}
 			}
 		}
 		
