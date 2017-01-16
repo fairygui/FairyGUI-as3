@@ -37,7 +37,7 @@ package fairygui.utils
 					var pixel:int = arr[i];
 					for(var j:int=0;j<8;j++)
 					{
-						if((pixel>>j)&0x01==1)
+						if(((pixel>>j)&0x01)==1)
 						{
 							var pos:int = i*8+j;
 							g.drawRect(pos%pw, int(pos/pw), 1, 1);
