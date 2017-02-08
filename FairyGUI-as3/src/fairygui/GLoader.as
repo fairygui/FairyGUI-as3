@@ -236,6 +236,31 @@ package fairygui
 			_showErrorSign = value;
 		}
 		
+		public function get texture():BitmapData
+		{
+			if(_content is Bitmap)
+				return Bitmap(_content).bitmapData;
+			else
+				return null;
+		}
+		
+		public function set texture(value:BitmapData):void
+		{
+			this.url = null;
+			
+			if(!(_content is Bitmap))
+			{
+				_content = new Bitmap();
+				_container.addChild(_content);
+			}
+			else
+				_container.addChild(_content);
+			Bitmap(_content).bitmapData = value;
+			_contentSourceWidth = value.width;
+			_contentSourceHeight = value.height;
+			updateLayout();
+		}
+		
 		protected function loadContent():void
 		{
 			clearContent();
