@@ -16,7 +16,7 @@ package fairygui
 	import fairygui.utils.GTimers;
 	import fairygui.utils.ToolSet;
 
-	public class GTextField extends GObject implements IColorGear
+	public class GTextField extends GObject implements ITextColorGear
 	{
 		protected var _ubbEnabled:Boolean;
 		protected var _autoSize:int;
@@ -166,7 +166,7 @@ package fairygui
 			if(_color!=value)
 			{
 				_color = value;
-				updateGear(4);				
+				updateGear(4);
 				updateTextFormat();
 			}
 		}
@@ -308,6 +308,7 @@ package fairygui
 			{
 				_strokeColor = value;
 				updateTextFilters();
+				updateGear(4);
 			}
 		}
 		

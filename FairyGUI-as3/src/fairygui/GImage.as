@@ -4,7 +4,6 @@ package fairygui
 	import flash.display.BitmapData;
 	import flash.geom.ColorTransform;
 	import flash.geom.Matrix;
-	import flash.geom.Rectangle;
 	
 	import fairygui.display.UIImage;
 	import fairygui.utils.ToolSet;
@@ -131,91 +130,52 @@ package fairygui
 			if(_bmdSource==null)
 				return;
 			
-			var bmdAfterFlip:BitmapData;
-			if(_flip!=FlipType.None)
+			var newBmd:BitmapData = _bmdSource;
+			var w:int = this.width;
+			var h:int = this.height;
+			
+			if(w<=0 || h<=0)
+				newBmd = null;
+			else if(_bmdSource==packageItem.image
+				&& (_bmdSource.width!=w || _bmdSource.height!=h))
+			{
+				if(packageItem.scale9Grid!=null)
+					newBmd = ToolSet.scaleBitmapWith9Grid(_bmdSource, 
+						packageItem.scale9Grid, w, h, packageItem.smoothing, packageItem.tileGridIndice);
+				else if(packageItem.scaleByTile)
+					newBmd = ToolSet.tileBitmap(_bmdSource, _bmdSource.rect, w, h);
+			}
+			
+			if(newBmd!=null &&　_flip!=FlipType.None)
 			{
 				var mat:Matrix = new Matrix();
 				var a:int=1,b:int=1;
 				if(_flip==FlipType.Both)
 				{
 					mat.scale(-1,-1);
-					mat.translate(_bmdSource.width, _bmdSource.height);
+					mat.translate(newBmd.width, newBmd.height);
 				}
 				else if(_flip==FlipType.Horizontal)
 				{
 					mat.scale(-1, 1);
-					mat.translate(_bmdSource.width, 0);
+					mat.translate(newBmd.width, 0);
 				}
 				else
 				{
 					mat.scale(1,-1);
-					mat.translate(0, _bmdSource.height);
+					mat.translate(0, newBmd.height);
 				}
-				bmdAfterFlip = new BitmapData(_bmdSource.width,_bmdSource.height,_bmdSource.transparent,0);
-				bmdAfterFlip.draw(_bmdSource, mat);
+				
+				var bmdAfterFlip:BitmapData = new BitmapData(newBmd.width,newBmd.height,newBmd.transparent,0);
+				bmdAfterFlip.draw(newBmd, mat);
+				
+				if(newBmd!=_bmdSource)
+					newBmd.dispose();
+				
+				newBmd = bmdAfterFlip;
 			}
-			else
-				bmdAfterFlip = _bmdSource;
 			
 			var oldBmd:BitmapData = _content.bitmapData;
-			var newBmd:BitmapData;
-			
-			if(_bmdSource!=packageItem.image)
-			{
-				newBmd = bmdAfterFlip;
-			}
-			else if(packageItem.scale9Grid!=null)
-			{
-				var w:Number = this.width;
-				var h:Number = this.height;
-				
-				if(bmdAfterFlip.width==w && bmdAfterFlip.height==h)
-					newBmd = bmdAfterFlip;
-				else if(w<=0 || h<=0)
-					newBmd = null;
-				else
-				{
-					var rect:Rectangle;
-					if(_flip!=FlipType.None)
-					{
-						rect = packageItem.scale9Grid.clone();
-						if(_flip==FlipType.Horizontal || _flip==FlipType.Both)
-						{
-							rect.x = bmdAfterFlip.width - rect.right;
-							rect.right = rect.x + rect.width;
-						}
-						
-						if(_flip==FlipType.Vertical || _flip==FlipType.Both)
-						{
-							rect.y = bmdAfterFlip.height - rect.bottom;
-							rect.bottom = rect.y + rect.height;
-						}
-					}
-					else
-						rect = packageItem.scale9Grid;
-					
-					newBmd = ToolSet.scaleBitmapWith9Grid(bmdAfterFlip, 
-						rect, w, h, packageItem.smoothing, packageItem.tileGridIndice);
-				}
-			}
-			else if(packageItem.scaleByTile)
-			{
-				w = this.width;
-				h = this.height;
-				oldBmd = _content.bitmapData;
-				
-				if(bmdAfterFlip.width==w && bmdAfterFlip.height==h)
-					newBmd = bmdAfterFlip;
-				else if(w==0 || h==0)
-					newBmd = null;
-				else
-					newBmd = ToolSet.tileBitmap(bmdAfterFlip, bmdAfterFlip.rect, w, h);
-			}
-			else
-			{
-				newBmd = bmdAfterFlip;
-			}
-			
 			if(oldBmd!=newBmd)
 			{
 				if(oldBmd && oldBmd!=_bmdSource)
