@@ -3,7 +3,6 @@ package fairygui
 	import flash.display.BitmapData;
 	import flash.filters.DropShadowFilter;
 	import flash.geom.Point;
-	import flash.text.AntiAliasType;
 	import flash.text.TextFieldAutoSize;
 	import flash.text.TextFormat;
 	
@@ -480,7 +479,7 @@ package fairygui
 			_textField.width = this.width;
 			_textField.height = Math.max(this.height, int(_textFormat.size));
 			_textField.multiline = !_singleLine;
-			_textField.antiAliasType = AntiAliasType.ADVANCED;
+			//_textField.antiAliasType = AntiAliasType.ADVANCED;
 			_textField.filters = _textFilters;
 			
 			if(_ubbEnabled)
