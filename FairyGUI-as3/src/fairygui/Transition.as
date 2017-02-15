@@ -33,6 +33,8 @@ package fairygui
 		private var _timeScale:Number;
 		
 		public const OPTION_IGNORE_DISPLAY_CONTROLLER:int = 1;
+		public const OPTION_AUTO_STOP_DISABLED:int = 2;
+		public const OPTION_AUTO_STOP_AT_END:int = 4;
 		
 		private const FRAME_RATE:int = 24;
 		
@@ -440,6 +442,12 @@ package fairygui
 					}
 				}
 			}
+		}
+		
+		internal function OnOwnerRemovedFromStage():void
+		{
+			if ((_options & OPTION_AUTO_STOP_DISABLED) == 0)
+				stop((_options & OPTION_AUTO_STOP_AT_END) != 0 ? true : false, false);
 		}
 		
 		private function internalPlay(delay:Number):void

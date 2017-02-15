@@ -1296,8 +1296,7 @@ package fairygui
 			var cnt:int = _transitions.length;
 			for (var i:int = 0; i < cnt; ++i)
 			{
-				var trans:Transition = _transitions[i];
-				trans.stop(false, false);
+				_transitions[i].OnOwnerRemovedFromStage();
 			}
 		}
 	}	
