@@ -65,9 +65,6 @@ package fairygui
 		
 		override public function updateState():void
 		{
-			if (_controller == null || _owner._gearLocked || _owner._underConstruct)
-				return;
-
 			var gv:GearColorValue = _storage[_controller.selectedPageId];
 			if(!gv)
 			{

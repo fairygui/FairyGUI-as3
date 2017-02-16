@@ -40,9 +40,6 @@ package fairygui
 		
 		override public function updateState():void
 		{
-			if (_controller == null || _owner._gearLocked || _owner._underConstruct)
-				return;
-			
 			_storage[_controller.selectedPageId] = _owner.text;
 		}
 	}

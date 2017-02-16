@@ -12,6 +12,7 @@ package fairygui
 		protected var _easeType:Ease;
 		protected var _tweenTime:Number;
 		protected var _delay:Number;
+		protected var _displayLockToken:uint;
 		
 		protected var _owner:GObject;
 		protected var _controller:Controller;

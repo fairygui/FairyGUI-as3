@@ -55,7 +55,8 @@ package fairygui
 		private var _pivotOffsetX:Number;
 		private var _pivotOffsetY:Number;
 		private var _sortingOrder:int;
-		private var _internalVisible:int;
+		private var _internalVisible:Boolean;
+		private var _handlingController:Boolean;
 		private var _focusable:Boolean;
 		private var _tooltips:String;
 		private var _pixelSnapping:Boolean;
@@ -102,7 +103,7 @@ package fairygui
 			_alpha = 1;
 			_rotation = 0;
 			_visible = true;
-			_internalVisible = 1;
+			_internalVisible = true;
 			_touchable = true;
 			_scaleX = 1;
 			_scaleY = 1;
@@ -553,29 +554,10 @@ package fairygui
 				}
 			}
 		}
-		
-		internal function set internalVisible(value:int):void
-		{
-			if (value < 0)
-				value = 0;
-			var oldValue:Boolean = _internalVisible > 0;
-			var newValue:Boolean = value > 0;
-			_internalVisible = value;
-			if (oldValue != newValue)
-			{
-				if(_parent)
-					_parent.childStateChanged(this);
-			}
-		}
-		
-		internal function get internalVisible():int
-		{
-			return _internalVisible;
-		}
-		
+
 		public function get finalVisible():Boolean
 		{
-			return _visible && _internalVisible>0 && (!_group || _group.finalVisible);
+			return _visible && _internalVisible && (!_group || _group.finalVisible);
 		}
 		
 		final public function get sortingOrder():int
@@ -746,14 +728,61 @@ package fairygui
 		
 		protected function updateGear(index:int):void
 		{
-			if (_gears[index] != null)
-				_gears[index].updateState();
+			if(_underConstruct || _gearLocked)
+				return;
+			
+			var gear:GearBase = _gears[index];
+			if ( gear!= null && gear.controller!=null)
+				gear.updateState();
+		}
+		
+		internal function checkGearController(index:int, c:Controller):Boolean
+		{
+			return _gears[index] != null && _gears[index].controller==c;
 		}
 		
 		internal function updateGearFromRelations(index:int, dx:Number, dy:Number):void
 		{
 			if (_gears[index] != null)
 				_gears[index].updateFromRelations(dx, dy);
+		}
+		
+		internal function addDisplayLock():uint
+		{
+			var gearDisplay:GearDisplay = GearDisplay(_gears[0]);
+			if(gearDisplay && gearDisplay.controller)
+			{
+				var ret:uint = gearDisplay.addLock();
+				checkGearDisplay();
+				
+				return ret;
+			}
+			else
+				return 0;
+		}
+		
+		internal function releaseDisplayLock(token:uint):void
+		{
+			var gearDisplay:GearDisplay = GearDisplay(_gears[0]);
+			if(gearDisplay && gearDisplay.controller)
+			{
+				gearDisplay.releaseLock(token);
+				checkGearDisplay();
+			}
+		}
+		
+		private function checkGearDisplay():void
+		{
+			if(_handlingController)
+				return;
+			
+			var connected:Boolean = _gears[0]==null || GearDisplay(_gears[0]).connected;
+			if(connected!=_internalVisible)
+			{
+				_internalVisible = connected;
+				if(_parent)
+					_parent.childStateChanged(this);
+			}
 		}
 
 		final public function get gearXY():GearXY
@@ -1216,12 +1245,16 @@ package fairygui
 		
 		public function handleControllerChanged(c:Controller):void
 		{
+			_handlingController = true;
 			for (var i:int = 0; i < 8; i++)
 			{
 				var gear:GearBase = _gears[i];
 				if (gear != null && gear.controller == c)
 					gear.apply();
 			}
+			_handlingController = false;
+			
+			checkGearDisplay();
 		}
 		
 		protected function handleGrayedChanged():void
