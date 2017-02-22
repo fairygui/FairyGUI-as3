@@ -9,14 +9,21 @@ package fairygui
 	import flash.geom.Point;
 	
 	import fairygui.display.UISprite;
+<<<<<<< HEAD
 	
 	import once.GameApp;
+=======
+	import fairygui.utils.GTimers;
+	import fairygui.utils.PixelHitTest;
+	import fairygui.utils.PixelHitTestData;
+>>>>>>> refs/remotes/fairygui/master
 
 	[Event(name = "dropEvent", type = "fairygui.event.DropEvent")]
 	public class GComponent extends GObject
 	{
 		private var _sortingChildCount:int;
 		private var _opaque:Boolean;
+		private var _hitArea:PixelHitTest;
 		
 		protected var _margin:Margin;
 		protected var _trackBounds:Boolean;
@@ -665,15 +672,43 @@ package fairygui
 			if(_opaque!=value)
 			{
 				_opaque = value;
-				if(_opaque) {
-					Sprite(this.displayObject).mouseEnabled = this.touchable;
+				if(_opaque)
 					updateOpaque();
-				}
-				else {
-					Sprite(this.displayObject).mouseEnabled = false;
+				else
 					_rootContainer.graphics.clear();
-				}
+				_rootContainer.mouseEnabled = this.touchable && (_opaque || _hitArea!=null);
 			}
+		}
+		
+		final public function get hitArea():PixelHitTest
+		{
+			return _hitArea;
+		}
+		
+		public function set hitArea(value:PixelHitTest):void
+		{
+			if(_rootContainer.hitArea!=null)
+				_rootContainer.removeChild(_rootContainer.hitArea);
+
+			_hitArea = value;
+			if(_hitArea!=null)
+			{
+				_rootContainer.hitArea = _hitArea.createHitAreaSprite();
+				_rootContainer.addChild(_rootContainer.hitArea);
+				_rootContainer.mouseChildren = false;
+			}
+			else
+			{
+				_rootContainer.hitArea = null;
+				_rootContainer.mouseChildren = this.touchable;
+			}
+			_rootContainer.mouseEnabled = this.touchable && (_opaque || _hitArea!=null);
+		}
+		
+		internal function handleTouchable(val:Boolean):void
+		{
+			_rootContainer.mouseEnabled = val && (_opaque || _hitArea!=null);
+			_rootContainer.mouseChildren = val && _hitArea==null;
 		}
 		
 		public function get margin():Margin
@@ -1090,6 +1125,15 @@ package fairygui
 			if(str!="false")
 				this.opaque = true;
 			
+			str = xml.@hitTest;
+			if(str)
+			{
+				arr = str.split(",");
+				var hitTestData:PixelHitTestData = packageItem.owner.getPixelHitTestData(arr[0]);
+				if (hitTestData != null)
+					this.hitArea = new PixelHitTest(hitTestData, parseInt(arr[1]), parseInt(arr[2]));
+			}
+			
 			var overflow:int;
 			str = xml.@overflow;
 			if(str)
@@ -1224,6 +1268,23 @@ package fairygui
 			
 		}
 		
+		override public function setup_afterAdd(xml:XML):void
+		{
+			super.setup_afterAdd(xml);
+			
+			var str:String = xml.@controller;
+			if(str)
+			{
+				var arr:Array = str.split(",");
+				for(var i:int=0;i<arr.length;i+=2)
+				{
+					var cc:Controller = getController(arr[i]);
+					if(cc)
+						cc.selectedPageId = arr[i+1];
+				}
+			}
+		}
+		
 		private function __addedToStage(evt:Event):void
 		{
 			var cnt:int = _transitions.length;
@@ -1240,8 +1301,7 @@ package fairygui
 			var cnt:int = _transitions.length;
 			for (var i:int = 0; i < cnt; ++i)
 			{
-				var trans:Transition = _transitions[i];
-				trans.stop(false, false);
+				_transitions[i].OnOwnerRemovedFromStage();
 			}
 		}
 	}	

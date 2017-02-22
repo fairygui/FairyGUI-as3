@@ -14,6 +14,7 @@ package fairygui
 	import fairygui.text.BMGlyph;
 	import fairygui.text.BitmapFont;
 	import fairygui.utils.GTimers;
+	import fairygui.utils.PixelHitTestData;
 	import fairygui.utils.ToolSet;
 	
 	public class UIPackage
@@ -24,6 +25,7 @@ package fairygui
 		private var _items:Vector.<PackageItem>;
 		private var _itemsById:Object;
 		private var _itemsByName:Object;
+		private var _hitTestDatas:Object;
 		private var _customId:String;
 		
 		private var _reader:IUIPackageReader;
@@ -39,6 +41,7 @@ package fairygui
 		public function UIPackage()
 		{
 			_items = new Vector.<PackageItem>();
+			_hitTestDatas = {};
 		}
 		
 		public static function getById(id:String):UIPackage
@@ -113,14 +116,35 @@ package fairygui
 		
 		public static function getItemByURL(url:String):PackageItem
 		{
-			if(ToolSet.startsWith(url, "ui://"))
+			var pos1:int = url.indexOf("//");
+			if (pos1 == -1)
+				return null;
+			
+			var pos2:int = url.indexOf("/", pos1 + 2);
+			if (pos2 == -1)
 			{
-				var pkgId:String = url.substr(5,8);
-				var srcId:String = url.substr(13);
-				var pkg:UIPackage = getById(pkgId);
-				if(pkg)
-					return pkg.getItemById(srcId);
+				if (url.length > 13)
+				{
+					var pkgId:String = url.substr(5, 8);
+					var pkg:UIPackage = getById(pkgId);
+					if (pkg != null)
+					{
+						var srcId:String = url.substr(13);
+						return pkg.getItemById(srcId);
+					}
+				}
 			}
+			else
+			{
+				var pkgName:String = url.substr(pos1 + 2, pos2 - pos1 - 2);
+				pkg = getByName(pkgName);
+				if (pkg != null)
+				{
+					var srcName:String = url.substr(pos2 + 1);
+					return pkg.getItemByName(srcName);
+				}
+			}
+			
 			return null;
 		}
 		
@@ -175,7 +199,7 @@ package fairygui
 		private function create(reader:IUIPackageReader):void
 		{
 			_reader = reader;
-
+			
 			var str:String = _reader.readDescFile("package.xml");
 			
 			var ignoreWhitespace:Boolean = XML.ignoreWhitespace;
@@ -196,6 +220,7 @@ package fairygui
 			for each(cxml in resources)
 			{
 				pi = new PackageItem();
+				pi.owner = this;
 				pi.type = PackageItemType.parseType(cxml.name().localName);
 				pi.id = cxml.@id;
 				pi.name = cxml.@name;
@@ -231,15 +256,29 @@ package fairygui
 						pi.smoothing = str!="false";
 						break;
 					}
+						
+					case PackageItemType.Component:
+						UIObjectFactory.resolvePackageItemExtension(pi);
+						break;
 				}
 				
-				pi.owner = this;
 				_items.push(pi);
 				_itemsById[pi.id] = pi;
 				if(pi.name!=null)
 					_itemsByName[pi.name] = pi;
 			}
 			
+			var ba:ByteArray = _reader.readResFile("hittest.bytes");
+			if(ba!=null)
+			{
+				while(ba.bytesAvailable)
+				{
+					var hitTestData:PixelHitTestData = new PixelHitTestData();
+					_hitTestDatas[ba.readUTF()] = hitTestData;
+					hitTestData.load(ba);
+				}
+			}
+
 			var cnt:int = _items.length;
 			for (var i:int = 0; i < cnt; i++)
 			{
@@ -384,6 +423,11 @@ package fairygui
 				return pi.image;
 			else
 				return null;
+		}
+		
+		public function getPixelHitTestData(itemId:String):PixelHitTestData
+		{
+			return _hitTestDatas[itemId];
 		}
 		
 		public function getComponentData(item:PackageItem):XML

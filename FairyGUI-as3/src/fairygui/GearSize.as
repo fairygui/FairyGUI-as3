@@ -63,13 +63,17 @@ package fairygui
 					{
 						_owner._gearLocked = true;
 						if(a)
-							_owner.setSize(tweener.vars.width, tweener.vars.height, _owner.gearXY.controller==_controller);
+							_owner.setSize(tweener.vars.width, tweener.vars.height, _owner.checkGearController(1, _controller));
 						if(b)
 							_owner.setScale(tweener.vars.scaleX, tweener.vars.scaleY);
 						_owner._gearLocked = false;
 						tweener.kill();
 						tweener = null;
-						_owner.internalVisible--;
+						if(_displayLockToken!=0)
+						{
+							_owner.releaseDisplayLock(_displayLockToken);
+							_displayLockToken = 0;
+						}
 					}
 					else
 						return;
@@ -79,7 +83,8 @@ package fairygui
 				b = gv.scaleX != _owner.scaleX || gv.scaleY != _owner.scaleY;
 				if(a || b)
 				{
-					_owner.internalVisible++;
+					if(_owner.checkGearController(0, _controller))
+						_displayLockToken = _owner.addDisplayLock();
 					var vars:Object = 
 						{
 							width: gv.width,
@@ -105,7 +110,7 @@ package fairygui
 			else
 			{
 				_owner._gearLocked = true;
-				_owner.setSize(gv.width, gv.height, _owner.gearXY.controller==_controller);
+				_owner.setSize(gv.width, gv.height, _owner.checkGearController(1, _controller));
 				_owner.setScale(gv.scaleX, gv.scaleY);
 				_owner._gearLocked = false;
 			}
@@ -115,7 +120,7 @@ package fairygui
 		{
 			_owner._gearLocked = true;
 			if(a)
-				_owner.setSize(_tweenValue.width, _tweenValue.height, _owner.gearXY.controller==_controller);
+				_owner.setSize(_tweenValue.width, _tweenValue.height, _owner.checkGearController(1, _controller));
 			if(b)
 				_owner.setScale(_tweenValue.scaleX, _tweenValue.scaleY);
 			_owner._gearLocked = false;							
@@ -123,15 +128,16 @@ package fairygui
 		
 		private function __tweenComplete():void
 		{
-			_owner.internalVisible--;
+			if(_displayLockToken!=0)
+			{
+				_owner.releaseDisplayLock(_displayLockToken);
+				_displayLockToken = 0;
+			}
 			tweener = null;
 		}
 		
 		override public function updateState():void
 		{
-			if (_controller == null || _owner._gearLocked || _owner._underConstruct)
-				return;
-
 			var gv:GearSizeValue = _storage[_controller.selectedPageId];
 			if(!gv)
 			{

@@ -33,6 +33,8 @@ package fairygui
 		private var _timeScale:Number;
 		
 		public const OPTION_IGNORE_DISPLAY_CONTROLLER:int = 1;
+		public const OPTION_AUTO_STOP_DISABLED:int = 2;
+		public const OPTION_AUTO_STOP_AT_END:int = 4;
 		
 		private const FRAME_RATE:int = 24;
 		
@@ -98,8 +100,7 @@ package fairygui
 			{
 				_onComplete = onComplete;
 				_onCompleteParam = onCompleteParam;
-				
-				_owner.internalVisible++;
+
 				if ((_options & OPTION_IGNORE_DISPLAY_CONTROLLER) != 0)
 				{
 					var cnt:int = _items.length;
@@ -107,7 +108,7 @@ package fairygui
 					{
 						var item:TransitionItem = _items[i];
 						if (item.target != null && item.target!=_owner)
-							item.target.internalVisible++;
+							item.displayLockToken = item.target.addDisplayLock();
 					}
 				}
 			}
@@ -131,8 +132,6 @@ package fairygui
 				var param:Object = _onCompleteParam;
 				_onComplete = null;
 				_onCompleteParam = null;
-				
-				_owner.internalVisible--;
 				
 				var cnt:int = _items.length;
 				if(_reversed)
@@ -170,8 +169,11 @@ package fairygui
 		
 		private function stopItem(item:TransitionItem, setToComplete:Boolean):void
 		{
-			if ((_options & OPTION_IGNORE_DISPLAY_CONTROLLER) != 0 && item.target != _owner)
-				item.target.internalVisible--;
+			if (item.displayLockToken!=0)
+			{
+				item.target.releaseDisplayLock(item.displayLockToken);
+				item.displayLockToken = 0;
+			}
 			
 			if (item.type == TransitionActionType.ColorFilter && item.filterCreated)
 				item.target.filters = null;
@@ -442,6 +444,12 @@ package fairygui
 			}
 		}
 		
+		internal function OnOwnerRemovedFromStage():void
+		{
+			if ((_options & OPTION_AUTO_STOP_DISABLED) == 0)
+				stop((_options & OPTION_AUTO_STOP_AT_END) != 0 ? true : false, false);
+		}
+		
 		private function internalPlay(delay:Number):void
 		{
 			_ownerBaseX = _owner.x;
@@ -694,7 +702,6 @@ package fairygui
 					else
 					{
 						_playing = false;
-						_owner.internalVisible--;
 						
 						var cnt:int = _items.length;				
 						for (var i:int = 0; i < cnt; i++)
@@ -702,14 +709,17 @@ package fairygui
 							var item:TransitionItem = _items[i];
 							if (item.target != null)
 							{
-								if((_options & OPTION_IGNORE_DISPLAY_CONTROLLER) != 0 && item.target!=_owner)
-									item.target.internalVisible--;
-							}
-							
-							if (item.filterCreated)
-							{
-								item.filterCreated = false;
-								item.target.filters = null;
+								if(item.displayLockToken!=0)
+								{
+									item.target.releaseDisplayLock(item.displayLockToken);
+									item.displayLockToken = 0;
+								}
+
+								if (item.filterCreated)
+								{
+									item.filterCreated = false;
+									item.target.filters = null;
+								}
 							}
 						}
 
@@ -1179,6 +1189,7 @@ class TransitionItem
 	public var completed:Boolean;
 	public var target:GObject;
 	public var filterCreated:Boolean;
+	public var displayLockToken:uint;
 	
 	public var params:Array;
 	public function TransitionItem()

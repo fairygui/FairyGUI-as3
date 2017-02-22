@@ -3,7 +3,6 @@ package fairygui
 	import flash.display.BitmapData;
 	import flash.filters.DropShadowFilter;
 	import flash.geom.Point;
-	import flash.text.AntiAliasType;
 	import flash.text.TextFieldAutoSize;
 	import flash.text.TextFormat;
 	
@@ -17,7 +16,7 @@ package fairygui
 	
 	import once.GameApp;
 
-	public class GTextField extends GObject implements IColorGear
+	public class GTextField extends GObject implements ITextColorGear
 	{
 		protected var _ubbEnabled:Boolean;
 		protected var _autoSize:int;
@@ -170,7 +169,7 @@ package fairygui
 			if(_color!=value)
 			{
 				_color = value;
-				updateGear(4);				
+				updateGear(4);
 				updateTextFormat();
 			}
 		}
@@ -312,6 +311,7 @@ package fairygui
 			{
 				_strokeColor = value;
 				updateTextFilters();
+				updateGear(4);
 			}
 		}
 		
@@ -412,14 +412,8 @@ package fairygui
 				else
 					_textFormat.font = UIConfig.defaultFont;
 				
-				var v:int = CharSize.getHeight(int(_textFormat.size), _textFormat.font, _bold);
-				
-				//像微软雅黑这样的字体，默认的渲染顶部会产生很大的空间，这里加一个调整值，消除这些多余的空间
-				var v2:Number = v-int(_textFormat.size);
-				if(v2>3)
-					_fontAdjustment = Math.ceil(v2/2);
-				else
-					_fontAdjustment = 0;
+				var charSize:Object = CharSize.getSize(int(_textFormat.size), _textFormat.font, _bold);
+				_fontAdjustment = charSize.yIndent;
 			}
 			
 			if(this.grayed)
@@ -489,7 +483,7 @@ package fairygui
 			_textField.width = this.width;
 			_textField.height = Math.max(this.height, int(_textFormat.size));
 			_textField.multiline = !_singleLine;
-			_textField.antiAliasType = AntiAliasType.ADVANCED;
+			//_textField.antiAliasType = AntiAliasType.ADVANCED;
 			_textField.filters = _textFilters;
 			
 			if(_ubbEnabled)
@@ -544,6 +538,7 @@ package fairygui
 		private function renderWithBitmapFont(updateBounds:Boolean):void
 		{
 			switchBitmapMode(true);
+			_bitmap.filters = _textFilters;
 			
 			if(!_lines)
 				_lines = new Vector.<LineInfo>();

@@ -70,7 +70,11 @@ package fairygui
 						_owner._gearLocked = false;
 						tweener.kill();
 						tweener = null;
-						_owner.internalVisible--;
+						if(_displayLockToken!=0)
+						{
+							_owner.releaseDisplayLock(_displayLockToken);
+							_displayLockToken = 0;
+						}
 					}
 					else
 						return;
@@ -80,7 +84,8 @@ package fairygui
 				b = gv.rotation!=_owner.rotation;
 				if(a || b)
 				{
-					_owner.internalVisible++;
+					if(_owner.checkGearController(0, _controller))
+						_displayLockToken = _owner.addDisplayLock();
 					var vars:Object = 
 						{
 							ease: _easeType,
@@ -116,20 +121,21 @@ package fairygui
 				_owner.alpha = _tweenValue.x;
 			if(b)
 				_owner.rotation = _tweenValue.y;
-			_owner._gearLocked = false;							
+			_owner._gearLocked = false;		
 		}
 		
 		private function __tweenComplete():void
 		{
-			_owner.internalVisible--;
+			if(_displayLockToken!=0)
+			{
+				_owner.releaseDisplayLock(_displayLockToken);
+				_displayLockToken = 0;
+			}
 			tweener = null;
 		}
 		
 		override public function updateState():void
 		{
-			if (_controller == null || _owner._gearLocked || _owner._underConstruct)
-				return;
-
 			var gv:GearLookValue = _storage[_controller.selectedPageId];
 			if(!gv)
 			{

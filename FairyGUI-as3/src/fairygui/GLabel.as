@@ -2,7 +2,7 @@ package fairygui
 {
 	import fairygui.utils.ToolSet;
 	
-	public class GLabel extends GComponent
+	public class GLabel extends GComponent implements IColorGear
 	{
 		protected var _titleObject:GObject;
 		protected var _iconObject:GObject;
@@ -72,6 +72,17 @@ package fairygui
 				GLabel(_titleObject).titleColor = value;
 			else if(_titleObject is GButton)
 				GButton(_titleObject).titleColor = value;
+			updateGear(4);
+		}
+		
+		public function get color():uint
+		{
+			return this.titleColor;
+		}
+		
+		public function set color(value:uint):void 
+		{
+			this.titleColor = value;
 		}
 		
 		public function set editable(val:Boolean):void

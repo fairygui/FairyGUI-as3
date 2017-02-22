@@ -99,7 +99,9 @@ package fairygui.text
 				sHelperRect.height = Math.ceil(glyph.height*fontScale);
 				if(colored)
 				{
-					sTransform.color = color;
+					sTransform.redMultiplier = ((color>>16)&0xFF)/255;
+					sTransform.greenMultiplier =  ((color>>8)&0xFF)/255;
+					sTransform.blueMultiplier = (color&0xFF)/255;
 					target.draw(drawBmd, sHelperMat, sTransform, null, sHelperRect, true);
 				}
 				else

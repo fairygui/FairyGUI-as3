@@ -3,8 +3,12 @@ package fairygui
 	public class UIObjectFactory
 	{
 		internal static var packageItemExtensions:Object = {};
+<<<<<<< HEAD
 		private static var loaderExtension:Class;
 		private static var glistExtension:Class = GList;
+=======
+		private static var loaderType:Class;
+>>>>>>> refs/remotes/fairygui/master
 		
 		public function UIObjectFactory()
 		{
@@ -12,12 +16,26 @@ package fairygui
 		
 		public static function setPackageItemExtension(url:String, type:Class):void
 		{
-			packageItemExtensions[url.substring(5)] = type;
+			if (url == null)
+				throw new Error("Invaild url: " + url);
+			
+			var pi:PackageItem = UIPackage.getItemByURL(url);
+			if (pi != null)
+				pi.extensionType = type;
+			
+			packageItemExtensions[url] = type;
 		}
 		
 		public static function setLoaderExtension(type:Class):void
 		{
-			loaderExtension = type;
+			loaderType = type;
+		}
+		
+		internal static function resolvePackageItemExtension(pi:PackageItem):void
+		{
+			pi.extensionType = packageItemExtensions["ui://" + pi.owner.id + pi.id];
+			if(!pi.extensionType)
+				pi.extensionType = packageItemExtensions["ui://" + pi.owner.name + "/" + pi.name];
 		}
 		
 		public static function setGListExtension(type:Class):void
@@ -40,7 +58,7 @@ package fairygui
 				
 				case PackageItemType.Component:
 					{
-						var cls:Class = packageItemExtensions[pi.owner.id + pi.id];
+						var cls:Object = pi.extensionType;
 						if (cls)
 							return new cls();
 						
@@ -114,8 +132,8 @@ package fairygui
 					return new GGraph();
 					
 				case "loader":
-					if (loaderExtension != null)
-						return new loaderExtension();
+					if (loaderType != null)
+						return new loaderType();
 					else
 						return new GLoader();
 			}
