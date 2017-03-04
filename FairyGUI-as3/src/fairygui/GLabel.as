@@ -75,6 +75,28 @@ package fairygui
 			updateGear(4);
 		}
 		
+		final public function get titleFontSize():int
+		{
+			if(_titleObject is GTextField)
+				return GTextField(_titleObject).fontSize;
+			else if(_titleObject is GLabel)
+				return GLabel(_titleObject).titleFontSize;
+			else if(_titleObject is GButton)
+				return GButton(_titleObject).titleFontSize;
+			else
+				return 0;
+		}
+		
+		public function set titleFontSize(value:int):void
+		{
+			if(_titleObject is GTextField)
+				GTextField(_titleObject).fontSize = value;
+			else if(_titleObject is GLabel)
+				GLabel(_titleObject).titleFontSize = value;
+			else if(_titleObject is GButton)
+				GButton(_titleObject).titleFontSize = value;
+		}
+		
 		public function get color():uint
 		{
 			return this.titleColor;
@@ -124,6 +146,9 @@ package fairygui
 				str = xml.@titleColor;
 				if(str)
 					this.titleColor = ToolSet.convertFromHtmlColor(str);
+				str = xml.@titleFontSize;
+				if(str)
+					this.titleFontSize = parseInt(str);
 				
 				if(_titleObject is GTextInput)
 				{
