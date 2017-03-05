@@ -70,6 +70,10 @@ package fairygui.display
 			if(_currentFrame<0 || _currentFrame>_frameCount - 1)
 				_currentFrame = _frameCount - 1;			
 			
+			if(_frameCount>0)
+				setFrame(_frames[_currentFrame]);
+			else
+				setFrame(null);
 			_playState.rewind();
 		}
 		
@@ -113,7 +117,7 @@ package fairygui.display
 			_playing = value;
 
 			if (_playing && this.stage!=null)
-				GTimers.inst.callBy24Fps(update);
+				GTimers.inst.add(1,0,update);
 			else
 				GTimers.inst.remove(update);
 		}
@@ -201,7 +205,7 @@ package fairygui.display
 		private function __addedToStage(evt:Event):void
 		{
 			if (_playing)
-				GTimers.inst.callBy24Fps(update);
+				GTimers.inst.add(1,0,update);
 		}
 		
 		private function __removedFromStage(evt:Event):void

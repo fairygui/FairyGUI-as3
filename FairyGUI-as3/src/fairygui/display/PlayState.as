@@ -9,24 +9,24 @@ package fairygui.display
 		public var repeatedCount:int; //重复次数
 		
 		private var _curFrame:int; //当前帧
-		private var _lastTime:Number;
 		private var _curFrameDelay:int; //当前帧延迟
 		private var _lastUpdateSeq:uint;
 		
 		public function PlayState()
 		{
-			_lastTime = GTimers.time;
 		}
 		
 		public function update(mc:MovieClip):void
 		{
-			if (_lastUpdateSeq == GTimers.workCount)//PlayState may be shared, only update once per frame
-				return;
-			
-			_lastUpdateSeq = GTimers.workCount;
-			var tt:Number = GTimers.time;
-			var elapsed:Number = tt - _lastTime;
-			_lastTime = tt;
+			var elapsed:Number;
+			var frameId:uint = GTimers.workCount;
+			if (frameId - _lastUpdateSeq != 1) 
+				//1、如果>1，表示不是连续帧了，说明刚启动（或者停止过），这里不能用流逝的时间了，不然会跳过很多帧
+				//2、如果==0，表示在本帧已经处理过了，这通常是因为一个PlayState用于多个MovieClip共享，目的是多个MovieClip同步播放
+				elapsed = 0;
+			else
+				elapsed = GTimers.deltaTime;
+			_lastUpdateSeq = frameId;
 			
 			reachEnding = false;
 			_curFrameDelay += elapsed;
