@@ -80,7 +80,8 @@ package fairygui
 			_textField.mouseEnabled = false;
 			_textField.selectable = false;
 			_textField.width = 10;
-			setDisplayObject(_textField); 
+			_textField.height = 1;
+			setDisplayObject(_textField);
 		}
 		
 		private function switchBitmapMode(val:Boolean):void
