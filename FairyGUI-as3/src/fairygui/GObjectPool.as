@@ -40,22 +40,18 @@ package fairygui
 		
 		public function getObject(url:String):GObject
 		{			
-			var arr:Vector.<GObject> = _pool[url];
-			if(arr==null)
-			{
-				arr = new Vector.<GObject>;
-				_pool[url] = arr;
-			}
+			url = UIPackage.normalizeURL(url);
 			
-			if(arr.length)
+			var arr:Vector.<GObject> = _pool[url];
+			if(arr!=null && arr.length)
 			{
 				_count--;
 				return arr.shift();
 			}
-			
+
 			var child:GObject = UIPackage.createObjectFromURL(url);
 			if(child)
-			{			
+			{
 				if(_initCallback!=null)
 					_initCallback(child);
 			}
