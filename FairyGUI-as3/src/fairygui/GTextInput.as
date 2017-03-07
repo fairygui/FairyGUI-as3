@@ -108,6 +108,11 @@ package fairygui
 			return _text;
 		}
 		
+		override protected function updateAutoSize():void
+		{
+			//输入文本不支持自动大小
+		}
+		
 		override protected function render():void
 		{
 			renderNow(true);
@@ -115,10 +120,13 @@ package fairygui
 		
 		override protected function renderNow(updateBounds:Boolean=true):void
 		{
-			_textField.width = this.width;
-			_textField.height = this.height+_fontAdjustment;
-			_textField.wordWrap = !_singleLine;
-			_textField.multiline = !_singleLine;
+			var w:Number, h:Number;
+			w = this.width;
+			if(w!=_textField.width)
+				_textField.width = w;
+			h = this.height+_fontAdjustment;
+			if(h!=_textField.height)
+				_textField.height = h;
 			_yOffset = -_fontAdjustment;
 			_textField.y = this.y+_yOffset;
 			

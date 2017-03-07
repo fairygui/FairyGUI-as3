@@ -28,8 +28,6 @@ package fairygui.text
 		private var _nodeCache:Vector.<HtmlNode>;
 		private var _needUpdateNodePos:Boolean;
 		
-		private static const PLACEHOLDER_FONT:String = "Arial";
-		
 		public static var objectFactory:IRichTextObjectFactory = new RichTextObjectFactory();
 
 		public function RichTextField():void 
@@ -94,16 +92,6 @@ package fairygui.text
 				fixTextSize();
 		}
 		
-		public function set autoSize(val:String):void
-		{
-			_textField.autoSize = val;
-		}
-		
-		public function get autoSize():String 
-		{
-			return _textField.autoSize;
-		}
-		
 		public function set defaultTextFormat(val:TextFormat):void 
 		{
 			_defaultTextFormat = val;
@@ -146,26 +134,6 @@ package fairygui.text
 			_AHoverFormat = val;
 		}
 		
-		public function set multiline(val:Boolean):void
-		{
-			_textField.multiline = val;
-		}
-		
-		public function get multiline():Boolean 
-		{
-			return _textField.multiline;
-		}
-		
-		public function set wordWrap(val:Boolean):void 
-		{
-			_textField.wordWrap = val;
-		}
-		
-		public function get wordWrap():Boolean
-		{
-			return _textField.wordWrap;
-		}
-		
 		public function set selectable(val:Boolean):void
 		{
 			_textField.selectable = val;
@@ -175,16 +143,6 @@ package fairygui.text
 		public function get selectable():Boolean 
 		{
 			return _textField.selectable;
-		}
-		
-		public function set border(val:Boolean):void
-		{
-			_textField.border = val;
-		}
-		
-		public function get border():Boolean 
-		{
-			return _textField.border;
 		}
 		
 		public function get textHeight():Number 
@@ -254,8 +212,7 @@ package fairygui.text
 					for(var j:int=0;j<cnt2;j++)
 					{
 						var node:HtmlNode = lineInfo[j];
-						if(node.element.id==objId && node.displayObject!=null
-						) {
+						if(node.element.id==objId && node.displayObject!=null) {
 							return node.displayObject.getRect(targetCoordinate);
 						}
 					}
@@ -373,10 +330,10 @@ package fairygui.text
 					else
 						e.realHeight = e.height;
 					e.realWidth += 4;
-					e.textformat.font = PLACEHOLDER_FONT;
+					e.textformat.font = CharSize.PLACEHOLDER_FONT;
 					e.textformat.size = e.realHeight + 2;
 					e.textformat.underline = false;
-					e.textformat.letterSpacing = e.realWidth-int(e.textformat.size);
+					e.textformat.letterSpacing = e.realWidth-CharSize.getHolderWidth(e.realHeight + 2);
 					_textField.setTextFormat(e.textformat, startPos+e.start, startPos+e.end+1);
 				}
 				else

@@ -19,6 +19,7 @@ package fairygui
 		override protected function createDisplayObject():void
 		{ 
 			_richTextField = new UIRichTextField(this);
+			_textField = _richTextField.nativeTextField;
 			setDisplayObject(_richTextField);
 		}
 
@@ -39,6 +40,15 @@ package fairygui
 			_richTextField.AHoverFormat = val;
 			render();
 		}
+		
+		override protected function updateAutoSize():void
+		{
+			//as版的RichText不支持自动宽度
+			if(_heightAutoSize)
+				_textField.autoSize = TextFieldAutoSize.LEFT;
+			else
+				_textField.autoSize = TextFieldAutoSize.NONE;
+		}
 
 		override protected function render():void
 		{
@@ -47,13 +57,7 @@ package fairygui
 		
 		override protected function renderNow(updateBounds:Boolean=true):void
 		{
-			if(_heightAutoSize)
-				_richTextField.autoSize = TextFieldAutoSize.LEFT;
-			else
-				_richTextField.autoSize = TextFieldAutoSize.NONE;
-			_richTextField.nativeTextField.filters = _textFilters;
 			_richTextField.defaultTextFormat = _textFormat;
-			_richTextField.multiline = !_singleLine;
 			if(_ubbEnabled)
 				_richTextField.text = ToolSet.parseUBB(_text);
 			else
