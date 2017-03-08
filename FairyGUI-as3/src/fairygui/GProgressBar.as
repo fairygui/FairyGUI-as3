@@ -91,16 +91,21 @@ package fairygui
 				_tweenValue = _value;
 				_value = value;
 				_tweener = TweenLite.to(this, duration,
-					{_tweenValue:value, onUpdate:onUpdateTween, ease: Linear.ease});
+					{_tweenValue:value, onUpdate:onTweenUpdate, onComplete:onTweenComplete, ease: Linear.ease});
 				return _tweener;
 			}
 			else
 				return null;
 		}
 		
-		private function onUpdateTween():void
+		private function onTweenUpdate():void
 		{
 			update(_tweenValue);
+		}
+		
+		private function onTweenComplete():void
+		{
+			_tweener = null;
 		}
 		
 		public function update(newValue:int):void
