@@ -3,10 +3,10 @@ package fairygui
 	import flash.display.DisplayObject;
 	import flash.display.DisplayObjectContainer;
 	import flash.display.Graphics;
-	import flash.display.Shape;
 	import flash.display.Sprite;
 	import flash.events.Event;
 	import flash.geom.Point;
+	import flash.geom.Rectangle;
 	
 	import fairygui.display.UISprite;
 	import fairygui.utils.GTimers;
@@ -22,7 +22,6 @@ package fairygui
 		
 		protected var _margin:Margin;
 		protected var _trackBounds:Boolean;
-		protected var _clipMask:Shape;
 		protected var _boundsChanged:Boolean;
 		
 		internal var _buildingDisplayList:Boolean;
@@ -636,7 +635,7 @@ package fairygui
 			{
 				return _scrollPane.isChildInView(child);
 			}
-			else if (_clipMask != null)
+			else if (_rootContainer.scrollRect != null)
 			{
 				return child.x + child.width >= 0 && child.x <= this.width
 					&& child.y + child.height >= 0 && child.y <= this.height;
@@ -714,7 +713,7 @@ package fairygui
 		public function set margin(value:Margin):void
 		{
 			_margin.copy(value);
-			if(_clipMask)
+			if(_rootContainer.scrollRect!=null)
 			{
 				_container.x = _margin.left + _alignOffset.x;
 				_container.y = _margin.top + _alignOffset.y;
@@ -760,8 +759,6 @@ package fairygui
 		public function set mask(value:DisplayObject):void
 		{
 			_container.mask = value;
-			if(!value && _clipMask)
-				_container.mask = _clipMask;
 		}
 		
 		protected function updateOpaque():void
@@ -783,21 +780,20 @@ package fairygui
 		
 		protected function updateMask():void
 		{
-			var left:Number = _margin.left;
-			var top:Number = _margin.top;
+			var rect:Rectangle = _rootContainer.scrollRect;
+			
+			rect.x = _margin.left;
+			rect.y = _margin.top;
 			var w:Number = this.width - (_margin.left + _margin.right);
 			var h:Number = this.height - (_margin.top + _margin.bottom);
 			if(w<=0)
-				w = 1;
+				w = 0;
 			if(h<=0)
-				h = 1;
+				h = 0;
+			rect.width = w;
+			rect.height = h;
 			
-			var g:Graphics = _clipMask.graphics;
-			g.clear();
-			g.lineStyle(0,0,0);
-			g.beginFill(0,0);
-			g.drawRect(left,top,w,h);
-			g.endFill();
+			_rootContainer.scrollRect = rect;
 		}
 		
 		protected function setupScroll(scrollBarMargin:Margin,
@@ -826,11 +822,9 @@ package fairygui
 					_rootContainer.addChild(_container);
 				}
 					
-				_clipMask = new Shape();
-				_rootContainer.addChild(_clipMask);
+				_rootContainer.scrollRect = new Rectangle();
 				updateMask();
 				
-				_container.mask = _clipMask;
 				_container.x = _margin.left;
 				_container.y = _margin.top;
 			}
@@ -851,7 +845,7 @@ package fairygui
 		{
 			if(_scrollPane)
 				_scrollPane.onOwnerSizeChanged();
-			if(_clipMask)
+			if(_rootContainer.scrollRect)
 				updateMask();
 			
 			if(_opaque)
