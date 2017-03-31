@@ -256,6 +256,11 @@ package fairygui.tree
 		{ 
 			return _children.length; 
 		}
+		
+		final public function get tree():TreeView
+		{
+			return _tree;
+		}
 
 		internal function setTree(value:TreeView):void
 		{

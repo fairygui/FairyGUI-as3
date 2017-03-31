@@ -127,46 +127,35 @@ package fairygui
 		
 		final public function get titleColor():uint
 		{
-			if(_titleObject is GTextField)
-				return GTextField(_titleObject).color;
-			else if(_titleObject is GLabel)
-				return GLabel(_titleObject).titleColor;
-			else if(_titleObject is GButton)
-				return GButton(_titleObject).titleColor;
+			var tf:GTextField = getTextField();
+			if(tf)
+				return tf.color;
 			else
 				return 0;
 		}
 		
 		public function set titleColor(value:uint):void
 		{
-			if(_titleObject is GTextField)
-				GTextField(_titleObject).color = value;
-			else if(_titleObject is GLabel)
-				GLabel(_titleObject).titleColor = value;
-			else if(_titleObject is GButton)
-				GButton(_titleObject).titleColor = value;
+			var tf:GTextField = getTextField();
+			if(tf)
+				tf.color = value;
+			updateGear(4);
 		}
 		
 		final public function get titleFontSize():int
 		{
-			if(_titleObject is GTextField)
-				return GTextField(_titleObject).fontSize;
-			else if(_titleObject is GLabel)
-				return GLabel(_titleObject).titleFontSize;
-			else if(_titleObject is GButton)
-				return GButton(_titleObject).titleFontSize;
+			var tf:GTextField = getTextField();
+			if(tf)
+				return tf.fontSize;
 			else
 				return 0;
 		}
 		
 		public function set titleFontSize(value:int):void
 		{
-			if(_titleObject is GTextField)
-				GTextField(_titleObject).fontSize = value;
-			else if(_titleObject is GLabel)
-				GLabel(_titleObject).titleFontSize = value;
-			else if(_titleObject is GButton)
-				GButton(_titleObject).titleFontSize = value;
+			var tf:GTextField = getTextField();
+			if(tf)
+				tf.fontSize = value;
 		}
 		
 		final public function get sound():String
@@ -313,6 +302,18 @@ package fairygui
 				GTimers.inst.add(200, 1, setState, UP);
 			}
 			__click(null);
+		}
+		
+		public function getTextField():GTextField
+		{
+			if(_titleObject is GTextField)
+				return GTextField(_titleObject);
+			else if(_titleObject is GLabel)
+				return GLabel(_titleObject).getTextField();
+			else if(_titleObject is GButton)
+				return GButton(_titleObject).getTextField();
+			else
+				return null;
 		}
 		
 		protected function setState(val:String):void
