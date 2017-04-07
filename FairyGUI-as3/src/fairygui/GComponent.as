@@ -635,7 +635,7 @@ package fairygui
 			{
 				return _scrollPane.isChildInView(child);
 			}
-			else if (_rootContainer.scrollRect != null)
+			else if (_container.scrollRect != null)
 			{
 				return child.x + child.width >= 0 && child.x <= this.width
 					&& child.y + child.height >= 0 && child.y <= this.height;
@@ -713,7 +713,7 @@ package fairygui
 		public function set margin(value:Margin):void
 		{
 			_margin.copy(value);
-			if(_rootContainer.scrollRect!=null)
+			if(_container.scrollRect!=null)
 			{
 				_container.x = _margin.left + _alignOffset.x;
 				_container.y = _margin.top + _alignOffset.y;
@@ -778,12 +778,9 @@ package fairygui
 			g.endFill();
 		}
 		
-		protected function updateMask():void
+		protected function updateClipRect():void
 		{
-			var rect:Rectangle = _rootContainer.scrollRect;
-			
-			rect.x = _margin.left;
-			rect.y = _margin.top;
+			var rect:Rectangle = _container.scrollRect;
 			var w:Number = this.width - (_margin.left + _margin.right);
 			var h:Number = this.height - (_margin.top + _margin.bottom);
 			if(w<=0)
@@ -792,8 +789,7 @@ package fairygui
 				h = 0;
 			rect.width = w;
 			rect.height = h;
-			
-			_rootContainer.scrollRect = rect;
+			_container.scrollRect = rect;
 		}
 		
 		protected function setupScroll(scrollBarMargin:Margin,
@@ -822,8 +818,8 @@ package fairygui
 					_rootContainer.addChild(_container);
 				}
 					
-				_rootContainer.scrollRect = new Rectangle();
-				updateMask();
+				_container.scrollRect = new Rectangle();
+				updateClipRect();
 				
 				_container.x = _margin.left;
 				_container.y = _margin.top;
@@ -845,8 +841,8 @@ package fairygui
 		{
 			if(_scrollPane)
 				_scrollPane.onOwnerSizeChanged();
-			if(_rootContainer.scrollRect)
-				updateMask();
+			if(_container.scrollRect)
+				updateClipRect();
 			
 			if(_opaque)
 				updateOpaque();

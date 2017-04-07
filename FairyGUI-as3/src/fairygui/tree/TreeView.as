@@ -86,11 +86,18 @@ package fairygui.tree
 				parentNode.expanded = true;
 				parentNode = parentNode.parent;
 			}
+			
+			if(!node.cell)
+				return;
+			
 			_list.addSelection(_list.getChildIndex(node.cell), scrollItToView);
 		}
 		
 		public function removeSelection(node:TreeNode):void
 		{
+			if(!node.cell)
+				return;
+			
 			_list.removeSelection(_list.getChildIndex(node.cell));
 		}
 		

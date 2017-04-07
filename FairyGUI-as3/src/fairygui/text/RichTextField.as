@@ -329,11 +329,10 @@ package fairygui.text
 						e.realHeight = imageHeight;
 					else
 						e.realHeight = e.height;
-					e.realWidth += 4;
 					e.textformat.font = CharSize.PLACEHOLDER_FONT;
 					e.textformat.size = e.realHeight + 2;
 					e.textformat.underline = false;
-					e.textformat.letterSpacing = e.realWidth-CharSize.getHolderWidth(e.realHeight + 2);
+					e.textformat.letterSpacing = e.realWidth+4-CharSize.getHolderWidth(e.realHeight + 2);
 					_textField.setTextFormat(e.textformat, startPos+e.start, startPos+e.end+1);
 				}
 				else
