@@ -5,8 +5,8 @@ package fairygui
 
 	public class GProgressBar extends GComponent
 	{
-		private var _max:int;
-		private var _value:int;
+		private var _max:Number;
+		private var _value:Number;
 		private var _titleType:int;
 		private var _reverse:Boolean;
 		
@@ -47,12 +47,12 @@ package fairygui
 			}
 		}
 
-		final public function get max():int
+		final public function get max():Number
 		{
 			return _max;
 		}
 
-		final public function set max(value:int):void
+		final public function set max(value:Number):void
 		{
 			if(_max != value)
 			{
@@ -61,12 +61,12 @@ package fairygui
 			}
 		}
 
-		final public function get value():int
+		final public function get value():Number
 		{
 			return _value;
 		}
 		
-		final public function set value(value:int):void
+		final public function set value(value:Number):void
 		{
 			if(_tweener)
 			{
@@ -81,7 +81,7 @@ package fairygui
 			}
 		}
 		
-		public function tweenValue(value:int, duration:Number):TweenLite
+		public function tweenValue(value:Number, duration:Number):TweenLite
 		{
 			if(_value != value)
 			{
@@ -110,7 +110,7 @@ package fairygui
 		
 		public function update(newValue:int):void
 		{
-			var percent:Number = Math.min(newValue/_max,1);
+			var percent:Number = _max!=0?Math.min(newValue/_max,1):0;
 			if(_titleObject)
 			{
 				switch(_titleType)
@@ -214,7 +214,11 @@ package fairygui
 			if(xml)
 			{
 				_value = parseInt(xml.@value);
+				if(isNaN(_value))
+					_value = 0;
 				_max = parseInt(xml.@max);
+				if(isNaN(_max))
+					_max = 0;
 			}
 			update(_value);
 		}
