@@ -589,6 +589,9 @@ package fairygui
 						value = strings[elementId];
 						if(value!=undefined)
 							dxml.@title = value;
+						value = strings[elementId+"-prompt"];
+						if(value!=undefined)
+							dxml.@prompt = value;
 						continue;
 					}
 
