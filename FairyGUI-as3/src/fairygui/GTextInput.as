@@ -3,6 +3,8 @@ package fairygui
 	import flash.events.Event;
 	import flash.events.FocusEvent;
 	import flash.events.KeyboardEvent;
+	import flash.system.Capabilities;
+	import flash.system.IME;
 	import flash.text.TextFieldType;
 	
 	import fairygui.utils.ToolSet;
@@ -13,10 +15,14 @@ package fairygui
 		private var _promptText:String;
 		private var _password:Boolean;
 		
+		public var disableIME:Boolean;
+		
 		public function GTextInput()
 		{
 			super();
 			this.focusable = true;
+			
+			_textField.wordWrap = true;
 			
 			_textField.addEventListener(KeyboardEvent.KEY_DOWN, __textChanged);
 			_textField.addEventListener(Event.CHANGE, __textChanged);
@@ -185,6 +191,9 @@ package fairygui
 		
 		private function __focusIn(evt:Event):void
 		{
+			if(disableIME && Capabilities.hasIME)
+				IME.enabled = false;
+			
 			if(!_text && _promptText)
 			{
 				_textField.displayAsPassword = _password;
@@ -195,6 +204,9 @@ package fairygui
 		
 		private function __focusOut(evt:Event):void
 		{
+			if(disableIME && Capabilities.hasIME)
+				IME.enabled = true;
+			
 			_text = _textField.text;
 			TextInputHistory.inst.stopRecord(_textField);
 			_changed = false;
