@@ -365,7 +365,8 @@ package fairygui.tree
 			if(_list.scrollPane!=null)
 			{
 				_list.scrollPane.posY = posY;
-				_list.scrollPane.scrollToView(node.cell);
+				if(node.cell)
+					_list.scrollPane.scrollToView(node.cell);
 			}
 		}
 	}
