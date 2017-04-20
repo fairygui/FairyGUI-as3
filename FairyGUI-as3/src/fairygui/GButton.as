@@ -413,7 +413,9 @@ package fairygui
 			if(str)
 				_mode = ButtonMode.parse(str);
 			
-			_sound = xml.@sound;
+			str = xml.@sound;
+			if(str)
+				_sound = str;
 			str = xml.@volume;
 			if(str)
 				_soundVolumeScale = parseInt(str)/100;
@@ -481,7 +483,7 @@ package fairygui
 				if(str)
 					this.titleFontSize = parseInt(str);
 				
-				if(xml.@sound!=undefined)
+				if(xml.@sound.length()!=0)
 					_sound = xml.@sound;
 				str = xml.@volume;
 				if(str)
