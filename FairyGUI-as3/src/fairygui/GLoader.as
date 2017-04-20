@@ -279,6 +279,9 @@ package fairygui
 			_contentItem = UIPackage.getItemByURL(itemURL);
 			if(_contentItem!=null)
 			{
+				if(_autoSize)
+					this.setSize(_contentItem.width, _contentItem.height);
+				
 				if(_contentItem.type==PackageItemType.Image)
 				{
 					if(_contentItem.loaded)
@@ -460,8 +463,7 @@ package fairygui
 			
 			if (_errorSign != null)
 			{
-				_errorSign.width = this.width;
-				_errorSign.height = this.height;
+				_errorSign.setSize(this.width, this.height);
 				_container.addChild(_errorSign.displayObject);
 			}
 		}
