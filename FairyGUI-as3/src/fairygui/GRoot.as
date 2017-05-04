@@ -464,7 +464,7 @@ package fairygui
 		public function set focus(value:GObject):void
 		{
 			if(value && (!value.focusable || !value.onStage))
-				throw new Error("invalid focus target");
+				return;
 			
 			setFocus(value);
 			if(value is GTextInput)
