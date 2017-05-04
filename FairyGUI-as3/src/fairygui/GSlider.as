@@ -24,6 +24,8 @@ package fairygui
 		private var _clickPos:Point;
 		private var _clickPercent:Number;
 		
+		public var changeOnClick:Boolean;
+		
 		public function GSlider()
 		{
 			super();
@@ -146,6 +148,8 @@ package fairygui
 				_gripObject.addEventListener(GTouchEvent.DRAG, __gripMouseMove);
 				_gripObject.addEventListener(GTouchEvent.END, __gripMouseUp);
 			}
+			
+			addEventListener(GTouchEvent.BEGIN, __barMouseDown);
 		}
 		
 		override protected function handleSizeChanged():void
@@ -176,6 +180,8 @@ package fairygui
 		
 		private function __gripMouseDown(evt:GTouchEvent):void
 		{
+			evt.stopPropagation();
+			
 			_clickPos = this.globalToLocal(evt.stageX, evt.stageY);
 			_clickPercent = _value/_max;
 		}
@@ -207,6 +213,30 @@ package fairygui
 		private function __gripMouseUp(evt:GTouchEvent):void
 		{
 			var percent:Number = _value/_max;
+			updateWidthPercent(percent);
+		}
+		
+		private function __barMouseDown(evt:GTouchEvent):void
+		{
+			if(!changeOnClick)
+				return;
+			
+			var pt:Point = _gripObject.globalToLocal(evt.stageX, evt.stageY);
+			var percent:Number = _value/_max;
+			if(_barObjectH)
+				percent += pt.x/_barMaxWidth;
+			if(_barObjectV)
+				percent += pt.y/_barMaxHeight;
+			if(percent>1)
+				percent = 1;
+			else if(percent<0)
+				percent = 0;
+			var newValue:int = Math.round(_max*percent);
+			if(newValue!=_value)
+			{
+				_value = newValue;
+				dispatchEvent(new StateChangeEvent(StateChangeEvent.CHANGED));
+			}
 			updateWidthPercent(percent);
 		}
 	}

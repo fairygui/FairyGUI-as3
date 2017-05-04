@@ -1407,7 +1407,7 @@ package fairygui
 		{
 			return _buttonStatus==1;
 		}
-		
+
 		public function triggerDown(touchPointID:int=-1):void
 		{
 			var st:Stage = _displayObject.stage;
@@ -1553,6 +1553,19 @@ package fairygui
 			devt = new GTouchEvent(GTouchEvent.END);
 			devt.copyFrom(evt);
 			this.dispatchEvent(devt);
+		}
+		
+		public function cancelClick():void
+		{
+			_buttonStatus = 0;
+			var cnt:int = GComponent(this).numChildren;
+			for(var i:int=0;i<cnt;i++)
+			{
+				var child:GObject = GComponent(this).getChildAt(i);
+				child._buttonStatus = 0;
+				if(child is GComponent)
+					child.cancelClick();
+			}
 		}
 		//-------------------------------------------------------------------
 		
