@@ -2030,12 +2030,6 @@ package fairygui
 			var viewWidth:Number = this.viewWidth;
 			var viewHeight:Number = this.viewHeight;
 			
-			for(i=0;i<cnt;i++)
-			{
-				child = getChildAt(i);
-				child.ensureSizeCorrect();
-			}
-			
 			if(_layout==ListLayoutType.SingleColumn)
 			{
 				for(i=0;i<cnt;i++)

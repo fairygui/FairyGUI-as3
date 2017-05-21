@@ -880,11 +880,22 @@ package fairygui
 		private function __render():void
 		{
 			if(_boundsChanged)
+			{
+				for each(var child:GObject in _children)
+				{
+					child.ensureSizeCorrect();
+				}
 				updateBounds();
+			}
 		}
 
 		public function ensureBoundsCorrect():void
 		{
+			for each(var child:GObject in _children)
+			{
+				child.ensureSizeCorrect();
+			}
+			
 			if(_boundsChanged)
 				updateBounds();
 		}
@@ -898,11 +909,6 @@ package fairygui
 				var ar:int = int.MIN_VALUE, ab:int = int.MIN_VALUE;
 				var tmp:int;
 	
-				for each(child in _children)
-				{
-					child.ensureSizeCorrect();
-				}
-				
 				for each(var child:GObject in _children)
 				{
 					tmp = child.x;
