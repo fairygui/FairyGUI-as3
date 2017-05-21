@@ -1188,6 +1188,8 @@ package fairygui
 			_displayObject.visible = old.visible;
 			_displayObject.scaleX = old.scaleX;
 			_displayObject.scaleY = old.scaleY;
+			_displayObject.filters = old.filters;
+			old.filters = null;
 			if((_displayObject is InteractiveObject) && (old is InteractiveObject))
 			{
 				InteractiveObject(_displayObject).mouseEnabled = InteractiveObject(old).mouseEnabled;

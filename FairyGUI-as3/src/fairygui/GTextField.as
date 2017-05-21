@@ -545,7 +545,6 @@ package fairygui
 		private function renderWithBitmapFont(updateBounds:Boolean):void
 		{
 			switchBitmapMode(true);
-			_bitmap.filters = _textFilters;
 			
 			if(!_lines)
 				_lines = new Vector.<LineInfo>();
@@ -929,7 +928,8 @@ package fairygui
 				}
 			}
 			
-			updateTextFilters();
+			if(_stroke || _shadowOffset!=null)
+				updateTextFilters();
 		}
 		
 		override public function setup_afterAdd(xml:XML):void

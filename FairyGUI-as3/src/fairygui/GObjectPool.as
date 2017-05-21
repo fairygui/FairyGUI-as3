@@ -41,6 +41,8 @@ package fairygui
 		public function getObject(url:String):GObject
 		{			
 			url = UIPackage.normalizeURL(url);
+			if(url==null)
+				return null;
 			
 			var arr:Vector.<GObject> = _pool[url];
 			if(arr!=null && arr.length)
