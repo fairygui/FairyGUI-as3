@@ -3,6 +3,7 @@ package fairygui
 	import flash.display.BitmapData;
 	import flash.filters.DropShadowFilter;
 	import flash.geom.Point;
+	import flash.text.TextField;
 	import flash.text.TextFieldAutoSize;
 	import flash.text.TextFormat;
 	
@@ -40,7 +41,7 @@ package fairygui
 		protected var _shadowOffset:Point;
 		protected var _textFilters:Array;
 
-		protected var _textField:UITextField;
+		protected var _textField:TextField;
 		protected var _bitmap:UIImage;
 		protected var _bitmapData:BitmapData;
 
@@ -72,6 +73,7 @@ package fairygui
 			_autoSize= AutoSizeType.Both;
 			_widthAutoSize = true;
 			_heightAutoSize = true;
+			updateAutoSize();
 		}
 		
 		override protected function createDisplayObject():void
@@ -79,6 +81,7 @@ package fairygui
 			_textField = new UITextField(this);
 			_textField.mouseEnabled = false;
 			_textField.selectable = false;
+			_textField.multiline = true;
 			_textField.width = 10;
 			_textField.height = 1;
 			setDisplayObject(_textField);
@@ -283,7 +286,12 @@ package fairygui
 			if(_singleLine!=value)
 			{
 				_singleLine = value;
-				render();
+				_textField.multiline = !_singleLine;
+				if(!_widthAutoSize)
+					_textField.wordWrap = !_singleLine;
+				
+				if(!_underConstruct)
+					render();
 			}
 		}
 		
@@ -349,8 +357,7 @@ package fairygui
 			else
 				_textFilters = null;
 			
-			if(!this._underConstruct)
-				render();
+			_textField.filters = _textFilters;
 		}
 		
 		public function set ubbEnabled(value:Boolean):void
@@ -374,6 +381,7 @@ package fairygui
 				_autoSize = value;
 				_widthAutoSize = value==AutoSizeType.Both;
 				_heightAutoSize = value==AutoSizeType.Both||value==AutoSizeType.Height;
+				updateAutoSize();
 				render();
 			}
 		}
@@ -429,11 +437,26 @@ package fairygui
 			_textFormat.bold = _bold;
 			_textFormat.underline = _underline;
 			_textFormat.italic = _italic;
-			if(_textField)
-				_textField.defaultTextFormat = _textFormat;
+			
+			_textField.defaultTextFormat = _textFormat;
+			_textField.embedFonts = FontUtils.isEmbeddedFont(_textFormat);
 			
 			if(!_underConstruct)
 				render();
+		}
+		
+		protected function updateAutoSize():void
+		{
+			if(_widthAutoSize)
+			{
+				_textField.autoSize = TextFieldAutoSize.LEFT;
+				_textField.wordWrap = false;
+			}
+			else
+			{
+				_textField.autoSize = TextFieldAutoSize.NONE;
+				_textField.wordWrap = !_singleLine;
+			}
 		}
 		
 		protected function render():void
@@ -468,30 +491,20 @@ package fairygui
 				return;
 			}
 			
-			switchBitmapMode(false);
-			_textField.embedFonts = FontUtils.isEmbeddedFont(_textFormat);
-			_textField.defaultTextFormat = _textFormat;
-			if(_widthAutoSize)
-			{
-				_textField.autoSize = TextFieldAutoSize.LEFT;
-				_textField.wordWrap = false;
-			}
-			else
-			{
-				_textField.autoSize = TextFieldAutoSize.NONE;
-				_textField.wordWrap = !_singleLine;
-			}
-			_textField.width = this.width;
-			_textField.height = Math.max(this.height, int(_textFormat.size));
-			_textField.multiline = !_singleLine;
-			//_textField.antiAliasType = AntiAliasType.ADVANCED;
-			_textField.filters = _textFilters;
+			switchBitmapMode(false);			
 			
+			var w:Number, h:Number;
+			w = this.width;
+			if(w!=_textField.width)
+				_textField.width = w;
+			h = Math.max(this.height, int(_textFormat.size));
+			if(h!=_textField.height)
+				_textField.height = h;
 			if(_ubbEnabled)
 				_textField.htmlText = _text;//ToolSet.parseUBB(ToolSet.encodeHTML(_text));
 			else
 				_textField.text = _text;
-			
+			_textField.defaultTextFormat = _textFormat;
 			var renderSingleLine:Boolean = _textField.numLines<=1;
 			
 			_textWidth = Math.ceil(_textField.textWidth);
@@ -505,18 +518,15 @@ package fairygui
 				else
 					_textHeight+=4;
 			}
-			
-			var w:int, h:int;
+
 			if(_widthAutoSize)
 				w = _textWidth;
-			else
-				w = this.width;
 
 			if(_heightAutoSize)
 			{
 				h = _textHeight;
 				if(!_widthAutoSize)
-					_textField.height = _textHeight + _fontAdjustment+3;
+					_textField.height = _textHeight + _fontAdjustment + 3;
 			}
 			else
 			{
@@ -539,7 +549,6 @@ package fairygui
 		private function renderWithBitmapFont(updateBounds:Boolean):void
 		{
 			switchBitmapMode(true);
-			_bitmap.filters = _textFilters;
 			
 			if(!_lines)
 				_lines = new Vector.<LineInfo>();
@@ -824,7 +833,7 @@ package fairygui
 		protected function doAlign():void
 		{
 			if(_verticalAlign==VertAlignType.Top)
-				_yOffset = -_fontAdjustment;
+				_yOffset = 0;
 			else
 			{
 				var dh:Number;
@@ -832,13 +841,18 @@ package fairygui
 					dh = this.height-int(_textFormat.size);
 				else
 					dh = this.height-_textHeight;
-				if(dh<0)
-					dh = 0;
-				if(_verticalAlign==VertAlignType.Middle)
-					_yOffset = int(dh/2)-_fontAdjustment;
+				if(dh>_fontAdjustment)
+				{
+					if(_verticalAlign==VertAlignType.Middle)
+						_yOffset = int((dh-_fontAdjustment)/2);
+					else
+						_yOffset = int(dh);
+				}
 				else
-					_yOffset = int(dh)-_fontAdjustment;
+					_yOffset = 0;
 			}
+			
+			_yOffset -=_fontAdjustment;
 			displayObject.y = this.y+_yOffset;
 		}
 		
@@ -887,12 +901,13 @@ package fairygui
 				_autoSize = AutoSizeType.parse(str);
 				_widthAutoSize = _autoSize==AutoSizeType.Both;
 				_heightAutoSize = _autoSize==AutoSizeType.Both||_autoSize==AutoSizeType.Height;
+				updateAutoSize();
 			}
 
 			_underline = xml.@underline == "true";
 			_italic = xml.@italic == "true";
 			_bold = xml.@bold == "true";
-			_singleLine = xml.@singleLine == "true";
+			this.singleLine = xml.@singleLine == "true";
 			str = xml.@strokeColor;
 			if(str)
 			{
@@ -917,7 +932,8 @@ package fairygui
 				}
 			}
 			
-			updateTextFilters();
+			if(_stroke || _shadowOffset!=null)
+				updateTextFilters();
 		}
 		
 		override public function setup_afterAdd(xml:XML):void

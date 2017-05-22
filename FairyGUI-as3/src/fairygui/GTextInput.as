@@ -3,6 +3,8 @@ package fairygui
 	import flash.events.Event;
 	import flash.events.FocusEvent;
 	import flash.events.KeyboardEvent;
+	import flash.system.Capabilities;
+	import flash.system.IME;
 	import flash.text.TextFieldType;
 	
 	import fairygui.utils.ToolSet;
@@ -13,10 +15,14 @@ package fairygui
 		private var _promptText:String;
 		private var _password:Boolean;
 		
+		public var disableIME:Boolean;
+		
 		public function GTextInput()
 		{
 			super();
 			this.focusable = true;
+			
+			_textField.wordWrap = true;
 			
 			_textField.addEventListener(KeyboardEvent.KEY_DOWN, __textChanged);
 			_textField.addEventListener(Event.CHANGE, __textChanged);
@@ -108,6 +114,11 @@ package fairygui
 			return _text;
 		}
 		
+		override protected function updateAutoSize():void
+		{
+			//输入文本不支持自动大小
+		}
+		
 		override protected function render():void
 		{
 			renderNow(true);
@@ -115,10 +126,13 @@ package fairygui
 		
 		override protected function renderNow(updateBounds:Boolean=true):void
 		{
-			_textField.width = this.width;
-			_textField.height = this.height+_fontAdjustment;
-			_textField.wordWrap = !_singleLine;
-			_textField.multiline = !_singleLine;
+			var w:Number, h:Number;
+			w = this.width;
+			if(w!=_textField.width)
+				_textField.width = w;
+			h = this.height+_fontAdjustment;
+			if(h!=_textField.height)
+				_textField.height = h;
 			_yOffset = -_fontAdjustment;
 			_textField.y = this.y+_yOffset;
 			
@@ -177,6 +191,9 @@ package fairygui
 		
 		private function __focusIn(evt:Event):void
 		{
+			if(disableIME && Capabilities.hasIME)
+				IME.enabled = false;
+			
 			if(!_text && _promptText)
 			{
 				_textField.displayAsPassword = _password;
@@ -187,6 +204,9 @@ package fairygui
 		
 		private function __focusOut(evt:Event):void
 		{
+			if(disableIME && Capabilities.hasIME)
+				IME.enabled = true;
+			
 			_text = _textField.text;
 			TextInputHistory.inst.stopRecord(_textField);
 			_changed = false;

@@ -9,13 +9,16 @@ package fairygui.utils
 	public class CharSize
 	{
 		private static var testTextField:TextField;
+		private static var testTextField2:TextField;
 		private static var testTextFormat:TextFormat;
 		private static var results:Object;
 		private static var boldResults:Object;
+		private static var holderResults:Object;
 		
 		private static var helperBmd:BitmapData;
 		
-		private static var TEST_STRING:String = "fj|_我案愛爱";
+		public static var TEST_STRING:String = "fj|_我案愛爱";
+		public static var PLACEHOLDER_FONT:String = "Arial";
 		
 		public static function getSize(size:int, font:String, bold:Boolean):Object {
 			if(!testTextField){
@@ -23,7 +26,8 @@ package fairygui.utils
 				testTextField.autoSize = TextFieldAutoSize.LEFT;
 				testTextField.text = TEST_STRING;
 				
-				testTextFormat = new TextFormat();
+				if(!testTextFormat)
+					testTextFormat = new TextFormat();
 				results = {};
 				boldResults = {};
 			}
@@ -62,6 +66,32 @@ package fairygui.utils
 			ret.yIndent = bounds.top-2-int((ret.height - Math.max(bounds.height, size))/2);
 
 			return ret;
+		}
+		
+		public static function getHolderWidth(size:int):int
+		{
+			if(!testTextField2){
+				testTextField2 = new TextField();
+				testTextField2.autoSize = TextFieldAutoSize.LEFT;
+				testTextField2.text = "　";
+				
+				if(!testTextFormat)
+					testTextFormat = new TextFormat();
+				holderResults = {};
+			}
+			var ret:Object = holderResults[size];
+			if(ret==null)
+			{
+				testTextFormat.font = PLACEHOLDER_FONT;
+				testTextFormat.size = size;
+				testTextFormat.bold = false;
+				testTextField2.setTextFormat(testTextFormat);
+				
+				ret = testTextField2.textWidth;
+				holderResults[size] = ret;
+			}
+			
+			return int(ret);
 		}
 	}
 }

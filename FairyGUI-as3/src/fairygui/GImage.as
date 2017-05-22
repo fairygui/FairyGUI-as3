@@ -195,7 +195,7 @@ package fairygui
 			
 			str = xml.@flip;
 			if(str)
-				_flip = FlipType.parse(str);			
+				this.flip = FlipType.parse(str);			
 		}
 	}
 }

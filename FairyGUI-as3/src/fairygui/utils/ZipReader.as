@@ -15,6 +15,11 @@ package fairygui.utils
 			
 			readEntries();
 		}
+		
+		public function get entries():Object
+		{
+			return _entries;
+		}
 
 		private function readEntries():void {
 			_stream.position = _stream.length - 22;

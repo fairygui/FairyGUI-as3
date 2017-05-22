@@ -54,47 +54,35 @@ package fairygui
 		
 		final public function get titleColor():uint
 		{
-			if(_titleObject is GTextField)
-				return GTextField(_titleObject).color;
-			else if(_titleObject is GLabel)
-				return GLabel(_titleObject).titleColor;
-			else if(_titleObject is GButton)
-				return GButton(_titleObject).titleColor;
+			var tf:GTextField = getTextField();
+			if(tf)
+				return tf.color;
 			else
 				return 0;
 		}
 		
 		public function set titleColor(value:uint):void
 		{
-			if(_titleObject is GTextField)
-				GTextField(_titleObject).color = value;
-			else if(_titleObject is GLabel)
-				GLabel(_titleObject).titleColor = value;
-			else if(_titleObject is GButton)
-				GButton(_titleObject).titleColor = value;
+			var tf:GTextField = getTextField();
+			if(tf)
+				tf.color = value;
 			updateGear(4);
 		}
 		
 		final public function get titleFontSize():int
 		{
-			if(_titleObject is GTextField)
-				return GTextField(_titleObject).fontSize;
-			else if(_titleObject is GLabel)
-				return GLabel(_titleObject).titleFontSize;
-			else if(_titleObject is GButton)
-				return GButton(_titleObject).titleFontSize;
+			var tf:GTextField = getTextField();
+			if(tf)
+				return tf.fontSize;
 			else
 				return 0;
 		}
 		
 		public function set titleFontSize(value:int):void
 		{
-			if(_titleObject is GTextField)
-				GTextField(_titleObject).fontSize = value;
-			else if(_titleObject is GLabel)
-				GLabel(_titleObject).titleFontSize = value;
-			else if(_titleObject is GButton)
-				GButton(_titleObject).titleFontSize = value;
+			var tf:GTextField = getTextField();
+			if(tf)
+				tf.fontSize = value;
 		}
 		
 		public function get color():uint
@@ -109,16 +97,30 @@ package fairygui
 		
 		public function set editable(val:Boolean):void
 		{
-			if(_titleObject is GTextInput)
-				_titleObject.asTextInput.editable = val;
+			var tf:GTextField = getTextField();
+			if(tf && (tf is GTextInput))
+				tf.asTextInput.editable = val;
 		}
 		
 		public function get editable():Boolean
 		{
-			if(_titleObject is GTextInput)
-				return _titleObject.asTextInput.editable;
+			var tf:GTextField = getTextField();
+			if(tf && (tf is GTextInput))
+				return tf.asTextInput.editable;
 			else
 				return false;
+		}
+		
+		public function getTextField():GTextField
+		{
+			if(_titleObject is GTextField)
+				return GTextField(_titleObject);
+			else if(_titleObject is GLabel)
+				return GLabel(_titleObject).getTextField();
+			else if(_titleObject is GButton)
+				return GButton(_titleObject).getTextField();
+			else
+				return null;
 		}
 		
 		override protected function constructFromXML(xml:XML):void
@@ -150,20 +152,21 @@ package fairygui
 				if(str)
 					this.titleFontSize = parseInt(str);
 				
-				if(_titleObject is GTextInput)
+				var tf:GTextField = getTextField();
+				if(tf is GTextInput)
 				{
 					str = xml.@prompt;
 					if(str)
-						GTextInput(_titleObject).promptText = str;					
+						GTextInput(tf).promptText = str;
 					str = xml.@maxLength;
 					if(str)
-						GTextInput(_titleObject).maxLength = parseInt(str);
+						GTextInput(tf).maxLength = parseInt(str);
 					str = xml.@restrict;
 					if(str)
-						GTextInput(_titleObject).restrict = str;
+						GTextInput(tf).restrict = str;
 					str = xml.@password;
 					if(str)
-						GTextInput(_titleObject).password = str=="true";
+						GTextInput(tf).password = str=="true";
 				}
 			}
 		}

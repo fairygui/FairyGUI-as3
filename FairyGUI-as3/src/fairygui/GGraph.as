@@ -1,10 +1,10 @@
 package fairygui
 {
+	import flash.display.BitmapData;
 	import flash.display.DisplayObject;
 	import flash.display.Graphics;
 	import flash.display.LineScaleMode;
 	import flash.display.Sprite;
-	import flash.geom.ColorTransform;
 	
 	import fairygui.display.UISprite;
 	import fairygui.utils.ToolSet;
@@ -19,6 +19,7 @@ package fairygui
 		private var _lineAlpha:Number;
 		private var _fillColor:int;
 		private var _fillAlpha:Number;
+		private var _fillBitmapData:BitmapData;
 		private var _corner:Array;
 
 		public function GGraph()
@@ -64,7 +65,18 @@ package fairygui
 			_lineAlpha = lineAlpha;
 			_fillColor = fillColor;
 			_fillAlpha = fillAlpha;
+			_fillBitmapData = null;
 			_corner = corner;
+			drawCommon();
+		}
+		
+		public function drawRectWithBitmap(lineSize:int, lineColor:int, lineAlpha:Number, bitmapData:BitmapData):void
+		{
+			_type = 1;
+			_lineSize = lineSize;
+			_lineColor = lineColor;
+			_lineAlpha = lineAlpha;
+			_fillBitmapData = bitmapData;
 			drawCommon();
 		}
 
@@ -115,7 +127,10 @@ package fairygui
 				if(h>0)
 					h-=_lineSize;
 			}
-			_graphics.beginFill(_fillColor, _fillAlpha);
+			if(_fillBitmapData!=null)
+				_graphics.beginBitmapFill(_fillBitmapData);
+			else
+				_graphics.beginFill(_fillColor, _fillAlpha);
 			if(_type==1)
 			{	
 				if(_corner)

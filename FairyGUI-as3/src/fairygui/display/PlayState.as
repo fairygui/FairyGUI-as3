@@ -43,9 +43,9 @@ package fairygui.display
 				if(reversed)
 				{
 					_curFrame--;
-					if(_curFrame<0)
+					if(_curFrame<=0)
 					{
-						_curFrame = Math.min(1, mc.frameCount-1);
+						_curFrame = 0;
 						repeatedCount++;
 						reversed = !reversed;
 					}
