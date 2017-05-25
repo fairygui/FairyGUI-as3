@@ -27,7 +27,8 @@ package fairygui
 		private var _owner:GComponent;
 		private var _container:Sprite;
 		private var _maskContainer:Sprite;
-
+		private var _alignContainer:Sprite;
+		
 		private var _viewWidth:Number;
 		private var _viewHeight:Number;
 		private var _contentWidth:Number;
@@ -604,11 +605,27 @@ package fairygui
 			else
 				mx = Math.floor(_owner.margin.left);
 			my = Math.floor(_owner.margin.top);
-			mx += _owner._alignOffset.x;
-			my += _owner._alignOffset.y;
 			
 			_maskContainer.x = mx;
 			_maskContainer.y = my;
+			
+			if(_owner._alignOffset.x!=0 || _owner._alignOffset.y!=0)
+			{
+				if(_alignContainer==null)
+				{
+					_alignContainer = new Sprite();
+					_alignContainer.mouseEnabled = false;
+					_maskContainer.addChild(_alignContainer);
+					_alignContainer.addChild(_container);
+				}
+				
+				_alignContainer.x = _owner._alignOffset.x;
+				_alignContainer.y = _owner._alignOffset.y;
+			}
+			else if(_alignContainer)
+			{
+				_alignContainer.x = _alignContainer.y = 0;
+			}
 		}
 		
 		private function setSize(aWidth:Number, aHeight:Number):void 
@@ -791,8 +808,6 @@ package fairygui
 			if (!_maskDisabled)
 			{
 				var rect:Rectangle = _maskContainer.scrollRect;
-				rect.x = -_owner._alignOffset.x;
-				rect.y = -_owner._alignOffset.y;
 				rect.width = _viewWidth;
 				rect.height = _viewHeight;
 				_maskContainer.scrollRect = rect;
