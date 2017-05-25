@@ -395,7 +395,7 @@ package fairygui
 		{
 			if(_pivotX!=0 || _pivotY!=0)
 			{
-				var rot:int = this.normalizeRotation;
+				var rot:Number = this.normalizeRotation;
 				if(rot!=0 || _scaleX!=1 || _scaleY!=1)
 				{				
 					var rotInRad:Number = rot * ToolSet.DEG_TO_RAD;
