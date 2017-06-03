@@ -167,7 +167,7 @@ package fairygui
 				}
 				
 				var bmdAfterFlip:BitmapData = new BitmapData(newBmd.width,newBmd.height,newBmd.transparent,0);
-				bmdAfterFlip.draw(newBmd, mat);
+				bmdAfterFlip.draw(newBmd, mat, null, null, null, packageItem.smoothing);
 				
 				if(newBmd!=_bmdSource)
 					newBmd.dispose();
@@ -181,6 +181,7 @@ package fairygui
 				if(oldBmd && oldBmd!=_bmdSource)
 					oldBmd.dispose();
 				_content.bitmapData = newBmd;
+				_content.smoothing = packageItem.smoothing;
 			}
 		}
 		
