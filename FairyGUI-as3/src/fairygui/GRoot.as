@@ -35,6 +35,7 @@ package fairygui
 		private var _designResolutionX:int;
 		private var _designResolutionY:int;
 		private var _screenMatchMode:int;
+		private var _popupCloseFlags:Vector.<Boolean>;
 		
 		private static var _inst:GRoot;
 		
@@ -63,6 +64,8 @@ package fairygui
 			_contextMenuDisabled = Capabilities.playerType=="Desktop";
 			_popupStack = new Vector.<GObject>();
 			_justClosedPopups = new Vector.<GObject>();
+			_popupCloseFlags = new Vector.<Boolean>();
+			
 			displayObject.addEventListener(Event.ADDED_TO_STAGE, __addedToStage);
 		}
 		
@@ -279,7 +282,7 @@ package fairygui
 			return _modalWaitPane && _modalWaitPane.inContainer;
 		}
 		
-		public function showPopup(popup:GObject, target:GObject=null, downward:Object=null):void 
+		public function showPopup(popup:GObject, target:GObject=null, downward:Object=null, closeUntilMouseUp:Boolean=false):void 
 		{
 			if(_popupStack.length>0)
 			{
@@ -289,10 +292,12 @@ package fairygui
 					for(var i:int=_popupStack.length-1;i>=k;i--)
 					{
 						closePopup(_popupStack.pop());
+						_popupCloseFlags.pop();
 					}
 				}
 			}
 			_popupStack.push(popup);
+			_popupCloseFlags.push(closeUntilMouseUp);
 			
 			addChild(popup);
 			adjustModalLayer();
@@ -342,7 +347,10 @@ package fairygui
 				if(k!=-1)
 				{
 					for(var i:int=_popupStack.length-1;i>=k;i--)
+					{
 						closePopup(_popupStack.pop());
+						_popupCloseFlags.pop();
+					}
 				}
 			}
 			else
@@ -351,6 +359,7 @@ package fairygui
 				for(i=cnt-1;i>=0;i--)
 					closePopup(_popupStack[i]);
 				_popupStack.length = 0;
+				_popupCloseFlags.length = 0;
 			}
 		}
 		
@@ -592,6 +601,7 @@ package fairygui
 			{
 				mc = evt.target as DisplayObject;
 				var handled:Boolean = false;
+				var popup:GObject;
 				while(mc!=_nativeStage && mc!=null) {
 					if(mc is UIDisplayObject)
 					{
@@ -600,7 +610,12 @@ package fairygui
 						{
 							for(var i:int=_popupStack.length-1;i>pindex;i--)
 							{
-								var popup:GObject = _popupStack.pop();
+								if(_popupCloseFlags[i])
+									continue;
+								
+								popup = _popupStack[i];
+								_popupStack.splice(i, 1);
+								_popupCloseFlags.splice(i, 1);
 								closePopup(popup);
 								_justClosedPopups.push(popup);
 							}
@@ -616,11 +631,15 @@ package fairygui
 					var cnt:int = _popupStack.length;
 					for(i=cnt-1;i>=0;i--)
 					{
+						if(_popupCloseFlags[i])
+							continue;
+						
 						popup = _popupStack[i];
+						_popupStack.splice(i, 1);
+						_popupCloseFlags.splice(i, 1);
 						closePopup(popup);
 						_justClosedPopups.push(popup);
 					}
-					_popupStack.length = 0;
 				}
 			}
 		}
@@ -637,6 +656,50 @@ package fairygui
 		private function __stageMouseUpCapture(evt:MouseEvent):void 
 		{
 			buttonDown = false;
+			
+			if(_popupStack.length>0) 
+			{
+				var mc:DisplayObject = evt.target as DisplayObject;
+				var handled:Boolean = false;
+				var popup:GObject;
+				while(mc!=_nativeStage && mc!=null) {
+					if(mc is UIDisplayObject)
+					{
+						var pindex:int = _popupStack.indexOf(UIDisplayObject(mc).owner);
+						if(pindex!=-1)
+						{
+							for(var i:int=_popupStack.length-1;i>pindex;i--)
+							{
+								if(!_popupCloseFlags[i])
+									continue;
+								
+								popup = _popupStack[i];
+								_popupStack.splice(i, 1);
+								_popupCloseFlags.splice(i, 1);
+								closePopup(popup);
+							}
+							handled = true;
+							break;
+						}
+					}
+					mc = mc.parent;
+				}
+				
+				if(!handled)
+				{
+					var cnt:int = _popupStack.length;
+					for(i=cnt-1;i>=0;i--)
+					{
+						if(!_popupCloseFlags[i])
+							continue;
+						
+						popup = _popupStack[i];
+						_popupStack.splice(i, 1);
+						_popupCloseFlags.splice(i, 1);						
+						closePopup(popup);
+					}
+				}
+			}
 		}
 		
 		private function __stageMouseUp(evt:MouseEvent):void

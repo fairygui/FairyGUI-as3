@@ -3,7 +3,7 @@ package fairygui.utils
 	import flash.text.Font;
 	import flash.text.FontStyle;
 	import flash.text.TextFormat;
-
+	
 	public class FontUtils
 	{
 		private static var sEmbeddedFonts:Array = null;
@@ -28,8 +28,10 @@ package fairygui.utils
 				var style:String = font.fontStyle;
 				var isBold:Boolean = style == FontStyle.BOLD || style == FontStyle.BOLD_ITALIC;
 				var isItalic:Boolean = style == FontStyle.ITALIC || style == FontStyle.BOLD_ITALIC;
+				var fBold:Boolean = format.bold==null?false:format.bold;
+				var fItalic:Boolean = format.italic==null?false:format.italic;
 				
-				if (format.font == font.fontName /*&& format.italic == isItalic && format.bold == isBold*/)
+				if (format.font == font.fontName && fItalic == isItalic && fBold == isBold)
 					return true;
 			}
 			
@@ -37,3 +39,4 @@ package fairygui.utils
 		}
 	}
 }
+

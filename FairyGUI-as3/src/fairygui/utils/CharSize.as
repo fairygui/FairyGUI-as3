@@ -5,7 +5,7 @@ package fairygui.utils
 	import flash.text.TextField;
 	import flash.text.TextFieldAutoSize;
 	import flash.text.TextFormat;
-
+	
 	public class CharSize
 	{
 		private static var testTextField:TextField;
@@ -51,6 +51,7 @@ package fairygui.utils
 			testTextFormat.size = size;
 			testTextFormat.bold = bold;
 			testTextField.setTextFormat(testTextFormat);
+			testTextField.embedFonts = FontUtils.isEmbeddedFont(testTextFormat);
 			
 			ret.height = testTextField.textHeight;
 			if(ret.height==0)
@@ -64,11 +65,11 @@ package fairygui.utils
 			helperBmd.draw(testTextField);
 			var bounds:Rectangle = helperBmd.getColorBoundsRect(0xFF000000, 0, false);
 			ret.yIndent = bounds.top-2-int((ret.height - Math.max(bounds.height, size))/2);
-
+			
 			return ret;
 		}
 		
-		public static function getHolderWidth(size:int):int
+		public static function getHolderWidth(font:String, size:int):int
 		{
 			if(!testTextField2){
 				testTextField2 = new TextField();
@@ -79,19 +80,27 @@ package fairygui.utils
 					testTextFormat = new TextFormat();
 				holderResults = {};
 			}
-			var ret:Object = holderResults[size];
+			var col:Object = holderResults[font];
+			if(!col)
+			{
+				col = {};
+				holderResults[font] = col;
+			}
+			var ret:Object = col[size];
 			if(ret==null)
 			{
-				testTextFormat.font = PLACEHOLDER_FONT;
+				testTextFormat.font = font;
 				testTextFormat.size = size;
 				testTextFormat.bold = false;
 				testTextField2.setTextFormat(testTextFormat);
+				testTextField2.embedFonts = FontUtils.isEmbeddedFont(testTextFormat);
 				
 				ret = testTextField2.textWidth;
-				holderResults[size] = ret;
+				col[size] = ret;
 			}
 			
 			return int(ret);
 		}
 	}
 }
+
