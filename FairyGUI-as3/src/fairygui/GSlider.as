@@ -25,6 +25,9 @@ package fairygui
 		private var _clickPercent:Number;
 		
 		public var changeOnClick:Boolean;
+
+		/**是否可拖动开关**/
+		private var _canDrag:Boolean=true;
 		
 		public function GSlider()
 		{
@@ -34,6 +37,15 @@ package fairygui
 			_value = 50;
 			_max = 100;
 			_clickPos = new Point();
+		}
+		final public function get canDrag():Boolean
+		{
+			return _canDrag;
+		}
+		
+		final public function set canDrag(value:Boolean):void
+		{
+			_canDrag = value;
 		}
 
 		final public function get titleType():int
@@ -180,6 +192,8 @@ package fairygui
 		
 		private function __gripMouseDown(evt:GTouchEvent):void
 		{
+			this.canDrag=true;
+
 			evt.stopPropagation();
 			
 			_clickPos = this.globalToLocal(evt.stageX, evt.stageY);
@@ -188,6 +202,10 @@ package fairygui
 		
 		private function __gripMouseMove(evt:GTouchEvent):void
 		{
+			if(!this.canDrag){
+				return;
+			}
+			
 			var pt:Point = this.globalToLocal(evt.stageX, evt.stageY);
 			var deltaX:int = pt.x-_clickPos.x;
 			var deltaY:int = pt.y-_clickPos.y;
