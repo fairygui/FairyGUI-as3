@@ -414,6 +414,7 @@ package fairygui
 		
 		final protected function onExternalLoadSuccess(content:DisplayObject):void
 		{
+			clearContent();
 			_content = content;
 			_container.addChild(_content);
 			if(content.loaderInfo && content.loaderInfo!=displayObject.loaderInfo)
