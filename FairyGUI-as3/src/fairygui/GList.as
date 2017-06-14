@@ -847,12 +847,9 @@ package fairygui
 			if(_autoResizeItem)
 				adjustItemsSize();
 			
-			if(_layout==ListLayoutType.FlowHorizontal || _layout==ListLayoutType.FlowVertical)
-			{
-				setBoundsChangedFlag();
-				if (_virtual)
-					setVirtualListChangedFlag(true);
-			}
+			setBoundsChangedFlag();
+			if (_virtual)
+				setVirtualListChangedFlag(true);
 		}
 		
 		public function adjustItemsSize():void

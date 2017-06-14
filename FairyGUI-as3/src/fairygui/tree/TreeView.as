@@ -17,6 +17,7 @@ package fairygui.tree
 		public function TreeView(list:GList)
 		{
 			_list = list;
+			_list.removeChildrenToPool();
 			_list.addEventListener(ItemEvent.CLICK, __clickItem);
 			
 			_root = new TreeNode(true);
@@ -333,6 +334,8 @@ package fairygui.tree
 		
 		private function __clickExpandButton(evt:Event):void
 		{
+			evt.stopPropagation();
+			
 			var expandButton:GButton = GButton(evt.currentTarget);
 			var node:TreeNode = TreeNode(expandButton.parent.data);
 			if(_list.scrollPane!=null)

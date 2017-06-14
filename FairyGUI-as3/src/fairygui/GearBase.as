@@ -132,13 +132,12 @@ package fairygui
 				if(str)
 					pages = str.split(",");
 				
-				str = xml.@values;
-				if(str)
-					values = str.split("|");
-				
-				if(pages && values)
+				if(pages)
 				{
-					for(var i:int=0;i<values.length;i++)
+					str = xml.@values;
+					values = str.split("|");
+					
+					for(var i:int=0;i<pages.length;i++)
 						addStatus(pages[i], values[i]);
 				}
 				
