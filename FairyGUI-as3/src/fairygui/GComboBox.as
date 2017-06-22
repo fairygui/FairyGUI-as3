@@ -29,6 +29,7 @@ package fairygui
 		private var _selectedIndex:int;
 		private var _buttonController:Controller;
 		private var _over:Boolean;
+		private var _selectionController:Controller;
 		
 		public function GComboBox()
 		{
@@ -192,6 +193,7 @@ package fairygui
 				if (_icons != null)
 					this.icon = null;
 			}
+			updateSelectionController();
 		}
 		
 		public function get value():String
@@ -205,6 +207,16 @@ package fairygui
 			if(index==-1 && val==null)
 				index = _values.indexOf("");
 			this.selectedIndex = index;
+		}
+		
+		public function get selectionController():Controller
+		{
+			return _selectionController;
+		}
+		
+		public function set selectionController(value:Controller):void
+		{
+			_selectionController = value;
 		}
 		
 		protected function setState(val:String):void
@@ -232,6 +244,26 @@ package fairygui
 			}
 			else
 				super.handleGrayedChanged();
+		}
+		
+		override public function handleControllerChanged(c:Controller):void
+		{
+			super.handleControllerChanged(c);
+			
+			if (_selectionController == c)
+				this.selectedIndex = c.selectedIndex;
+		}
+		
+		private function updateSelectionController():void
+		{
+			if (_selectionController != null && !_selectionController.changing
+				&& _selectedIndex < _selectionController.pageCount)
+			{
+				var c:Controller = _selectionController;
+				_selectionController = null;
+				c.selectedIndex = _selectedIndex;
+				_selectionController = c;
+			}
 		}
 		
 		override public function dispose():void
@@ -353,7 +385,11 @@ package fairygui
 					else if(str=="down")
 						_popupDownward = true;
 				}
-			}				
+				
+				str = xml.@selectionController;
+				if (str)
+					_selectionController = parent.getController(str);
+			}
 		}
 		
 		protected function showDropdown():void

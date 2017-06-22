@@ -74,6 +74,8 @@ package fairygui
 		private var _aniFlag:int;
 		private var _scrollBarVisible:Boolean;
 		
+		private var _pageController:Controller;
+		
 		private var _hzScrollBar:GScrollBar;
 		private var _vtScrollBar:GScrollBar;
 		
@@ -332,8 +334,7 @@ package fairygui
 			if(value!=_xPos)
 			{
 				_xPos = value;
-				_xPerc = _xOverlap==0?0:_xPos/_xOverlap;
-				
+				_xPerc = _xOverlap==0?0:_xPos/_xOverlap;				
 				posChanged(ani);
 			}
 		}
@@ -356,8 +357,7 @@ package fairygui
 			if(value!=_yPos)
 			{
 				_yPos = value;
-				_yPerc = _yOverlap==0?0:_yPos/_yOverlap;
-				
+				_yPerc = _yOverlap==0?0:_yPos/_yOverlap;				
 				posChanged(ani);
 			}
 		}
@@ -374,7 +374,14 @@ package fairygui
 		
 		public function get currentPageX():int
 		{
-			return _pageMode ? Math.floor(this.posX / _pageSizeH):0;
+			if (!_pageMode)
+				return 0;
+			
+			var page:int = Math.floor(_xPos / _pageSizeH);
+			if (_xPos - page * _pageSizeH > _pageSizeH * 0.5)
+				page++;
+			
+			return page;
 		}
 		
 		public function set currentPageX(value:int):void
@@ -385,13 +392,30 @@ package fairygui
 		
 		public function get currentPageY():int
 		{
-			return _pageMode ? Math.floor(this.posY / _pageSizeV):0;
+			if (!_pageMode)
+				return 0;
+			
+			var page:int = Math.floor(_yPos / _pageSizeV);
+			if (_yPos - page * _pageSizeV > _pageSizeV * 0.5)
+				page++;
+			
+			return page;
 		}
 		
 		public function set currentPageY(value:int):void
 		{
 			if (_pageMode && _yOverlap>0)
 				this.setPosY(value * _pageSizeV, false);
+		}
+		
+		public function get pageController():Controller
+		{
+			return _pageController;
+		}
+		
+		public function set pageController(value:Controller):void
+		{
+			_pageController = value;
 		}
 		
 		public function get scrollingPosX():Number
@@ -595,6 +619,36 @@ package fairygui
 		{
 			setSize(_owner.width, _owner.height);
 			posChanged(false);
+		}
+		
+		internal function handleControllerChanged(c:Controller):void
+		{
+			if (_pageController == c)
+			{
+				if (_scrollType == ScrollType.Horizontal)
+					this.currentPageX = c.selectedIndex;
+				else
+					this.currentPageY = c.selectedIndex;
+			}
+		}
+		
+		private function updatePageController():void
+		{
+			if (_pageController != null && !_pageController.changing)
+			{
+				var index:int;
+				if (_scrollType == ScrollType.Horizontal)
+					index = this.currentPageX;
+				else
+					index = this.currentPageY;
+				if (index < _pageController.pageCount)
+				{
+					var c:Controller = _pageController;
+					_pageController = null; //防止HandleControllerChanged的调用
+					c.selectedIndex = index;
+					_pageController = c;
+				}
+			}
 		}
 		
 		internal function adjustMaskContainer():void
@@ -852,6 +906,9 @@ package fairygui
 				_vtScrollBar.scrollPerc = _yPerc;
 			if (_hzScrollBar != null)
 				_hzScrollBar.scrollPerc = _xPerc;
+			
+			if(_pageMode)
+				updatePageController();
 		}
 		
 		private function validateHolderPos():void
@@ -1042,6 +1099,9 @@ package fairygui
 				if(_hzScrollBar)
 					_hzScrollBar.scrollPerc = _xPerc;
 			}
+			
+			if(_pageMode)
+				updatePageController();
 		}
 		
 		private function syncPos():void
@@ -1057,6 +1117,9 @@ package fairygui
 				_yPos = ToolSet.clamp(-_container.y, 0, _yOverlap);
 				_yPerc = _yPos / _yOverlap;
 			}
+			
+			if(_pageMode)
+				updatePageController();
 		}
 		
 		private function syncScrollBar(end:Boolean=false):void

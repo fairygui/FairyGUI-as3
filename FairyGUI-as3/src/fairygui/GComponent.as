@@ -23,6 +23,8 @@ package fairygui
 		protected var _margin:Margin;
 		protected var _trackBounds:Boolean;
 		protected var _boundsChanged:Boolean;
+		protected var _childrenRenderOrder:int;
+		protected var _apexIndex:int;
 		
 		internal var _buildingDisplayList:Boolean;
 		internal var _children:Vector.<GObject>;
@@ -32,9 +34,6 @@ package fairygui
 		internal var _container:Sprite;
 		internal var _scrollPane:ScrollPane;
 		internal var _alignOffset:Point;
-		
-		private var _childrenRenderOrder:int;
-		private var _apexIndex:int;
 		
 		public function GComponent():void
 		{
@@ -1258,12 +1257,21 @@ package fairygui
 		{
 			
 		}
-		
+
 		override public function setup_afterAdd(xml:XML):void
 		{
 			super.setup_afterAdd(xml);
 			
-			var str:String = xml.@controller;
+			var str:String;
+			
+			if(scrollPane)
+			{
+				str = xml.@pageController;
+				if(str)
+					scrollPane.pageController = parent.getController(str);
+			}
+			
+			str = xml.@controller;
 			if(str)
 			{
 				var arr:Array = str.split(",");
