@@ -1548,6 +1548,15 @@ package fairygui
 				devt.copyFrom(evt, cc);
 
 				this.dispatchEvent(devt);
+				if(devt.isPropagationStop)
+				{
+					var p:GObject = this.parent;
+					while(p!=null)
+					{
+						p._buttonStatus = 0;
+						p = p.parent;
+					}
+				}
 			}
 			
 			_buttonStatus = 0;

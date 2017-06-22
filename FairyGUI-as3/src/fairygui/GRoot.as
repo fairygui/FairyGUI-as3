@@ -331,12 +331,12 @@ package fairygui
 			popup.setXY(int(xx),int(yy));
 		}
 		
-		public function togglePopup(popup:GObject, target:GObject=null, downward:Object=null):void
+		public function togglePopup(popup:GObject, target:GObject=null, downward:Object=null, closeUntilMouseUp:Boolean=false):void
 		{
 			if(_justClosedPopups.indexOf(popup)!=-1)
 				return;
 			
-			showPopup(popup, target, downward);
+			showPopup(popup, target, downward, closeUntilMouseUp);
 		}
 		
 		public function hidePopup(popup:GObject=null):void
@@ -677,6 +677,7 @@ package fairygui
 								_popupStack.splice(i, 1);
 								_popupCloseFlags.splice(i, 1);
 								closePopup(popup);
+								_justClosedPopups.push(popup);
 							}
 							handled = true;
 							break;
@@ -697,6 +698,7 @@ package fairygui
 						_popupStack.splice(i, 1);
 						_popupCloseFlags.splice(i, 1);						
 						closePopup(popup);
+						_justClosedPopups.push(popup);
 					}
 				}
 			}

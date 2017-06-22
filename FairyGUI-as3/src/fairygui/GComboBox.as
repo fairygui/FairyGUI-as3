@@ -201,7 +201,10 @@ package fairygui
 		
 		public function set value(val:String):void
 		{
-			this.selectedIndex = _values.indexOf(val);
+			var index:int = _values.indexOf(val);
+			if(index==-1 && val==null)
+				index = _values.indexOf("");
+			this.selectedIndex = index;
 		}
 		
 		protected function setState(val:String):void
