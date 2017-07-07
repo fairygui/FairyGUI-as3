@@ -91,12 +91,12 @@ package fairygui
 		
 		override public function constructFromResource():void
 		{
-			_sourceWidth = packageItem.width;
-			_sourceHeight = packageItem.height;
-			_initWidth = _sourceWidth;
-			_initHeight = _sourceHeight;
+			sourceWidth = packageItem.width;
+			sourceHeight = packageItem.height;
+			initWidth = sourceWidth;
+			initHeight = sourceHeight;
 			
-			setSize(_sourceWidth, _sourceHeight);
+			setSize(sourceWidth, sourceHeight);
 			
 			if(packageItem.loaded)
 				__imageLoaded(packageItem);

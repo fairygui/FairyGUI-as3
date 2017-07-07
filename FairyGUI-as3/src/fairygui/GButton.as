@@ -583,21 +583,26 @@ package fairygui
 				}
 			}
 			
-			if(!_changeStateOnClick)
-				return;
-			
 			if(_mode==ButtonMode.Check)
 			{
-				this.selected = !_selected;
-				dispatchEvent(new StateChangeEvent(StateChangeEvent.CHANGED));
+				if(_changeStateOnClick)
+				{
+					this.selected = !_selected;
+					dispatchEvent(new StateChangeEvent(StateChangeEvent.CHANGED));
+				}
 			}
 			else if(_mode==ButtonMode.Radio)
 			{
-				if(!_selected)
+				if(_changeStateOnClick && !_selected)
 				{
 					this.selected = true;
 					dispatchEvent(new StateChangeEvent(StateChangeEvent.CHANGED));
 				}
+			}
+			else
+			{
+				if(_relatedController)
+					_relatedController.selectedPageId = _pageOption.id;
 			}
 		}
 	}

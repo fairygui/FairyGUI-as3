@@ -163,13 +163,14 @@ package fairygui
 		{
 			if (index >= 0 && index < numChildren)
 			{
-				var child:GObject = _children[index];				
+				var child:GObject = _children[index];
 				child.parent = null;
 				
 				if(child.sortingOrder!=0)
 					_sortingChildCount--;
 				
 				_children.splice(index, 1);
+				child.group = null;
 				if(child.inContainer)
 				{
 					_container.removeChild(child.displayObject);
@@ -1096,12 +1097,12 @@ package fairygui
 			
 			str = xml.@size;
 			arr = str.split(",");
-			_sourceWidth = int(arr[0]);
-			_sourceHeight = int(arr[1]);
-			_initWidth = _sourceWidth;
-			_initHeight = _sourceHeight;
+			sourceWidth = int(arr[0]);
+			sourceHeight = int(arr[1]);
+			initWidth = sourceWidth;
+			initHeight = sourceHeight;
 			
-			setSize(_sourceWidth, _sourceHeight);
+			setSize(sourceWidth, sourceHeight);
 			
 			str = xml.@pivot;
 			if(str)
@@ -1109,6 +1110,16 @@ package fairygui
 				arr = str.split(",");
 				str = xml.@anchor;
 				internalSetPivot(parseFloat(arr[0]), parseFloat(arr[1]), str=="true");
+			}
+			
+			str = xml.@restrictSize;
+			if(str)
+			{
+				arr = str.split(",");
+				minWidth = parseInt(arr[0]);
+				maxWidth = parseInt(arr[1]);
+				minHeight = parseInt(arr[2]);
+				maxHeight= parseInt(arr[3]);
 			}
 			
 			str = xml.@opaque;

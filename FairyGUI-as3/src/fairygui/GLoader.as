@@ -507,52 +507,53 @@ package fairygui
 					_contentHeight = 30;
 				this.setSize(_contentWidth, _contentHeight);
 				_updatingLayout = false;
+				
+				if(_width==_contentWidth && _height==_contentHeight) //可能由于大小限制
+					return;
+			}
+				
+			var sx:Number = 1, sy:Number = 1;
+			if(_fill!=LoaderFillType.None)
+			{
+				sx = _width/_contentSourceWidth;
+				sy = _height/_contentSourceHeight;
+				
+				if(sx!=1 || sy!=1)
+				{
+					if (_fill == LoaderFillType.ScaleMatchHeight)
+						sx = sy;
+					else if (_fill == LoaderFillType.ScaleMatchWidth)
+						sy = sx;
+					else if (_fill == LoaderFillType.Scale)
+					{
+						if (sx > sy)
+							sx = sy;
+						else
+							sy = sx;
+					}
+					_contentWidth = _contentSourceWidth * sx;
+					_contentHeight = _contentSourceHeight * sy;
+				}
+			}	
+			
+			if(_contentItem && _contentItem.type==PackageItemType.Image)
+			{
+				resizeImage();
 			}
 			else
-			{		
-				var sx:Number = 1, sy:Number = 1;
-				if(_fill!=LoaderFillType.None)
-				{
-					sx = this.width/_contentSourceWidth;
-					sy = this.height/_contentSourceHeight;
-					
-					if(sx!=1 || sy!=1)
-					{
-						if (_fill == LoaderFillType.ScaleMatchHeight)
-							sx = sy;
-						else if (_fill == LoaderFillType.ScaleMatchWidth)
-							sy = sx;
-						else if (_fill == LoaderFillType.Scale)
-						{
-							if (sx > sy)
-								sx = sy;
-							else
-								sy = sx;
-						}
-						_contentWidth = _contentSourceWidth * sx;
-						_contentHeight = _contentSourceHeight * sy;
-					}
-				}	
-				
-				if(_contentItem && _contentItem.type==PackageItemType.Image)
-				{
-					resizeImage();
-				}
-				else
-				{
-					_content.scaleX =  sx;
-					_content.scaleY =  sy;
-				}
-				
-				if(_align==AlignType.Center)
-					_content.x = int((this.width-_contentWidth)/2);
-				else if(_align==AlignType.Right)
-					_content.x = this.width-_contentWidth;
-				if(_verticalAlign==VertAlignType.Middle)
-					_content.y = int((this.height-_contentHeight)/2);
-				else if(_verticalAlign==VertAlignType.Bottom)
-					_content.y = this.height-_contentHeight;
+			{
+				_content.scaleX =  sx;
+				_content.scaleY =  sy;
 			}
+			
+			if(_align==AlignType.Center)
+				_content.x = int((this.width-_contentWidth)/2);
+			else if(_align==AlignType.Right)
+				_content.x = this.width-_contentWidth;
+			if(_verticalAlign==VertAlignType.Middle)
+				_content.y = int((this.height-_contentHeight)/2);
+			else if(_verticalAlign==VertAlignType.Bottom)
+				_content.y = this.height-_contentHeight;
 		}
 		
 		private function clearContent():void 

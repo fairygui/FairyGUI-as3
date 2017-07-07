@@ -172,7 +172,6 @@ package fairygui
 		
 		private function applyOnXYChanged(info:RelationDef, dx:Number, dy:Number):void
 		{
-			var tmp:Number;
 			switch (info.type)
 			{
 				case RelationType.Left_Left:
@@ -201,9 +200,8 @@ package fairygui
 				
 				case RelationType.LeftExt_Left:
 				case RelationType.LeftExt_Right:
-					tmp = _owner.x;
 					_owner.x += dx;
-					_owner.width = _owner._rawWidth - (_owner.x - tmp);
+					_owner.width = _owner._rawWidth - dx;
 					break;
 				
 				case RelationType.RightExt_Left:
@@ -213,9 +211,8 @@ package fairygui
 				
 				case RelationType.TopExt_Top:
 				case RelationType.TopExt_Bottom:
-					tmp = _owner.y;
 					_owner.y += dy;
-					_owner.height = _owner._rawHeight - (_owner.y - tmp);
+					_owner.height = _owner._rawHeight - dy;
 					break;
 				
 				case RelationType.BottomExt_Top:
@@ -247,45 +244,45 @@ package fairygui
 					{
 						v = _owner.x - targetX;
 						if (info.percent)
-							v = v / _targetWidth * _target._rawWidth;
+							v = v / _targetWidth * _target._width;
 						_owner.x = targetX + v;
 					}
 					break;
 				case RelationType.Left_Center:
 					v = _owner.x - (targetX + _targetWidth / 2);
 					if (info.percent)
-						v = v / _targetWidth * _target._rawWidth;
-					_owner.x = targetX + _target._rawWidth / 2 + v;
+						v = v / _targetWidth * _target._width;
+					_owner.x = targetX + _target._width / 2 + v;
 					break;
 				case RelationType.Left_Right:
 					v = _owner.x - (targetX + _targetWidth);
 					if (info.percent)
-						v = v / _targetWidth * _target._rawWidth;
-					_owner.x = targetX + _target._rawWidth + v;
+						v = v / _targetWidth * _target._width;
+					_owner.x = targetX + _target._width + v;
 					break;
 				case RelationType.Center_Center:
 					v = _owner.x + _owner._rawWidth / 2 - (targetX + _targetWidth / 2);
 					if (info.percent)
-						v = v / _targetWidth * _target._rawWidth;
-					_owner.x = targetX + _target._rawWidth / 2 + v - _owner._rawWidth / 2;
+						v = v / _targetWidth * _target._width;
+					_owner.x = targetX + _target._width / 2 + v - _owner._rawWidth / 2;
 					break;
 				case RelationType.Right_Left:
 					v = _owner.x + _owner._rawWidth - targetX;
 					if (info.percent)
-						v = v / _targetWidth * _target._rawWidth;
+						v = v / _targetWidth * _target._width;
 					_owner.x = targetX + v - _owner._rawWidth;
 					break;
 				case RelationType.Right_Center:
 					v = _owner.x + _owner._rawWidth - (targetX + _targetWidth / 2);
 					if (info.percent)
-						v = v / _targetWidth * _target._rawWidth;
-					_owner.x = targetX + _target._rawWidth / 2 + v - _owner._rawWidth;
+						v = v / _targetWidth * _target._width;
+					_owner.x = targetX + _target._width / 2 + v - _owner._rawWidth;
 					break;
 				case RelationType.Right_Right:
 					v = _owner.x + _owner._rawWidth - (targetX + _targetWidth);
 					if (info.percent)
-						v = v / _targetWidth * _target._rawWidth;
-					_owner.x = targetX + _target._rawWidth + v - _owner._rawWidth;
+						v = v / _targetWidth * _target._width;
+					_owner.x = targetX + _target._width + v - _owner._rawWidth;
 					break;
 				
 				case RelationType.Top_Top:
@@ -293,70 +290,70 @@ package fairygui
 					{
 						v = _owner.y - targetY;
 						if (info.percent)
-							v = v / _targetHeight * _target._rawHeight;
+							v = v / _targetHeight * _target._height;
 						_owner.y = targetY + v;
 					}
 					break;
 				case RelationType.Top_Middle:
 					v = _owner.y - (targetY + _targetHeight / 2);
 					if (info.percent)
-						v = v / _targetHeight * _target._rawHeight;
-					_owner.y = targetY + _target._rawHeight / 2 + v;
+						v = v / _targetHeight * _target._height;
+					_owner.y = targetY + _target._height / 2 + v;
 					break;
 				case RelationType.Top_Bottom:
 					v = _owner.y - (targetY + _targetHeight);
 					if (info.percent)
-						v = v / _targetHeight * _target._rawHeight;
-					_owner.y = targetY + _target._rawHeight + v;
+						v = v / _targetHeight * _target._height;
+					_owner.y = targetY + _target._height + v;
 					break;
 				case RelationType.Middle_Middle:
 					v = _owner.y + _owner._rawHeight / 2 - (targetY + _targetHeight / 2);
 					if (info.percent)
-						v = v / _targetHeight * _target._rawHeight;
-					_owner.y = targetY + _target._rawHeight / 2 + v - _owner._rawHeight / 2;
+						v = v / _targetHeight * _target._height;
+					_owner.y = targetY + _target._height / 2 + v - _owner._rawHeight / 2;
 					break;
 				case RelationType.Bottom_Top:
 					v = _owner.y + _owner._rawHeight - targetY;
 					if (info.percent)
-						v = v / _targetHeight * _target._rawHeight;
+						v = v / _targetHeight * _target._height;
 					_owner.y = targetY + v - _owner._rawHeight;
 					break;
 				case RelationType.Bottom_Middle:
 					v = _owner.y + _owner._rawHeight - (targetY + _targetHeight / 2);
 					if (info.percent)
-						v = v / _targetHeight * _target._rawHeight;
-					_owner.y = targetY + _target._rawHeight / 2 + v - _owner._rawHeight;
+						v = v / _targetHeight * _target._height;
+					_owner.y = targetY + _target._height / 2 + v - _owner._rawHeight;
 					break;
 				case RelationType.Bottom_Bottom:
 					v = _owner.y + _owner._rawHeight - (targetY + _targetHeight);
 					if (info.percent)
-						v = v / _targetHeight * _target._rawHeight;
-					_owner.y = targetY + _target._rawHeight + v - _owner._rawHeight;
+						v = v / _targetHeight * _target._height;
+					_owner.y = targetY + _target._height + v - _owner._rawHeight;
 					break;
 				
 				case RelationType.Width:
 					if(_owner._underConstruct && _owner==_target.parent)
-						v = _owner.sourceWidth - _target._initWidth;
+						v = _owner.sourceWidth - _target.initWidth;
 					else
 						v = _owner._rawWidth - _targetWidth;
 					if (info.percent)
-						v = v / _targetWidth * _target._rawWidth;
+						v = v / _targetWidth * _target._width;
 					if(_target==_owner.parent)
-						_owner.setSize(_target._rawWidth + v, _owner._rawHeight, true);
+						_owner.setSize(_target._width + v, _owner._rawHeight, true);
 					else
-						_owner.width = _target._rawWidth + v;
+						_owner.width = _target._width + v;
 					break;
 				case RelationType.Height:
 					if(_owner._underConstruct && _owner==_target.parent)
-						v = _owner.sourceHeight - _target._initHeight;
+						v = _owner.sourceHeight - _target.initHeight;
 					else
 						v = _owner._rawHeight - _targetHeight;
 					if (info.percent)
-						v = v / _targetHeight * _target._rawHeight;
+						v = v / _targetHeight * _target._height;
 					if(_target==_owner.parent)
-						_owner.setSize(_owner._rawWidth, _target._rawHeight + v, true);
+						_owner.setSize(_owner._rawWidth, _target._height + v, true);
 					else
-						_owner.height = _target._rawHeight + v;
+						_owner.height = _target._height + v;
 					break;
 				
 				case RelationType.LeftExt_Left:
@@ -364,52 +361,52 @@ package fairygui
 				case RelationType.LeftExt_Right:
 					v = _owner.x - (targetX + _targetWidth);
 					if (info.percent)
-						v = v / _targetWidth * _target._rawWidth;
+						v = v / _targetWidth * _target._width;
 					tmp = _owner.x;
-					_owner.x = targetX + _target._rawWidth + v;
+					_owner.x = targetX + _target._width + v;
 					_owner.width = _owner._rawWidth-(_owner.x - tmp);
 					break;
 				case RelationType.RightExt_Left:
 					break;
 				case RelationType.RightExt_Right:
 					if(_owner._underConstruct && _owner==_target.parent)
-						v = _owner.sourceWidth - (targetX + _target._initWidth);
+						v = _owner.sourceWidth - (targetX + _target.initWidth);
 					else
 						v = _owner._rawWidth - (targetX + _targetWidth);
 					if (_owner != _target.parent)
 						v += _owner.x;
 					if (info.percent)
-						v = v / _targetWidth * _target._rawWidth;
+						v = v / _targetWidth * _target._width;
 					if (_owner != _target.parent)
-						_owner.width = targetX + _target._rawWidth + v - _owner.x;
+						_owner.width = targetX + _target._width + v - _owner.x;
 					else
-						_owner.width = targetX + _target._rawWidth + v;
+						_owner.width = targetX + _target._width + v;
 					break;
 				case RelationType.TopExt_Top:
 					break;
 				case RelationType.TopExt_Bottom:
 					v = _owner.y - (targetY + _targetHeight);
 					if (info.percent)
-						v = v / _targetHeight * _target._rawHeight;
+						v = v / _targetHeight * _target._height;
 					tmp = _owner.y;
-					_owner.y = targetY + _target._rawHeight + v;
+					_owner.y = targetY + _target._height + v;
 					_owner.height = _owner._rawHeight - (_owner.y - tmp);
 					break;
 				case RelationType.BottomExt_Top:
 					break;
 				case RelationType.BottomExt_Bottom:
 					if(_owner._underConstruct && _owner==_target.parent)
-						v = _owner.sourceHeight - (targetY + _target._initHeight);
+						v = _owner.sourceHeight - (targetY + _target.initHeight);
 					else
 						v = _owner._rawHeight - (targetY + _targetHeight);
 					if (_owner != _target.parent)
 						v += _owner.y;
 					if (info.percent)
-						v = v / _targetHeight * _target._rawHeight;
+						v = v / _targetHeight * _target._height;
 					if (_owner != _target.parent)
-						_owner.height = targetY + _target._rawHeight + v - _owner.y;
+						_owner.height = targetY + _target._height + v - _owner.y;
 					else
-						_owner.height = targetY + _target._rawHeight + v;
+						_owner.height = targetY + _target._height + v;
 					break;
 			}
 		}
@@ -422,8 +419,8 @@ package fairygui
 			target.addSizeDelayChangeCallback(__targetSizeWillChange);
 			_targetX = _target.x;
 			_targetY = _target.y;
-			_targetWidth = _target._rawWidth;
-			_targetHeight = _target._rawHeight;
+			_targetWidth = _target._width;
+			_targetHeight = _target._height;
 		}
 		
 		private function releaseRefTarget(target:GObject):void
@@ -478,8 +475,8 @@ package fairygui
 		{
 			if (_owner.relations.handling!=null)
 			{
-				_targetWidth = _target._rawWidth;
-				_targetHeight = _target._rawHeight;
+				_targetWidth = _target._width;
+				_targetHeight = _target._height;
 				return;
 			}
 			
@@ -493,8 +490,8 @@ package fairygui
 			{
 				applyOnSizeChanged(info);
 			}
-			_targetWidth = _target._rawWidth;
-			_targetHeight = _target._rawHeight;
+			_targetWidth = _target._width;
+			_targetHeight = _target._height;
 			
 			if (ox!=_owner.x || oy!=_owner.y)
 			{

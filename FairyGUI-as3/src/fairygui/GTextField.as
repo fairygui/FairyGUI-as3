@@ -427,8 +427,6 @@ package fairygui
 				_textFormat.color = _color;
 			_textFormat.align = AlignType.toString(_align);
 			_textFormat.leading = _leading-_fontAdjustment;
-			if(_textFormat.leading<0)
-				_textFormat.leading = 0;
 			_textFormat.letterSpacing = _letterSpacing;
 			_textFormat.bold = _bold;
 			_textFormat.underline = _underline;
@@ -490,10 +488,10 @@ package fairygui
 			switchBitmapMode(false);
 			
 			var w:Number, h:Number;
-			w = this.width;
+			w = _width;
 			if(w!=_textField.width)
 				_textField.width = w;
-			h = Math.max(this.height, int(_textFormat.size));
+			h = Math.max(_height, int(_textFormat.size));
 			if(h!=_textField.height)
 				_textField.height = h;
 			if(_ubbEnabled)
@@ -519,18 +517,15 @@ package fairygui
 				w = _textWidth;
 
 			if(_heightAutoSize)
-			{
 				h = _textHeight;
-				if(!_widthAutoSize)
-					_textField.height = _textHeight + _fontAdjustment + 3;
-			}
 			else
-			{
-				h = this.height;
-				if(_textHeight>h)
-					_textHeight = h;
-				_textField.height = _textHeight+_fontAdjustment+3;
-			}
+				h = _height;
+			if(maxHeight>0 && h>maxHeight)
+				h = maxHeight;
+			if(_textHeight>h)
+				_textHeight = h;
+			
+			_textField.height = _textHeight + _fontAdjustment + 3;
 
 			if(updateBounds)
 			{
@@ -724,24 +719,16 @@ package fairygui
 			
 			var w:int, h:int;
 			if(_widthAutoSize)
-			{
-				if(_textWidth==0)
-					w = 0;
-				else
-					w = _textWidth;
-			}
+				w = _textWidth;
 			else
 				w = this.width;
 			
 			if(_heightAutoSize)
-			{
-				if(_textHeight==0)
-					h = 0;
-				else
-					h = _textHeight;
-			}
+				h = _textHeight;
 			else
 				h = this.height;
+			if(maxHeight>0 && h>maxHeight)
+				h = maxHeight;
 			
 			if(updateBounds)
 			{

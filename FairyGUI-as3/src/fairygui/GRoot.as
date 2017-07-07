@@ -272,6 +272,11 @@ package fairygui
 			return null;
 		}
 		
+		public function get modalLayer():GGraph
+		{
+			return _modalLayer;
+		}
+		
 		public function get hasModalWindow():Boolean
 		{
 			return _modalLayer.parent!=null;

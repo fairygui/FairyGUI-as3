@@ -37,10 +37,17 @@ package fairygui
 		public var packageItem:PackageItem;
 		public static var draggingObject:GObject;
 		
+		public var sourceWidth:Number;
+		public var sourceHeight:Number;
+		public var initWidth:Number;
+		public var initHeight:Number;
+		public var minWidth:Number;
+		public var minHeight:Number;
+		public var maxWidth:Number;
+		public var maxHeight:Number;
+		
 		private var _x:Number;
 		private var _y:Number;
-		private var _width:Number;
-		private var _height:Number;
 		private var _alpha:Number;
 		private var _rotation:Number;
 		private var _visible:Boolean;
@@ -73,16 +80,15 @@ package fairygui
 		
 		internal var _parent:GComponent;
 		internal var _dispatcher:SimpleDispatcher;
+		internal var _width:Number;
+		internal var _height:Number;
 		internal var _rawWidth:Number;
 		internal var _rawHeight:Number;
-		internal var _sourceWidth:int;
-		internal var _sourceHeight:int;
-		internal var _initWidth:int;
-		internal var _initHeight:int;
 		internal var _id:String;
 		internal var _name:String;
 		internal var _underConstruct:Boolean;
 		internal var _gearLocked:Boolean;
+		internal var _sizePercentInGroup:Number;
 		
 		internal static var _gInstanceCounter:uint;
 		
@@ -98,6 +104,14 @@ package fairygui
 			_height = 0;
 			_rawWidth = 0;
 			_rawHeight = 0;
+			sourceWidth = 0;
+			sourceHeight = 0;
+			initWidth = 0;
+			initHeight = 0;
+			minWidth = 0;
+			minHeight = 0;
+			maxWidth = 0;
+			maxHeight = 0;
 			_id = "_n" + _gInstanceCounter++;
 			_name = "";
 			_alpha = 1;
@@ -172,6 +186,8 @@ package fairygui
 				if (parent != null && !(parent is GList))
 				{
 					_parent.setBoundsChangedFlag();
+					if (_group != null)
+						_group.setBoundsChangedFlag();
 					_dispatcher.dispatch(this, XY_CHANGED);
 				}
 				
@@ -248,10 +264,14 @@ package fairygui
 			{
 				_rawWidth = wv;
 				_rawHeight = hv;
-				if(wv<0)
-					wv = 0;
-				if(hv<0)
-					hv = 0;
+				if(wv<minWidth)
+					wv = minWidth;
+				if(hv<minHeight)
+					hv = minHeight;
+				if(maxWidth>0 && wv>maxWidth)
+					wv = maxWidth;
+				if(maxHeight>0 && hv>maxHeight)
+					hv = maxHeight;
 				var dWidth:Number = wv-_width;
 				var dHeight:Number = hv-_height;
 				_width = wv;
@@ -270,12 +290,17 @@ package fairygui
 						applyPivot();
 				}
 				
+				if (this is GGroup)
+					GGroup(this).resizeChildren(dWidth, dHeight);
+				
 				updateGear(2);
 				
 				if(_parent)
 				{
 					_parent.setBoundsChangedFlag();					
 					_relations.onOwnerSizeChanged(dWidth, dHeight);
+					if (_group != null)
+						_group.setBoundsChangedFlag(true);
 				}
 				
 				_dispatcher.dispatch(this, SIZE_CHANGED);
@@ -284,26 +309,6 @@ package fairygui
 		
 		public function ensureSizeCorrect():void
 		{
-		}
-		
-		final public function get sourceHeight():int
-		{
-			return _sourceHeight;
-		}
-
-		final public function get sourceWidth():int
-		{
-			return _sourceWidth;
-		}
-		
-		final public function get initHeight():int
-		{
-			return _initHeight;
-		}
-		
-		final public function get initWidth():int
-		{
-			return _initWidth;
 		}
 
 		final public function get actualWidth():Number
@@ -679,7 +684,14 @@ package fairygui
 		
 		final public function set group(value:GGroup):void
 		{
-			_group = value;
+			if (_group != value)
+			{
+				if (_group != null)
+					_group.setBoundsChangedFlag(true);
+				_group = value;
+				if (_group != null)
+					_group.setBoundsChangedFlag(true);
+			}
 		}
 		
 		final public function get group():GGroup
@@ -1221,10 +1233,10 @@ package fairygui
 		
 		protected function handleSizeChanged():void
 		{
-			if(_displayObject!=null && _sizeImplType==1 && _sourceWidth!=0 && _sourceHeight!=0)
+			if(_displayObject!=null && _sizeImplType==1 && sourceWidth!=0 && sourceHeight!=0)
 			{
-				_displayObject.scaleX = _width/_sourceWidth*_scaleX;
-				_displayObject.scaleY = _height/_sourceHeight*_scaleY;
+				_displayObject.scaleX = _width/sourceWidth*_scaleX;
+				_displayObject.scaleY = _height/sourceHeight*_scaleY;
 			}
 		}
 		
@@ -1232,15 +1244,15 @@ package fairygui
 		{
 			if(_displayObject!=null)
 			{
-				if( _sizeImplType==0 || _sourceWidth==0 || _sourceHeight==0)
+				if( _sizeImplType==0 || sourceWidth==0 || sourceHeight==0)
 				{
 					_displayObject.scaleX = _scaleX;
 					_displayObject.scaleY = _scaleY;
 				}
 				else
 				{
-					_displayObject.scaleX = _width/_sourceWidth*_scaleX;
-					_displayObject.scaleY = _height/_sourceHeight*_scaleY;
+					_displayObject.scaleX = _width/sourceWidth*_scaleX;
+					_displayObject.scaleY = _height/sourceHeight*_scaleY;
 				}
 			}
 		}
@@ -1290,9 +1302,19 @@ package fairygui
 			if(str)
 			{
 				arr = str.split(",");
-				_initWidth = parseInt(arr[0]);
-				_initHeight = parseInt(arr[1]);
-				setSize(_initWidth,_initHeight, true);
+				initWidth = parseInt(arr[0]);
+				initHeight = parseInt(arr[1]);
+				setSize(initWidth,initHeight, true);
+			}
+			
+			str = xml.@restrictSize;
+			if(str)
+			{
+				arr = str.split(",");
+				minWidth = parseInt(arr[0]);
+				maxWidth = parseInt(arr[1]);
+				minHeight = parseInt(arr[2]);
+				maxHeight= parseInt(arr[3]);
 			}
 			
 			str = xml.@scale;
@@ -1314,29 +1336,9 @@ package fairygui
 			if(str)
 			{
 				arr = str.split(",");
-				var n1:Number = parseFloat(arr[0]);
-				var n2:Number = parseFloat(arr[1])
-				//旧版本的兼容性处理
-				if(n1>2)
-				{
-					if(_sourceWidth!=0)
-						n1 = n1/_sourceWidth;
-					else
-						n1 = 0;
-				}
-				
-				if(n2>2)
-				{
-					if(_sourceHeight!=0)
-						n2 = n2/_sourceHeight;
-					else
-						n2 = 0;
-				}
 				str = xml.@anchor;
-				this.setPivot(n1, n2, str=="true");
+				this.setPivot(parseFloat(arr[0]), parseFloat(arr[1]), str=="true");
 			}
-			else
-				this.setPivot(0,0,false);
 			
 			if(xml.@touchable=="false")
 				this.touchable = false;
@@ -1363,7 +1365,7 @@ package fairygui
 						cm.adjustContrast(parseFloat(arr[1]));
 						cm.adjustSaturation(parseFloat(arr[2]));
 						cm.adjustHue(parseFloat(arr[3]));
-						var cf:ColorMatrixFilter = new ColorMatrixFilter(cm);						
+						var cf:ColorMatrixFilter = new ColorMatrixFilter(cm);
 						this.filters = [cf];
 						break;
 				}
