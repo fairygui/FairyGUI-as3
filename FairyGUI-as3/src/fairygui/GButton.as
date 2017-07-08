@@ -33,6 +33,7 @@ package fairygui
 		private var _downEffect:int;
 		private var _downEffectValue:Number;
 		private var _useHandCursor:Boolean;
+		private var _downScaled:Boolean;
 		
 		private var _over:Boolean;
 		
@@ -348,9 +349,21 @@ package fairygui
 			else if(_downEffect==2)				
 			{
 				if(val==DOWN || val==SELECTED_OVER || val==SELECTED_DISABLED)
-					setScale(_downEffectValue, _downEffectValue);
+				{
+					if(!_downScaled)
+					{
+						setScale(this.scaleX*_downEffectValue, this.scaleY*_downEffectValue);
+						_downScaled = true;
+					}
+				}
 				else
-					setScale(1, 1);
+				{
+					if(_downScaled)
+					{
+						setScale(this.scaleX/_downEffectValue, this.scaleY/_downEffectValue);
+						_downScaled = false;
+					}
+				}
 			}
 		}
 		
