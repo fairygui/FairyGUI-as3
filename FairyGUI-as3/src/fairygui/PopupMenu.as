@@ -9,6 +9,9 @@ package fairygui
 		protected var _contentPane:GComponent;
 		protected var _list:GList;
 		
+		public var visibleItemCount:int = int.MAX_VALUE;
+		public var hideOnClickItem:Boolean = true;
+		
 		public function PopupMenu(resourceURL:String=null)
 		{
 			if(!resourceURL)
@@ -171,6 +174,12 @@ package fairygui
 			var r:GRoot = target!=null?target.root:GRoot.inst;
 			r.showPopup(this.contentPane, (target is GRoot)?null:target, downward);
 		}
+		
+		public function hide():void
+		{
+			if(contentPane.parent)
+				GRoot(contentPane.parent).hidePopup(contentPane);
+		}
 
 		private function __clickItem(evt:ItemEvent):void
 		{
@@ -193,8 +202,8 @@ package fairygui
 					c.selectedIndex = 1;
 			}
 			
-			var r:GRoot = GRoot(_contentPane.parent);
-			r.hidePopup(this.contentPane);
+			if(hideOnClickItem)
+				hide();
 			if(item.data!=null)
 			{
 				if(item.data.length==1)
@@ -207,7 +216,7 @@ package fairygui
 		private function __addedToStage(evt:Event):void
 		{
 			_list.selectedIndex = -1;
-			_list.resizeToFit(int.MAX_VALUE, 10);
+			_list.resizeToFit(visibleItemCount, 10);
 		}
 	}
 }
