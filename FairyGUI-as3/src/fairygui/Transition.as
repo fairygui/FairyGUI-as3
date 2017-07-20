@@ -82,15 +82,17 @@ package fairygui
 			_play(onComplete, onCompleteParam, 1, delay, true);
 		}
 		
+		
+		public function changeRepeat(value:int):void
+		{
+			_totalTimes = value;
+		}
+		
 		private function _play(onComplete:Function = null, onCompleteParam:Object = null,
-							   times:int = 1, delay:Number = 0, reversed:Boolean = false):void
+							times:int = 1, delay:Number = 0, reversed:Boolean = false):void
 		{
 			stop();
 			
-			if (times < 0)
-				times = int.MAX_VALUE;
-			else if(times==0)
-				times = 1;
 			_totalTimes = times;
 			_reversed = reversed;
 			internalPlay(delay);
@@ -819,7 +821,7 @@ package fairygui
 						if (value.i == 0)
 							trans.stop(false, true);
 						else if (trans.playing)
-							trans._totalTimes = value.i==-1?int.MAX_VALUE:value.i;
+							trans._totalTimes = value.i;
 						else
 						{
 							item.completed = false;
