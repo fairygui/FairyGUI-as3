@@ -282,14 +282,6 @@ package fairygui
 		
 		override public function addChildAt(child:GObject, index:int):GObject
 		{
-			if(_autoResizeItem)
-			{
-				if(_layout==ListLayoutType.SingleColumn)
-					child.width = this.viewWidth;
-				else if(_layout==ListLayoutType.SingleRow)
-					child.height = this.viewHeight;
-			}
-			
 			super.addChildAt(child, index);
 			
 			if(child is GButton)
