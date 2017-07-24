@@ -19,7 +19,7 @@ package fairygui
 		
 		override protected function init():void
 		{
-			_default = new GearLookValue(_owner.alpha, _owner.rotation, _owner.grayed);
+			_default = new GearLookValue(_owner.alpha, _owner.rotation, _owner.grayed,_owner.touchable);
 			_storage = {};
 		}
 		
@@ -40,6 +40,7 @@ package fairygui
 			gv.alpha = parseFloat(arr[0]);
 			gv.rotation = parseInt(arr[1]);
 			gv.grayed = arr[2]=="1"?true:false;
+			gv.touchable = arr[3]!="1"?true:false;
 		}
 		
 		override public function apply():void
@@ -52,6 +53,7 @@ package fairygui
 			{
 				_owner._gearLocked = true;
 				_owner.grayed = gv.grayed;
+				_owner.touchable = gv.touchable;
 				_owner._gearLocked = false;
 				
 				var a:Boolean;
@@ -110,6 +112,7 @@ package fairygui
 				_owner.alpha = gv.alpha;
 				_owner.rotation = gv.rotation;
 				_owner.grayed = gv.grayed;
+				_owner.touchable = gv.touchable;
 				_owner._gearLocked = false;
 			}
 		}
@@ -146,6 +149,7 @@ package fairygui
 			gv.alpha = _owner.alpha;
 			gv.rotation = _owner.rotation;
 			gv.grayed = _owner.grayed;
+			gv.touchable = _owner.touchable;
 		}
 	}
 }
@@ -155,11 +159,14 @@ class GearLookValue
 	public var alpha:Number;
 	public var rotation:Number;
 	public var grayed:Boolean;
+	public var touchable:Boolean;
 	
-	public function GearLookValue(alpha:Number=0, rotation:Number=0, grayed:Boolean=false)
+	public function GearLookValue(alpha:Number=0, rotation:Number=0, 
+								  grayed:Boolean=false, touchable:Boolean=true)
 	{
 		this.alpha = alpha;
 		this.rotation = rotation;
 		this.grayed = grayed;
+		this.touchable = touchable;
 	}
 }
