@@ -1,13 +1,20 @@
 package fairygui
 {
 	import flash.events.Event;
+	import flash.events.MouseEvent;
+	import flash.geom.Point;
+	import flash.ui.Mouse;
 	
 	import fairygui.event.ItemEvent;
+	import fairygui.utils.GTimers;
 
 	public class PopupMenu
 	{
 		protected var _contentPane:GComponent;
 		protected var _list:GList;
+		protected var _expandingItem:GObject;
+		
+		private var _parentMenu:PopupMenu;
 		
 		public var visibleItemCount:int = int.MAX_VALUE;
 		public var hideOnClickItem:Boolean = true;
@@ -23,6 +30,7 @@ package fairygui
 			
 			_contentPane = GComponent(UIPackage.createObjectFromURL(resourceURL));
 			_contentPane.addEventListener(Event.ADDED_TO_STAGE, __addedToStage);
+			_contentPane.addEventListener(Event.REMOVED_FROM_STAGE, __removeFromStage);
 			
 			_list = GList(_contentPane.getChild("list"));
 			_list.removeChildrenToPool();
@@ -39,7 +47,7 @@ package fairygui
 			_contentPane.dispose();
 		}
 		
-		public function addItem(caption:String, callback:Function=null):GButton
+		public function addItem(caption:String, callback:*=null):GButton
 		{
 			var item:GButton = _list.addItemFromPool().asButton;
 			item.title = caption;
@@ -49,10 +57,15 @@ package fairygui
 			var c:Controller = item.getController("checked");
 			if(c!=null)
 				c.selectedIndex = 0;
+			if(Mouse.supportsCursor)
+			{
+				item.addEventListener(MouseEvent.ROLL_OVER, __rollOver);
+				item.addEventListener(MouseEvent.ROLL_OUT, __rollOut);
+			}
 			return item;
 		}
 		
-		public function addItemAt(caption:String, index:int, callback:Function=null):GButton
+		public function addItemAt(caption:String, index:int, callback:*=null):GButton
 		{
 			var item:GButton = _list.getFromPool().asButton;
 			_list.addChildAt(item, index);
@@ -63,6 +76,11 @@ package fairygui
 			var c:Controller = item.getController("checked");
 			if(c!=null)
 				c.selectedIndex = 0;
+			if(Mouse.supportsCursor)
+			{
+				item.addEventListener(MouseEvent.ROLL_OVER, __rollOver);
+				item.addEventListener(MouseEvent.ROLL_OUT, __rollOut);
+			}
 			return item;
 		}
 		
@@ -71,7 +89,12 @@ package fairygui
 			if(UIConfig.popupMenu_seperator==null)
 				throw new Error("UIConfig.popupMenu_seperator not defined");
 			
-			list.addItemFromPool(UIConfig.popupMenu_seperator);
+			var item:GObject = list.addItemFromPool(UIConfig.popupMenu_seperator);
+			if(Mouse.supportsCursor)
+			{
+				item.addEventListener(MouseEvent.ROLL_OVER, __rollOver);
+				item.addEventListener(MouseEvent.ROLL_OUT, __rollOut);
+			}
 		}
 		
 		public function getItemName(index:int):String
@@ -169,16 +192,39 @@ package fairygui
 			return _list;
 		}
 		
-		public function show(target:GObject=null, downward:Object=null):void
+		public function show(target:GObject=null, downward:Object=null, parentMenu:PopupMenu=null):void
 		{
 			var r:GRoot = target!=null?target.root:GRoot.inst;
 			r.showPopup(this.contentPane, (target is GRoot)?null:target, downward);
+			_parentMenu = parentMenu;
 		}
 		
 		public function hide():void
 		{
 			if(contentPane.parent)
 				GRoot(contentPane.parent).hidePopup(contentPane);
+		}
+		
+		private function showSecondLevelMenu(item:GObject):void
+		{
+			_expandingItem = item;
+			
+			var popup:PopupMenu = PopupMenu(item.data);
+			if(item is GButton)
+				GButton(item).selected = true;
+			popup.show(item, null, this);
+			
+			var pt:Point = contentPane.localToRoot(item.x + item.width-5, item.y-5);
+			popup.contentPane.setXY(pt.x, pt.y);
+		}
+		
+		private function closeSecondLevelMenu():void
+		{
+			if(_expandingItem is GButton)
+				GButton(_expandingItem).selected = false;
+			var popup:PopupMenu = PopupMenu(_expandingItem.data);
+			_expandingItem = null;
+			popup.hide();
 		}
 
 		private function __clickItem(evt:ItemEvent):void
@@ -203,8 +249,13 @@ package fairygui
 			}
 			
 			if(hideOnClickItem)
+			{
+				if(_parentMenu)
+					_parentMenu.hide();
 				hide();
-			if(item.data!=null)
+			}
+			
+			if((item.data!=null) && !(item.data is PopupMenu))
 			{
 				if(item.data.length==1)
 					item.data(evt);
@@ -217,6 +268,60 @@ package fairygui
 		{
 			_list.selectedIndex = -1;
 			_list.resizeToFit(visibleItemCount, 10);
+		}
+		
+		private function __removeFromStage(evt:Event):void
+		{
+			_parentMenu = null;
+			
+			if(_expandingItem)
+				closeSecondLevelMenu();
+		}
+		
+		private function __rollOver(evt:MouseEvent):void
+		{
+			var item:GObject = GObject(evt.currentTarget);
+			if((item.data is PopupMenu) || _expandingItem)
+				GTimers.inst.callDelay(100, __showSubMenu, item);
+		}
+		
+		private function __showSubMenu(item:GObject):void
+		{
+			var r:GRoot = contentPane.root;
+			if(!r)
+				return;
+			
+			if(_expandingItem)
+			{
+				if(_expandingItem==item)
+					return;
+				
+				closeSecondLevelMenu();
+			}
+			
+			var popup:PopupMenu = item.data as PopupMenu;
+			if(!popup)
+				return;
+			
+			showSecondLevelMenu(item);
+		}
+		
+		private function __rollOut(evt:MouseEvent):void
+		{		
+			if(!_expandingItem)
+				return;
+				
+			GTimers.inst.remove(__showSubMenu);
+			var r:GRoot = contentPane.root;
+			if(r)
+			{
+				var popup:PopupMenu =  PopupMenu(_expandingItem.data);
+				var pt:Point = popup.contentPane.globalToLocal(r.nativeStage.mouseX, r.nativeStage.mouseY);
+				if(pt.x>=0 && pt.y>=0 && pt.x<popup.contentPane.width && pt.y<popup.contentPane.height)
+					return;
+			}
+
+			closeSecondLevelMenu();
 		}
 	}
 }

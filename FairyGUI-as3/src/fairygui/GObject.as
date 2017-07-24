@@ -633,9 +633,11 @@ package fairygui
 			GTimers.inst.callDelay(100, __doShowTooltips);
 		}
 		
-		private function __doShowTooltips(r:GRoot):void
+		private function __doShowTooltips():void
 		{
-			this.root.showTooltips(_tooltips);
+			var r:GRoot = this.root;
+			if(r)
+				this.root.showTooltips(_tooltips);
 		}
 		
 		private function __rollOut(evt:Event):void
