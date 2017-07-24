@@ -40,7 +40,10 @@ package fairygui
 			gv.alpha = parseFloat(arr[0]);
 			gv.rotation = parseInt(arr[1]);
 			gv.grayed = arr[2]=="1"?true:false;
-			gv.touchable = arr[3]!="1"?true:false;
+			if(arr.length<4)
+				gv.touchable = _owner.touchable;
+			else
+				gv.touchable = arr[3]=="1"?true:false;
 		}
 		
 		override public function apply():void

@@ -14,7 +14,6 @@ package fairygui
 		private var _reverse:Boolean;
 
 		private var _titleObject:GTextField;
-		private var _aniObject:GObject;
 		private var _barObjectH:GObject;
 		private var _barObjectV:GObject;
 		private var _barMaxWidth:int;
@@ -132,11 +131,6 @@ package fairygui
 					_barObjectV.y =  _barStartY + (fullHeight-_barObjectV.height);
 				}
 			}
-			
-			if(_aniObject is GMovieClip)
-				GMovieClip(_aniObject).frame = Math.round(percent*100);
-			else if(_aniObject is GSwfObject)
-				GSwfObject(_aniObject).frame = Math.round(percent*100);
 		}
 		
 		override protected function constructFromXML(xml:XML):void
@@ -155,7 +149,6 @@ package fairygui
 			_titleObject = getChild("title") as GTextField;
 			_barObjectH = getChild("bar");
 			_barObjectV = getChild("bar_v");
-			_aniObject = getChild("ani");
 			_gripObject = getChild("grip");
 			
 			if(_barObjectH)

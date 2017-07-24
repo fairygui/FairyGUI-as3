@@ -444,23 +444,28 @@ package fairygui
 		
 		public function set touchable(value:Boolean):void
 		{
-			_touchable = value;
-			if((this is GImage) || (this is GMovieClip) 
-				|| (this is GTextField) && !(this is GTextInput) && !(this is GRichTextField))
-				//Touch is not supported by GImage/GMovieClip/GTextField
-				return;
-			
-			if(_displayObject is InteractiveObject)
+			if(_touchable!=value)
 			{
-				if(this is GComponent)
+				_touchable = value;
+				updateGear(3);
+				
+				if((this is GImage) || (this is GMovieClip) 
+					|| (this is GTextField) && !(this is GTextInput) && !(this is GRichTextField))
+					//Touch is not supported by GImage/GMovieClip/GTextField
+					return;
+				
+				if(_displayObject is InteractiveObject)
 				{
-					GComponent(this).handleTouchable(_touchable);
-				}
-				else
-				{
-					InteractiveObject(_displayObject).mouseEnabled = _touchable;
-					if(_displayObject is DisplayObjectContainer)
-						DisplayObjectContainer(_displayObject).mouseChildren = _touchable;
+					if(this is GComponent)
+					{
+						GComponent(this).handleTouchable(_touchable);
+					}
+					else
+					{
+						InteractiveObject(_displayObject).mouseEnabled = _touchable;
+						if(_displayObject is DisplayObjectContainer)
+							DisplayObjectContainer(_displayObject).mouseChildren = _touchable;
+					}
 				}
 			}
 		}
