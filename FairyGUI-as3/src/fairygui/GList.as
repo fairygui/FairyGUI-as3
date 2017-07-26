@@ -2444,6 +2444,8 @@ package fairygui
 						}
 						child.setXY(page * viewWidth + curX, curY);
 						curX += Math.ceil(child.width);
+						if (curX > maxWidth)
+							maxWidth = curX;
 						if (child.height > maxHeight)
 							maxHeight = child.height;
 						j++;
