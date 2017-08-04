@@ -19,6 +19,7 @@ package fairygui
 		private var _sortingChildCount:int;
 		private var _opaque:Boolean;
 		private var _hitArea:PixelHitTest;
+		private var _applyingController:Controller;
 		
 		protected var _margin:Margin;
 		protected var _trackBounds:Boolean;
@@ -567,10 +568,12 @@ package fairygui
 		
 		internal function applyController(c:Controller):void
 		{
+			_applyingController = c;
 			for each(var child:GObject in _children)
 			{
 				child.handleControllerChanged(c);
 			}
+			_applyingController = null;
 			c.runActions();
 		}
 		
@@ -604,7 +607,14 @@ package fairygui
 				}
 			}
 			if(myIndex<maxIndex)
+			{
+				//如果正在applyingController，此时修改显示列表是危险的，但真正排除危险只能用显示列表的副本去做，这样性能可能损耗较大，
+				//这里取个巧，让可能漏过的child补一下handleControllerChanged，反正重复执行是无害的。
+				if(_applyingController!=null)
+					_children[maxIndex].handleControllerChanged(_applyingController);
+				
 				this.swapChildrenAt(myIndex, maxIndex);
+			}
 		}
 		
 		public function getTransitionAt(index:int):Transition
