@@ -8,8 +8,11 @@ package fairygui.text
 		
 		public function LinkButton():void {
 			buttonMode = true;
+		}
+		
+		public function setSize(w:Number, h:Number):void {
 			graphics.beginFill(0, 0);
-			graphics.drawRect(0, 0, 10, 10);
+			graphics.drawRect(0, 0, w, h);
 			graphics.endFill();
 		}
 	}

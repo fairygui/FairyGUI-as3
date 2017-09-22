@@ -617,8 +617,7 @@ package fairygui.text
 						w = _textField.width-rect1.left-2;					
 					var h:int = Math.max(rect1.height, rect2.height);
 					node.displayObject.x = rect1.left;
-					node.displayObject.width = w;
-					node.displayObject.height = h;
+					LinkButton(node.displayObject).setSize(w,h);
 					if(rect1.top<rect2.top)
 						node.topY = 0;
 					else

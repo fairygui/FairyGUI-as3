@@ -26,6 +26,7 @@ package fairygui.display
 		private var _endAt:int;
 		private var _status:int; //0-none, 1-next loop, 2-ending, 3-ended
 		private var _callback:Function;
+		private var _smoothing:Boolean;
 		
 		public function MovieClip()
 		{
@@ -34,6 +35,8 @@ package fairygui.display
 			_playState = new PlayState();
 			_playing = true;
 			setPlaySettings();
+			
+			_smoothing = true;
 			
 			this.addEventListener(Event.ADDED_TO_STAGE, __addedToStage);
 			this.addEventListener(Event.REMOVED_FROM_STAGE, __removedFromStage);
@@ -122,6 +125,17 @@ package fairygui.display
 				GTimers.inst.remove(update);
 		}
 		
+		public function get smoothing():Boolean
+		{
+			return _smoothing;
+		}
+		
+		public function set smoothing(value:Boolean):void
+		{
+			_smoothing = value;
+			_bitmap.smoothing = _smoothing;
+		}
+		
 		//从start帧开始，播放到end帧（-1表示结尾），重复times次（0表示无限循环），循环结束后，停止在endAt帧（-1表示参数end）
 		public function setPlaySettings(start:int = 0, end:int = -1, times:int = 0, endAt:int = -1, endCallback:Function = null):void
 		{
@@ -195,6 +209,8 @@ package fairygui.display
 			if(frame!=null)
 			{
 				_bitmap.bitmapData = frame.image;
+				if(_bitmap.smoothing!=_smoothing)
+					_bitmap.smoothing = _smoothing;
 				_bitmap.x = frame.rect.x;
 				_bitmap.y = frame.rect.y;
 			}

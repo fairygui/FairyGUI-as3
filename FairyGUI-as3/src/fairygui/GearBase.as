@@ -138,7 +138,12 @@ package fairygui
 					values = str.split("|");
 					
 					for(var i:int=0;i<pages.length;i++)
-						addStatus(pages[i], values[i]);
+					{
+						str = values[i];
+						if(str==null)
+							str = "";
+						addStatus(pages[i], str);
+					}
 				}
 				
 				str = xml.@["default"];
