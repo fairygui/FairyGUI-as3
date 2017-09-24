@@ -1161,8 +1161,13 @@ package fairygui
 				return;
 
 			if(_tweener!=null)
+			{
 				killTween();
-
+				isDragged = true;
+			}
+			else
+				isDragged = false;
+			
 			_x1 = _x2 = _container.x;
 			_y1 = _y2 = _container.y;
 			
@@ -1173,7 +1178,6 @@ package fairygui
 			_holdAreaPoint.x = _maskContainer.mouseX;
 			_holdAreaPoint.y = _maskContainer.mouseY;
 			_isHoldAreaDone = false;
-			isDragged = false;
 			
 			_owner.addEventListener(GTouchEvent.DRAG, __mouseMove);
 		}
