@@ -359,9 +359,11 @@ package fairygui
 				addSelection(value);
 		}
 		
-		public function getSelection():Vector.<int>
+		public function getSelection( ret:Vector.<int> = null):Vector.<int>
 		{
-			var ret:Vector.<int> = new Vector.<int>();
+			/**无需重新实例化Vector对象，否则无法直接控制到**/
+			ret || = new Vector.<int>();
+			ret.length = 0;
 			var cnt:int = _children.length;
 			for(var i:int=0;i<cnt;i++)
 			{
@@ -2606,6 +2608,13 @@ package fairygui
 			str = xml.@selectionController;
 			if(str)
 				_selectionController = parent.getController(str);
+		}
+		/**
+		 * 开放获取当前一共有几列
+		 * 项目需求
+		 */
+		public function get curLineItemCount():int{
+			return _curLineItemCount
 		}
 	}
 }
