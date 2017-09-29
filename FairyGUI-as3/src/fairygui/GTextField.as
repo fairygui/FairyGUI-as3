@@ -746,7 +746,6 @@ package fairygui
 				return;
 			
 			_bitmapData = new BitmapData(w, h, true, 0);
-			_bitmap.bitmapData = _bitmapData;
 			
 			var charX:int = GUTTER_X;
 			var lineIndent:int;
@@ -794,6 +793,9 @@ package fairygui
 					}
 				}//text loop
 			}//line loop
+			
+			_bitmap.bitmapData = _bitmapData;
+			_bitmap.smoothing = true;
 		}
 		
 		override protected function handleSizeChanged():void
