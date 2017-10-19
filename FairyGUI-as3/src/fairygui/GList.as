@@ -76,6 +76,8 @@ package fairygui
 		public override function dispose():void
 		{
 			_pool.clear();
+			scrollItemToViewOnClick = false;
+			
 			super.dispose();
 		}
 
