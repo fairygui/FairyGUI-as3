@@ -195,6 +195,8 @@ package fairygui.display
 								else
 									_status = 1;
 							}
+							else if(_start!=0)
+								_status = 1;
 						}
 					}
 					
