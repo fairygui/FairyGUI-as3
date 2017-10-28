@@ -33,7 +33,7 @@ package fairygui
 	[Event(name = "clickGTouch", type = "fairygui.event.GTouchEvent")]
 	public class GObject extends EventDispatcher
 	{
-		public var data:Object;
+		protected var _data:Object;
 		public var packageItem:PackageItem;
 		public static var draggingObject:GObject;
 		
@@ -1724,5 +1724,12 @@ package fairygui
 			}
 		}
 		//-------------------------------------------------------------------
+		public function set data(data:Object):void {
+		    this._data = data;
+		}
+
+		public function get data():Object {
+		    return this._data;
+		}
 	}
 }
