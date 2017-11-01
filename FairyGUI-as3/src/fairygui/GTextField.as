@@ -811,7 +811,8 @@ package fairygui
 		
 		override protected function handleGrayedChanged():void
 		{
-			super.handleGrayedChanged();
+			if(_bitmapFont)
+				super.handleGrayedChanged();
 			updateTextFormat();
 		}
 		

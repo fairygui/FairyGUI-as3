@@ -33,7 +33,6 @@ package fairygui
 	[Event(name = "clickGTouch", type = "fairygui.event.GTouchEvent")]
 	public class GObject extends EventDispatcher
 	{
-		protected var _data:Object;
 		public var packageItem:PackageItem;
 		public static var draggingObject:GObject;
 		
@@ -67,6 +66,7 @@ package fairygui
 		private var _focusable:Boolean;
 		private var _tooltips:String;
 		private var _pixelSnapping:Boolean;
+		private var _data:Object;
 		
 		private var _relations:Relations;
 		private var _group:GGroup;
@@ -146,6 +146,14 @@ package fairygui
 		final public function set name(value:String):void
 		{
 			_name = value;
+		}
+		
+		final public function set data(data:Object):void {
+			this._data = data;
+		}
+		
+		final public function get data():Object {
+			return this._data;
 		}
 
 		final public function get x():Number
@@ -1722,14 +1730,6 @@ package fairygui
 				dragEvent.touchPointID = evt.touchPointID;
 				dispatchEvent(dragEvent);
 			}
-		}
-		//-------------------------------------------------------------------
-		public function set data(data:Object):void {
-		    this._data = data;
-		}
-
-		public function get data():Object {
-		    return this._data;
 		}
 	}
 }
