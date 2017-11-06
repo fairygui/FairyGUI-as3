@@ -4,6 +4,7 @@ package fairygui
 	
 	import fairygui.event.GTouchEvent;
 	import fairygui.event.StateChangeEvent;
+	import fairygui.utils.GTimers;
 	
 	[Event(name = "stateChanged", type = "fairygui.event.StateChangeEvent")]
 	public class GSlider extends GComponent
@@ -30,6 +31,14 @@ package fairygui
 
 		/**是否可拖动开关**/
 		public var canDrag:Boolean = true;
+		/**
+		 *移动中 是否派发 change事件  默认 false
+		 */		
+		public var isMoveSendEvent:Boolean=false;
+		/**
+		 *是否自动隐藏 文本   默认 true
+		 */		
+		public var isAutoHide:Boolean=true;
 		
 		public function GSlider()
 		{
@@ -167,9 +176,31 @@ package fairygui
 			{
 				_gripObject.addEventListener(GTouchEvent.BEGIN, __gripMouseDown);
 				_gripObject.addEventListener(GTouchEvent.DRAG, __gripMouseMove);
+				_gripObject.addEventListener(GTouchEvent.END, __gripMouseUp);
 			}
 			
 			addEventListener(GTouchEvent.BEGIN, __barMouseDown);
+		}
+		
+		protected function __gripMouseUp(event:GTouchEvent):void
+		{
+			if(isAutoHide)
+			{
+				GTimers.inst.remove(hideTxt);
+				GTimers.inst.add(500,1,hideTxt);
+			}
+			
+			if(isMoveSendEvent)
+			{
+				dispatchEvent(new StateChangeEvent(StateChangeEvent.CHANGED));
+			}
+		}
+		
+		private function hideTxt():void
+		{
+			GTimers.inst.remove(hideTxt);
+			if(_titleObject)
+				_titleObject.visible=false;
 		}
 		
 		override protected function handleSizeChanged():void
@@ -196,12 +227,17 @@ package fairygui
 			}
 			
 			update();
+			if(isAutoHide)
+			{
+				hideTxt();
+			}
 		}
 		
 		private function __gripMouseDown(evt:GTouchEvent):void
 		{
 			this.canDrag=true;
-
+			if(_titleObject)
+				_titleObject.visible=true;
 			evt.stopPropagation();
 			
 			_clickPos = this.globalToLocal(evt.stageX, evt.stageY);
@@ -236,7 +272,10 @@ package fairygui
 			if(newValue!=_value)
 			{
 				_value = newValue;
-				dispatchEvent(new StateChangeEvent(StateChangeEvent.CHANGED));
+				if(isMoveSendEvent)
+				{
+					dispatchEvent(new StateChangeEvent(StateChangeEvent.CHANGED));
+				}
 			}
 			updateWidthPercent(percent);
 		}
@@ -268,6 +307,13 @@ package fairygui
 				dispatchEvent(new StateChangeEvent(StateChangeEvent.CHANGED));
 			}
 			updateWidthPercent(percent);
+			if(_titleObject)
+				_titleObject.visible=true;
+			if(isAutoHide)
+			{
+				GTimers.inst.remove(hideTxt);
+				GTimers.inst.add(500,1,hideTxt);
+			}
 		}
 	}
 }

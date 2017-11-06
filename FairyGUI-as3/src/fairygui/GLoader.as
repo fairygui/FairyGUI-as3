@@ -15,6 +15,8 @@ package fairygui
 	import fairygui.display.MovieClip;
 	import fairygui.display.UISprite;
 	import fairygui.utils.ToolSet;
+	
+	import ktv.message.local.UIEvent;
 
 	public class GLoader extends GObject implements IColorGear, IAnimationGear
 	{
@@ -45,6 +47,8 @@ package fairygui
 		private var _initExternalURLBeforeLoadSuccess:String;
 		
 		private static var _errorSignPool:GObjectPool = new GObjectPool();
+		
+		private var _editorURL:String="编辑器路径";
 		
 		public function GLoader()
 		{
@@ -89,7 +93,7 @@ package fairygui
 		{
 			if(_url==value)
 				return;
-			
+
 			_url = value;
 			loadContent();
 			updateGear(7);
@@ -279,6 +283,7 @@ package fairygui
 			_contentItem = UIPackage.getItemByURL(itemURL);
 			if(_contentItem!=null)
 			{
+				_editorURL=_contentItem.url;
 				if(_autoSize)
 					this.setSize(_contentItem.width, _contentItem.height);
 				
@@ -337,6 +342,7 @@ package fairygui
 				_contentSourceHeight = pi.height;
 				updateLayout();
 			}
+			this.dispatchEvent(new Event(UIEvent.IMAGE_COMPLETE));
 		}
 		
 		private function __movieClipLoaded(pi:PackageItem):void
@@ -360,6 +366,7 @@ package fairygui
 			fairygui.display.MovieClip(_content).boundsRect = new Rectangle(0,0,_contentSourceWidth,_contentSourceHeight);
 
 			updateLayout();
+			this.dispatchEvent(new Event(UIEvent.IMAGE_COMPLETE));
 		}
 		
 		private function __swfLoaded(content:DisplayObject):void
@@ -393,6 +400,7 @@ package fairygui
 			_contentSourceHeight = _content.height;
 
 			updateLayout();
+			this.dispatchEvent(new Event(UIEvent.IMAGE_COMPLETE));
 		}
 		
 		protected function loadExternal():void
@@ -412,7 +420,7 @@ package fairygui
 			
 		}
 		
-		final protected function onExternalLoadSuccess(content:DisplayObject):void
+		public function onExternalLoadSuccess(content:DisplayObject):void
 		{
 			_content = content;
 			_container.addChild(_content);
@@ -556,7 +564,7 @@ package fairygui
 				_content.y = this.height-_contentHeight;
 		}
 		
-		private function clearContent():void 
+		protected function clearContent():void 
 		{
 			clearErrorState();
 			
@@ -650,7 +658,9 @@ package fairygui
 			var str:String;
 			str = xml.@url;
 			if(str)
+			{
 				_url = str;
+			}
 			
 			str = xml.@align;
 			if(str)
@@ -679,5 +689,22 @@ package fairygui
 			if(_url)
 				loadContent();
 		}
+
+		public function get editorURL():String
+		{
+			return _editorURL;
+		}
+
+		public function get content():DisplayObject
+		{
+			return _content;
+		}
+
+		public function set content(value:DisplayObject):void
+		{
+			_content = value;
+		}
+
+
 	}
 }

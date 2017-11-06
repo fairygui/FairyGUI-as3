@@ -173,5 +173,29 @@ package fairygui
 		public function updateState():void
 		{
 		}
+		
+		public function setLang(xml:XML):void
+		{
+			var str:String;
+			var pages:Array;
+			var values:Array;
+			
+			str = xml.@pages;
+			if(str)
+				pages = str.split(",");
+			
+			if(pages)
+			{
+				str = xml.@values;
+				values = str.split("|");
+				
+				for(var i:int=0;i<pages.length;i++)
+					addStatus(pages[i], values[i]);
+			}
+			
+			str = xml.@["default"];
+			if(str)
+				addStatus(null, str);
+		}
 	}
 }

@@ -6,7 +6,7 @@ package fairygui
 	
 	import fairygui.display.Frame;
 	import fairygui.text.BitmapFont;
-
+	
 	public class PackageItem
 	{
 		public var owner:UIPackage;
@@ -18,6 +18,7 @@ package fairygui
 		public var height:int;
 		public var file:String;
 		public var lastVisitTime:int;
+		public var path:String;
 		
 		public var callbacks:Array = [];
 		public var loading:int;
@@ -83,6 +84,18 @@ package fairygui
 		public function toString():String
 		{
 			return name;
+		}
+		
+		/**
+		 *获取资源的 url 
+		 * @return 
+		 * 
+		 */		
+		public function  get url():String
+		{
+			var suffix:String=file.substr(file.lastIndexOf("."));
+			var str:String=owner.name+path+name+suffix;
+			return str;
 		}
 	}
 }

@@ -1178,6 +1178,7 @@ package fairygui
 			_holdAreaPoint.x = _maskContainer.mouseX;
 			_holdAreaPoint.y = _maskContainer.mouseY;
 			_isHoldAreaDone = false;
+			isDragged = false;
 			
 			_owner.addEventListener(GTouchEvent.DRAG, __mouseMove);
 		}
@@ -1391,12 +1392,14 @@ package fairygui
 					//页面吸附策略
 					if (Math.abs(change1.x) > _pageSizeH)//如果滚动距离超过1页,则需要超过页面的一半，才能到更下一页
 					{
-						if (delta > testPageSize * 0.5)
+//						if (delta > testPageSize * 0.5)
+						if (delta > UIConfig.pageScrollMinDistance)
 							page++;
 					}
 					else //否则只需要页面的1/3，当然，需要考虑到左移和右移的情况
 					{
-						if (delta > testPageSize * (change1.x < 0 ? 0.3 : 0.7))
+//						if (delta > testPageSize * (change1.x < 0 ? 0.3 : 0.7))
+						if (delta > (change1.x < 0 ?  UIConfig.pageScrollMinDistance :  testPageSize-UIConfig.pageScrollMinDistance))
 							page++;
 					}
 					
@@ -1429,12 +1432,14 @@ package fairygui
 					delta = -endY - page * _pageSizeV;
 					if (Math.abs(change1.y) > _pageSizeV)
 					{
-						if (delta > testPageSize * 0.5)
+//						if (delta > testPageSize * 0.5)
+						if (delta > UIConfig.pageScrollMinDistance)
 							page++;
 					}
 					else
 					{
-						if (delta > testPageSize * (change1.y < 0 ? 0.3 : 0.7))
+//						if (delta > testPageSize * (change1.y < 0 ? 0.3 : 0.7))
+						if (delta > (change1.y < 0 ?  UIConfig.pageScrollMinDistance :  testPageSize-UIConfig.pageScrollMinDistance))
 							page++;
 					}
 					

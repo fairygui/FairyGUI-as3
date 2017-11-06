@@ -512,6 +512,22 @@ package fairygui
 			}
 		}
 		
+		override internal function setLang(xml:XML):void
+		{
+			super.setLang(xml);
+			xml = xml.Button[0];
+			if(xml)
+			{
+				var str:String;
+				str = xml.@title;
+				if(str)
+					this.title = str;
+				str = xml.@selectedTitle;
+				if(str)
+					this.selectedTitle = str;
+			}
+		}
+		
 		private function __rollover(evt:Event):void
 		{
 			if(!_buttonController || !_buttonController.hasPage(OVER))

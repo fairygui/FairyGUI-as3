@@ -169,6 +169,12 @@ package fairygui
 			_password = xml.@password=="true";
 		}
 		
+		override internal function setLang(xml:XML):void
+		{
+			super.setLang(xml);
+			promptText = xml.@prompt;
+		}
+		
 		override public function setup_afterAdd(xml:XML):void
 		{
 			super.setup_afterAdd(xml);

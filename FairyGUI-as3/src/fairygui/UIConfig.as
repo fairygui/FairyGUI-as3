@@ -63,5 +63,10 @@ package fairygui
 		public static var bringWindowToFrontOnClick:Boolean = true;
 		
 		public static var frameTimeForAsyncUIConstruction:int = 2;
+		
+		/**
+		 *页面滚动翻页的 最小距离  (超过 pageScrollMinDistance 就翻页) 
+		 */		
+		public static var pageScrollMinDistance:int=50;
 	}
 }

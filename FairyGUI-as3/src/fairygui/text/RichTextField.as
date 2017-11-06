@@ -17,6 +17,8 @@ package fairygui.text
 	import fairygui.utils.FontUtils;
 	import fairygui.utils.ToolSet;
 	
+	import ktv.font.ManagerFont;
+	
 	public class RichTextField extends Sprite 
 	{
 		private var _textField:TextField;
@@ -30,6 +32,7 @@ package fairygui.text
 		
 		public static var objectFactory:IRichTextObjectFactory = new RichTextObjectFactory();
 
+		public var testFontText:String;
 		public function RichTextField():void 
 		{
 			this.mouseEnabled = false;
@@ -104,9 +107,10 @@ package fairygui.text
 				if(_defaultTextFormat.kerning==null)
 					_defaultTextFormat.kerning = false;
 			}
-			
-			_textField.embedFonts = FontUtils.isEmbeddedFont(_defaultTextFormat);
+			_defaultTextFormat.font=ManagerFont.setFontHandler(testFontText,[_defaultTextFormat.font]);
+//			_textField.embedFonts = FontUtils.isEmbeddedFont(_defaultTextFormat);
 			_textField.defaultTextFormat = _defaultTextFormat;
+			_textField.embedFonts = ManagerFont.embedFont;
 		}
 		
 		public function get defaultTextFormat():TextFormat

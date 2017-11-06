@@ -87,6 +87,7 @@ package fairygui
 		
 		public override function dispose():void
 		{
+			packageItem.owner.removeItemCallback(packageItem, __movieClipLoaded);
 			super.dispose();
 		}
 
