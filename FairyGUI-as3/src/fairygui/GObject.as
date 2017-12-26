@@ -623,15 +623,9 @@ package fairygui
 			if(_alpha!=value)
 			{
 				_alpha = value;
-				updateAlpha();
+				handleAlphaChanged();
+				updateGear(3);
 			}
-		}
-		
-		protected function updateAlpha():void
-		{
-			if(_displayObject)
-				_displayObject.alpha = _alpha;
-			updateGear(3);
 		}
 		
 		final public function get visible():Boolean
@@ -644,19 +638,20 @@ package fairygui
 			if(_visible!=value)
 			{
 				_visible = value;
-				if(_displayObject)
-					_displayObject.visible = _visible;
+				handleVisibleChanged();
 				if(_parent)
-				{
-					_parent.childStateChanged(this);
 					_parent.setBoundsChangedFlag();
-				}
 			}
 		}
 
-		public function get finalVisible():Boolean
+		public function get internalVisible():Boolean
 		{
-			return _visible && _internalVisible && (!_group || _group.finalVisible);
+			return _internalVisible && (!_group || _group.internalVisible);
+		}
+		
+		public function get internalVisible2():Boolean
+		{
+			return _visible && (!_group || _group.internalVisible2);
 		}
 		
 		final public function get sortingOrder():int
@@ -787,6 +782,9 @@ package fairygui
 				_group = value;
 				if (_group != null)
 					_group.setBoundsChangedFlag(true);
+				handleVisibleChanged();
+				if (_parent != null)
+					_parent.childStateChanged(this);
 			}
 		}
 		
@@ -1376,6 +1374,18 @@ package fairygui
 				else
 					_displayObject.filters = null;
 			}	
+		}
+		
+		protected function handleAlphaChanged():void
+		{
+			if(_displayObject)
+				_displayObject.alpha = _alpha;
+		}
+		
+		internal function handleVisibleChanged():void
+		{
+			if(_displayObject)
+				_displayObject.visible = internalVisible2;
 		}
 		
 		public function constructFromResource():void

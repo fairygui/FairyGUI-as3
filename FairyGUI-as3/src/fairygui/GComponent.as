@@ -289,8 +289,8 @@ package fairygui
 			var cnt:int=_children.length;
 			for (var i:int=0; i < cnt; ++i)
 			{
-				var child:GObject=_children[i];
-				if (child.finalVisible && child.name == name)
+				var child:GObject = _children[i];
+				if (child.internalVisible &&child.internalVisible2 && child.name==name) 
 					return child;
 			}
 
@@ -548,8 +548,8 @@ package fairygui
 
 			if (!child.displayObject)
 				return;
-
-			if (child.finalVisible)
+			
+			if(child.internalVisible)
 			{
 				if (!child.displayObject.parent)
 				{
@@ -615,9 +615,12 @@ package fairygui
 				{
 					for (i=0; i < cnt; i++)
 					{
-						child=_children[i];
-						if (child.displayObject != null && child.finalVisible)
-							_container.addChild(child.displayObject);
+						for (i = 0; i < cnt; i++)
+						{
+							child = _children[i];
+							if (child.displayObject != null && child.internalVisible)
+								_container.addChild(child.displayObject);
+						}
 					}
 				}
 					break;
@@ -625,9 +628,12 @@ package fairygui
 				{
 					for (i=cnt - 1; i >= 0; i--)
 					{
-						child=_children[i];
-						if (child.displayObject != null && child.finalVisible)
-							_container.addChild(child.displayObject);
+						for (i = cnt - 1; i >= 0; i--)
+						{
+							child = _children[i];
+							if (child.displayObject != null && child.internalVisible)
+								_container.addChild(child.displayObject);
+						}
 					}
 				}
 					break;
@@ -636,9 +642,18 @@ package fairygui
 				{
 					for (i=0; i < _apexIndex; i++)
 					{
-						child=_children[i];
-						if (child.displayObject != null && child.finalVisible)
-							_container.addChild(child.displayObject);
+						for (i = 0; i < _apexIndex; i++)
+						{
+							child = _children[i];
+							if (child.displayObject != null && child.internalVisible)
+								_container.addChild(child.displayObject);
+						}
+						for (i = cnt - 1; i >= _apexIndex; i--)
+						{
+							child = _children[i];
+							if (child.displayObject != null && child.internalVisible)
+								_container.addChild(child.displayObject);
+						}
 					}
 					for (i=cnt - 1; i >= _apexIndex; i--)
 					{
