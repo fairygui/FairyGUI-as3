@@ -27,14 +27,14 @@ package ktv.managers
 				}
 			}
 		}
-
+		public static var messageHeader:String="";
 		public static function sendObj(obj:Object):void
 		{
 			if(obj)
 			{
 				if(isSocket)
 				{
-					SocketManager.getInstance().sendMessage(JSON.stringify(obj));
+					SocketManager.getInstance().sendMessage(messageHeader+JSON.stringify(obj));
 				}
 				else//本地发送  本地接受
 				{

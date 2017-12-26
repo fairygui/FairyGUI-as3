@@ -20,8 +20,7 @@ package ktv.message.socket
 		/**
 		 *测试数据使用的 消息长度 
 		 */		
-		private const testMessageLenght:int=10000000;//8位数  1000 0000
-		
+		public static const messageHead:String="10000000";//8位数  1000 0000
 		private var _socketIP:String="127.0.0.1";
 		private var _socketPort:int=8730;
 		private var timer:Timer;
@@ -36,6 +35,11 @@ package ktv.message.socket
 		 */		
 		private var loopByte:ByteArray;
 		private var socketMessage:SocketMessage;
+		/**
+		 *是否包含发送消息的长度 
+		 */		
+		public var isHasByteHeadLength:Boolean=true;
+		
 		public function SocketManager()
 		{
 			
@@ -45,7 +49,6 @@ package ktv.message.socket
 		{
 			return socket.connected;
 		}
-
 
 		public static function getInstance():SocketManager
 		{
@@ -78,6 +81,7 @@ package ktv.message.socket
 
 		public function init():void
 		{
+			trace("socketManager 初始话 init()");
 			timer=new Timer(1000 * 1);
 			loopByte=new ByteArray();
 			socketMessage=new SocketMessage();
@@ -133,47 +137,51 @@ package ktv.message.socket
 		{
 			var tempByte:ByteArray=new ByteArray();
 			socket.readBytes(tempByte);
-			var testMessage:String=tempByte.readMultiByte(tempByte.length,"UTF8");
-			if(testMessage.indexOf(testMessageLenght.toString()) != -1)//查找发来的数据是否是测试数据
+			var testMessage:String=tempByte.readUTFBytes(tempByte.length);
+			if(testMessage.indexOf(messageHead.toString()) != -1)//查找发来的数据是否含有消息头
 			{
-				testMessage=testMessage.replace(testMessageLenght.toString(),"");
-				getMessage(testMessage,testMessageLenght);
+				testMessage=testMessage.replace(messageHead,"");
+				var tempAry:Array=testMessage.split(messageHead);
+				while(tempAry.length>0)
+				{
+					getMessage(tempAry.shift(),messageHead);
+				}
 			}else
 			{
-				loopByte.position=loopByte.length; //从指定的位置开始写入
+				loopByte.position=loopByte.length; //从指定的位置开始写入 往末尾添加  push();
 				tempByte.position=0;
 				loopByte.writeBytes(tempByte);
-				parseSocketData();
+				parseSocketDataByte();
 			}
 			
 		}
 
-		private function parseSocketData():void
+		private function parseSocketDataByte():void
 		{
-			if (loopByte.length >= SocketMessage.RECEIVE_MESSAGE_HEAD_LENGTH)
+			if (loopByte.length >= SocketMessage.RECEIVE_MESSAGE_HEAD_BYTE_LENGTH)
 			{
 				if (!isMessageHead)
 				{
 					isMessageHead=true;
-					socketMessage.headByte.writeBytes(loopByte, 0, SocketMessage.RECEIVE_MESSAGE_HEAD_LENGTH);
+					socketMessage.headByte.writeBytes(loopByte, 0, SocketMessage.RECEIVE_MESSAGE_HEAD_BYTE_LENGTH);
 				}
 				if (isMessageHead)
 				{
 					trace("读取消息中..." + loopByte.length + "/" + socketMessage.totalLength);
 					if (loopByte.length >= socketMessage.totalLength)
 					{
-						socketMessage.dataByte.writeBytes(loopByte, SocketMessage.RECEIVE_MESSAGE_HEAD_LENGTH, socketMessage.dataLength);
+						socketMessage.dataByte.writeBytes(loopByte, SocketMessage.RECEIVE_MESSAGE_HEAD_BYTE_LENGTH, socketMessage.dataLength);
 						//多余的数据
 						var excessDataLength:int=loopByte.length - socketMessage.totalLength;
-						if(excessDataLength == 0)//调整trace 顺序
-						getMessage(socketMessage.data,socketMessage.dataLength);
+						if(excessDataLength >= 0)//调整trace 顺序
+						getMessage(socketMessage.data,socketMessage.totalLength.toString());
 						if (excessDataLength == 0) //截取完毕
 						{
 							isMessageHead=false;
 							loopByte.clear();
 							socketMessage.clear();
 						}
-						else
+						else//实际获取的数据 过长
 						{
 							var temp:ByteArray=new ByteArray();
 							loopByte.position=socketMessage.totalLength;
@@ -181,20 +189,21 @@ package ktv.message.socket
 							loopByte=temp;
 							isMessageHead=false;
 							socketMessage.clear();
-							parseSocketData();
+							parseSocketDataByte();
 						}
 					}
 				}
 			}
 		}
+		
 
 		/**
 		 *获取后台发来的消息
 		 * @param data
 		 */
-		public function getMessage(data:String,dataLength:int=testMessageLenght):void
+		public function getMessage(data:String,msgHead:String=messageHead):void
 		{
-			LogManager.log.receive(dataLength + data);
+			LogManager.log.receive(msgHead + data);
 			sendEvent(SocketEvent.SOCKET_DATA, data);
 		}
 		
@@ -213,15 +222,27 @@ package ktv.message.socket
 			if (socket && socket.connected && message)
 			{
 				var byteData:ByteArray=new ByteArray();
-				var byteHead:ByteArray=new ByteArray();
 				byteData.writeUTFBytes(message); //4 个字节 的 消息长度
-				byteHead.endian=Endian.LITTLE_ENDIAN;
-				byteHead.writeInt(byteData.length);
-				socket.writeBytes(byteHead);
+				if(isHasByteHeadLength)
+				{
+					var byteHead:ByteArray=new ByteArray();
+					byteHead.endian=Endian.LITTLE_ENDIAN;
+					byteHead.writeInt(byteData.length);
+					socket.writeBytes(byteHead);
+				}
 				socket.writeBytes(byteData);
-				byteHead.position=0;
+				if(isHasByteHeadLength)
+				{
+					byteHead.position=0;
+				}
 				byteData.position=0;
-				LogManager.log.send("socket发送消息:"+ byteHead.readUnsignedInt() + byteData.readUTFBytes(byteData.length));
+				if(isHasByteHeadLength)
+				{
+					LogManager.log.send("socket发送消息:"+byteHead.readUnsignedInt() + byteData.readUTFBytes(byteData.length));
+				}else
+				{
+					LogManager.log.send("socket发送消息:"+byteData.readUTFBytes(byteData.length));
+				}
 				socket.flush();
 			}
 			else
@@ -233,7 +254,7 @@ package ktv.message.socket
 		public function dispose():void
 		{
 			socket.removeEventListener(Event.CONNECT, socketConnected);
-			socket.removeEventListener(ProgressEvent.SOCKET_DATA, socketData);
+			socket.removeEventListener(ProgressEvent.SOCKET_DATA,socketData);
 			socket.removeEventListener(Event.CLOSE, socketClose);
 			socket.removeEventListener(IOErrorEvent.IO_ERROR, io_error);
 			socket.removeEventListener(SecurityErrorEvent.SECURITY_ERROR, security_error);
@@ -241,6 +262,7 @@ package ktv.message.socket
 			timer.removeEventListener(TimerEvent.TIMER, timerRun);
 			timer.stop();
 			socketMessage.clear();
+			if(loopByte) loopByte.clear();
 		}
 	}
 }
