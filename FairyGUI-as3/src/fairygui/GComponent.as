@@ -603,62 +603,47 @@ package fairygui
 
 		private function buildNativeDisplayList():void
 		{
-			var cnt:int=_children.length;
+			var cnt:int = _children.length;
 			if (cnt == 0)
 				return;
-
+			
 			var i:int;
 			var child:GObject;
 			switch (_childrenRenderOrder)
 			{
 				case ChildrenRenderOrder.Ascent:
 				{
-					for (i=0; i < cnt; i++)
+					for (i = 0; i < cnt; i++)
 					{
-						for (i = 0; i < cnt; i++)
-						{
-							child = _children[i];
-							if (child.displayObject != null && child.internalVisible)
-								_container.addChild(child.displayObject);
-						}
+						child = _children[i];
+						if (child.displayObject != null && child.internalVisible)
+							_container.addChild(child.displayObject);
 					}
 				}
 					break;
 				case ChildrenRenderOrder.Descent:
 				{
-					for (i=cnt - 1; i >= 0; i--)
+					for (i = cnt - 1; i >= 0; i--)
 					{
-						for (i = cnt - 1; i >= 0; i--)
-						{
-							child = _children[i];
-							if (child.displayObject != null && child.internalVisible)
-								_container.addChild(child.displayObject);
-						}
+						child = _children[i];
+						if (child.displayObject != null && child.internalVisible)
+							_container.addChild(child.displayObject);
 					}
 				}
 					break;
-
+				
 				case ChildrenRenderOrder.Arch:
 				{
-					for (i=0; i < _apexIndex; i++)
+					for (i = 0; i < _apexIndex; i++)
 					{
-						for (i = 0; i < _apexIndex; i++)
-						{
-							child = _children[i];
-							if (child.displayObject != null && child.internalVisible)
-								_container.addChild(child.displayObject);
-						}
-						for (i = cnt - 1; i >= _apexIndex; i--)
-						{
-							child = _children[i];
-							if (child.displayObject != null && child.internalVisible)
-								_container.addChild(child.displayObject);
-						}
+						child = _children[i];
+						if (child.displayObject != null && child.internalVisible)
+							_container.addChild(child.displayObject);
 					}
-					for (i=cnt - 1; i >= _apexIndex; i--)
+					for (i = cnt - 1; i >= _apexIndex; i--)
 					{
-						child=_children[i];
-						if (child.displayObject != null && child.finalVisible)
+						child = _children[i];
+						if (child.displayObject != null && child.internalVisible)
 							_container.addChild(child.displayObject);
 					}
 				}
