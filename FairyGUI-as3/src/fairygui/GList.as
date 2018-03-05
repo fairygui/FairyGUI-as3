@@ -400,8 +400,8 @@ package fairygui
 					{
 						if (_loop)
 						{
-							i = i % _numItems;
-							if (ret.indexOf(i)!=-1)
+							var j:int = i % _numItems;
+							if (ret.indexOf(j)!=-1)
 								continue;
 						}
 						ret.push(i);
