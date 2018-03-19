@@ -117,21 +117,29 @@ package fairygui
 		public override function dispose():void
 		{
 			var i:int;
-
-			var transCnt:int=_transitions.length;
-			for (i=0; i < transCnt; ++i)
+			
+			var cnt:int;
+			
+			cnt = _transitions.length;
+			for (i = 0; i < cnt; ++i)
 			{
+
 				var trans:Transition=_transitions[i];
 				trans.dispose();
 			}
-
-			var numChildren:int=_children.length;
-			for (i=numChildren - 1; i >= 0; --i)
+			
+			
+			if(_scrollPane)
+				_scrollPane.dispose();
+			
+			cnt = _children.length; 
+			for (i=cnt-1; i>=0; --i)
 			{
-				var obj:GObject=_children[i];
-				obj.parent=null; //avoid removeFromParent call
-				obj.dispose();
+				var obj:GObject = _children[i];
+				obj.parent = null; //avoid removeFromParent call
+				obj.dispose(); 
 			}
+			
 
 			_boundsChanged=false;
 			super.dispose();
@@ -893,7 +901,9 @@ package fairygui
 										scrollBarDisplay:int,
 										flags:int,
 										vtScrollBarRes:String,
-										hzScrollBarRes:String):void
+										hzScrollBarRes:String,
+										headerRes:String,
+										footerRes:String):void
 		{
 			if (_rootContainer == _container)
 			{
@@ -901,7 +911,7 @@ package fairygui
 				_rootContainer.addChild(_container);
 			}
 			_scrollPane = new ScrollPane(this, scroll, scrollBarMargin, scrollBarDisplay, flags,
-				vtScrollBarRes, hzScrollBarRes);
+				vtScrollBarRes, hzScrollBarRes, headerRes, footerRes);
 		}
 		
 		protected function setupOverflow(overflow:int):void
@@ -1282,8 +1292,18 @@ package fairygui
 					hzScrollBarRes = arr[1];
 				}
 				
+				var headerRes:String;
+				var footerRes:String;
+				str = xml.@ptrRes;
+				if(str)
+				{
+					arr = str.split(",");
+					headerRes = arr[0];
+					footerRes = arr[1];
+				}
+				
 				setupScroll(scrollBarMargin, scroll, scrollBarDisplay, scrollBarFlags, 
-					vtScrollBarRes, hzScrollBarRes);
+					vtScrollBarRes, hzScrollBarRes, headerRes, footerRes);
 			}
 			else
 				setupOverflow(overflow);
