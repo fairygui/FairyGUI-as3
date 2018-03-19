@@ -23,6 +23,7 @@ package fairygui.utils  {
 		public static const inst:GTimers = new GTimers();
 		
 		private static const FPS24:int = int(1000/24);
+		private static const FPS60:int = int(1000/60);
 		
 		public function GTimers():void {
 			_items = new Vector.<TimerItem>();
@@ -76,6 +77,11 @@ package fairygui.utils  {
 		public function callBy24Fps(callback:Function, callbackParam:Object=null):void
 		{
 			add(FPS24,0,callback,callbackParam);
+		}
+		
+		public function callBy60Fps(callback:Function, callbackParam:Object=null):void
+		{
+			add(FPS60,0,callback,callbackParam);
 		}
 
 		public function exists(callback:Function):Boolean {

@@ -30,7 +30,7 @@ package fairygui
 			_selectedIndex = -1;
 			_previousIndex = -1;
 		}
-		
+
 		public function get name():String
 		{
 			return _name;

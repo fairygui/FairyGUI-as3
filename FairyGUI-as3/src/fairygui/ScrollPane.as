@@ -1,9 +1,5 @@
 package fairygui
 {
-	import com.greensock.TweenLite;
-	import com.greensock.easing.Ease;
-	import com.greensock.easing.EaseLookup;
-	
 	import flash.display.DisplayObject;
 	import flash.display.Sprite;
 	import flash.events.Event;
@@ -17,7 +13,7 @@ package fairygui
 	import fairygui.event.GTouchEvent;
 	import fairygui.utils.GTimers;
 	import fairygui.utils.ToolSet;
-	
+
 	[Event(name = "scroll", type = "flash.events.Event")]
 	[Event(name = "scrollEnd", type = "flash.events.Event")]
 	[Event(name = "pullDownRelease", type = "flash.events.Event")]
@@ -29,55 +25,60 @@ package fairygui
 		private var _maskContainer:Sprite;
 		private var _alignContainer:Sprite;
 		
-		private var _viewWidth:Number;
-		private var _viewHeight:Number;
-		private var _contentWidth:Number;
-		private var _contentHeight:Number;
-	
 		private var _scrollType:int;
-		private var _scrollSpeed:int;
-		private var _mouseWheelSpeed:int;
+		private var _scrollStep:int;
+		private var _mouseWheelStep:int;
+		private var _decelerationRate:Number;
 		private var _scrollBarMargin:Margin;
 		private var _bouncebackEffect:Boolean;
 		private var _touchEffect:Boolean;
 		private var _scrollBarDisplayAuto:Boolean;
 		private var _vScrollNone:Boolean;
 		private var _hScrollNone:Boolean;
+		private var _needRefresh:Boolean;
+		private var _refreshBarAxis:String;
 		
 		private var _displayOnLeft:Boolean;
 		private var _snapToItem:Boolean;
 		private var _displayInDemand:Boolean;
 		private var _mouseWheelEnabled:Boolean;
 		private var _pageMode:Boolean;
-		private var _pageSizeH:Number;
-		private var _pageSizeV:Number;
 		private var _inertiaDisabled:Boolean;
-		private var _maskDisabled:Boolean;
 		
-		private var _xPerc:Number, _yPerc:Number;
-		private var _xPos:Number, _yPos:Number;
-		private var _xOverlap:Number, _yOverlap:Number;
+		private var _xPos:Number;
+		private var _yPos:Number;
 		
-		private static var _easeTypeFunc:Ease;
-		private var _throwTween:ThrowTween;
-		private var _tweening:int;
-		private var _tweener:TweenLite;
-		
-		private var _time1:uint, _time2:uint;
-		private var _y1:Number, _y2:Number;
-		private var _x1:Number, _x2:Number;
-		private var _xOffset:Number, _yOffset:Number;
-		
-		private var _needRefresh:Boolean;
-		private var _holdAreaPoint:Point;
+		private var _viewSize:Point;
+		private var _contentSize:Point;
+		private var _overlapSize:Point;
+		private var _pageSize:Point;
+		private var _containerPos:Point;
+		private var _beginTouchPos:Point;
+		private var _lastTouchPos:Point;
+		private var _lastTouchGlobalPos:Point;
+		private var _velocity:Point;
+		private var _velocityScale:Number;
+		private var _lastMoveTime:Number;
 		private var _isHoldAreaDone:Boolean;
 		private var _aniFlag:int;
 		private var _scrollBarVisible:Boolean;
+		internal var _loop:int;
+		private var _headerLockedSize:int;
+		private var _footerLockedSize:int;
+		private var _refreshEventDispatching:Boolean;
 		
+		private var _tweening:int;
+		private var _tweenTime:Point;
+		private var _tweenDuration:Point;
+		private var _tweenStart:Point;
+		private var _tweenChange:Point;
+
 		private var _pageController:Controller;
 		
 		private var _hzScrollBar:GScrollBar;
 		private var _vtScrollBar:GScrollBar;
+		private var _header:GComponent;
+		private var _footer:GComponent;
 		
 		public var isDragged:Boolean;
 		public static var draggingPane:ScrollPane;
@@ -85,10 +86,16 @@ package fairygui
 		
 		private static var sHelperPoint:Point = new Point();
 		private static var sHelperRect:Rectangle = new Rectangle();
+		private static var sEndPos:Point = new Point();
+		private static var sOldChange:Point = new Point();
 		
 		public static const SCROLL_END:String = "scrollEnd";
 		public static const PULL_DOWN_RELEASE:String = "pullDownRelease";
 		public static const PULL_UP_RELEASE:String = "pullUpRelease";
+		
+		public static const TWEEN_TIME_GO:Number = 0.5; //调用SetPos(ani)时使用的缓动时间
+		public static const TWEEN_TIME_DEFAULT:Number = 0.3; //惯性滚动的最小缓动时间
+		public static const PULL_RATIO:Number = 0.5; //下拉过顶或者上拉过底时允许超过的距离占显示区域的比例
 		
 		public function ScrollPane(owner:GComponent, 
 								   scrollType:int,
@@ -96,19 +103,28 @@ package fairygui
 								   scrollBarDisplay:int,
 								   flags:int,
 								   vtScrollBarRes:String,
-								   hzScrollBarRes:String):void
+								   hzScrollBarRes:String,
+								   headerRes:String,
+								   footerRes:String):void
 		{
-			if(_easeTypeFunc==null)
-				_easeTypeFunc = EaseLookup.find("Cubic.easeOut");
-			_throwTween = new ThrowTween();
-			
 			_owner = owner;
 			owner.opaque = true;
-
+			
+			_maskContainer = new Sprite();
+			_maskContainer.mouseEnabled = false;
+			_owner._rootContainer.addChild(_maskContainer);
+			
+			_container = _owner._container;
+			_container.x = 0;
+			_container.y = 0;
+			_container.mouseEnabled = false;			
+			_maskContainer.addChild(_container);
+			
 			_scrollBarMargin = scrollBarMargin;
 			_scrollType = scrollType;
-			_scrollSpeed = UIConfig.defaultScrollSpeed;
-			_mouseWheelSpeed = _scrollSpeed*2;
+			_scrollStep = UIConfig.defaultScrollStep;
+			_mouseWheelStep = _scrollStep*2;
+			_decelerationRate = UIConfig.defaultScrollDecelerationRate;
 			
 			_displayOnLeft = (flags & 1)!=0;
 			_snapToItem = (flags & 2)!=0;
@@ -127,36 +143,34 @@ package fairygui
 			else
 				_bouncebackEffect = UIConfig.defaultScrollBounceEffect;
 			_inertiaDisabled = (flags & 256)!=0;
-			_maskDisabled = (flags & 512) != 0;
+			if((flags & 512) == 0)
+				_maskContainer.scrollRect = new Rectangle();
+			
+			_scrollBarVisible = true;
+			_mouseWheelEnabled = true;
+			_xPos = 0;
+			_yPos = 0;
+			_aniFlag = 0;
+			_footerLockedSize = 0;
+			_headerLockedSize = 0;
 			
 			if(scrollBarDisplay==ScrollBarDisplayType.Default)
 				scrollBarDisplay = UIConfig.defaultScrollBarDisplay;
 			
-			_xPerc = 0;
-			_yPerc = 0;
-			_xPos = 0;
-			_yPos = 0;
-			_xOverlap = 0;
-			_yOverlap = 0;
-			_scrollBarVisible = true;
-			_mouseWheelEnabled = true;
-			_holdAreaPoint = new Point();
-			_pageSizeH = 1;
-			_pageSizeV = 1;
+			_viewSize = new Point();
+			_contentSize = new Point();
+			_pageSize = new Point(1,1);
+			_overlapSize = new Point();
+			_tweenTime = new Point();
+			_tweenStart = new Point();
+			_tweenDuration = new Point();
+			_tweenChange = new Point();
+			_velocity = new Point();
+			_containerPos = new Point();
+			_beginTouchPos = new Point();
+			_lastTouchPos = new Point();
+			_lastTouchGlobalPos = new Point();
 			
-			_maskContainer = new Sprite();
-			_maskContainer.mouseEnabled = false;
-			_owner._rootContainer.addChild(_maskContainer);
-	
-			_container = _owner._container;
-			_container.x = 0;
-			_container.y = 0;
-			_container.mouseEnabled = false;			
-			_maskContainer.addChild(_container);
-			
-			if(!_maskDisabled)
-				_maskContainer.scrollRect = new Rectangle();
-
 			if(scrollBarDisplay!=ScrollBarDisplayType.Hidden)
 			{
 				if(_scrollType==ScrollType.Both || _scrollType==ScrollType.Vertical)
@@ -203,8 +217,23 @@ package fairygui
 			else
 				_mouseWheelEnabled = false;
 			
-			_contentWidth = 0;
-			_contentHeight = 0;
+			if (headerRes)
+			{
+				_header = UIPackage.createObjectFromURL(headerRes) as GComponent;
+				if (_header == null)
+					throw new Error("FairyGUI: cannot create scrollPane header from " + headerRes);
+			}
+			
+			if (footerRes)
+			{
+				_footer = UIPackage.createObjectFromURL(footerRes) as GComponent;
+				if (_footer == null)
+					throw new Error("FairyGUI: cannot create scrollPane footer from " + footerRes);
+			}
+			
+			if (_header != null || _footer != null)
+				_refreshBarAxis = (_scrollType == ScrollType.Both || _scrollType == ScrollType.Vertical) ? "y" : "x";
+			
 			setSize(owner.width, owner.height);
 			
 			_owner._rootContainer.addEventListener(MouseEvent.MOUSE_WHEEL, __mouseWheel);
@@ -212,9 +241,44 @@ package fairygui
 			_owner.addEventListener(GTouchEvent.END, __mouseUp);
 		}
 		
+		public function dispose():void
+		{
+			if (_tweening != 0)
+				GTimers.inst.remove(tweenUpdate);
+			
+			_pageController = null;
+			
+			if (_hzScrollBar != null)
+				_hzScrollBar.dispose();
+			if (_vtScrollBar != null)
+				_vtScrollBar.dispose();
+			if (_header != null)
+				_header.dispose();
+			if (_footer != null)
+				_footer.dispose();	
+		}
+		
 		public function get owner():GComponent
 		{
 			return _owner;
+		}
+		
+		public function get hzScrollBar(): GScrollBar {
+			return this._hzScrollBar;
+		}
+		
+		public function get vtScrollBar(): GScrollBar {
+			return this._vtScrollBar;
+		}
+		
+		public function get header():GComponent
+		{
+			return _header;
+		}
+		
+		public function get footer():GComponent
+		{
+			return _footer;
 		}
 		
 		public function get bouncebackEffect():Boolean
@@ -237,17 +301,29 @@ package fairygui
 			_touchEffect = sc;
 		}
 		
+		[Deprecated(replacement="ScrollPane.scrollStep")]
 		public function set scrollSpeed(val:int):void
 		{
-			_scrollSpeed = val;
-			if(_scrollSpeed==0)
-				_scrollSpeed = UIConfig.defaultScrollSpeed;
-			_mouseWheelSpeed = _scrollSpeed*2;
+			this.scrollStep = val;
 		}
 		
+		[Deprecated(replacement="ScrollPane.scrollStep")]
 		public function get scrollSpeed():int
 		{
-			return _scrollSpeed;
+			return this.scrollStep;
+		}
+		
+		public function set scrollStep(val:int):void
+		{
+			_scrollStep = val;
+			if(_scrollStep==0)
+				_scrollStep = UIConfig.defaultScrollStep;
+			_mouseWheelStep = _scrollStep*2;
+		}
+		
+		public function get scrollStep():int
+		{
+			return _scrollStep;
 		}
 		
 		public function get snapToItem():Boolean
@@ -270,9 +346,19 @@ package fairygui
 			_mouseWheelEnabled = value;
 		}
 		
+		public function get decelerationRate():Number
+		{
+			return _decelerationRate;
+		}
+		
+		public function set decelerationRate(value:Number):void
+		{
+			_decelerationRate = value;
+		}
+		
 		public function get percX():Number
 		{
-			return _xPerc;
+			return _overlapSize.x == 0 ? 0 : _xPos / _overlapSize.x;
 		}
 		
 		public function set percX(value:Number):void
@@ -283,19 +369,12 @@ package fairygui
 		public function setPercX(value:Number, ani:Boolean=false):void
 		{
 			_owner.ensureBoundsCorrect();
-			
-			value = ToolSet.clamp01(value);
-			if(value != _xPerc)
-			{
-				_xPerc = value;
-				_xPos = _xPerc*_xOverlap;
-				posChanged(ani);
-			}
+			setPosX(_overlapSize.x * ToolSet.clamp01(value), ani);
 		}
 		
 		public function get percY():Number
 		{
-			return _yPerc;
+			return _overlapSize.y == 0 ? 0 : _yPos / _overlapSize.y;
 		}
 		
 		public function set percY(value:Number):void
@@ -306,14 +385,7 @@ package fairygui
 		public function setPercY(value:Number, ani:Boolean=false):void
 		{
 			_owner.ensureBoundsCorrect();
-			
-			value = ToolSet.clamp01(value);
-			if(value != _yPerc)
-			{
-				_yPerc = value;
-				_yPos = _yPerc*_yOverlap;
-				posChanged(ani);
-			}
+			setPosY(_overlapSize.y * ToolSet.clamp01(value), ani);
 		}
 		
 		public function get posX():Number
@@ -330,11 +402,13 @@ package fairygui
 		{
 			_owner.ensureBoundsCorrect();
 			
-			value = ToolSet.clamp(value, 0, _xOverlap);
-			if(value!=_xPos)
+			if (_loop == 1)
+				value = loopCheckingNewPos(value, "x");
+			
+			value = ToolSet.clamp(value, 0, _overlapSize.x);
+			if (value != _xPos)
 			{
 				_xPos = value;
-				_xPerc = _xOverlap==0?0:_xPos/_xOverlap;				
 				posChanged(ani);
 			}
 		}
@@ -353,23 +427,51 @@ package fairygui
 		{
 			_owner.ensureBoundsCorrect();
 			
-			value = ToolSet.clamp(value, 0, _yOverlap);
-			if(value!=_yPos)
+			if (_loop == 1)
+				value = loopCheckingNewPos(value, "y");
+			
+			value = ToolSet.clamp(value, 0, _overlapSize.y);
+			if (value != _yPos)
 			{
 				_yPos = value;
-				_yPerc = _yOverlap==0?0:_yPos/_yOverlap;				
 				posChanged(ani);
 			}
 		}
 		
-		public function get isBottomMost():Boolean
+		public function get contentWidth():Number
 		{
-			return _yPerc==1 || _yOverlap==0;
+			return _contentSize.x;
 		}
 		
-		public function get isRightMost():Boolean
+		public function get contentHeight():Number
 		{
-			return _xPerc==1 || _xOverlap==0;
+			return _contentSize.y;
+		}
+		
+		public function get viewWidth():int
+		{
+			return _viewSize.x;
+		}
+		
+		public function set viewWidth(value:int):void
+		{
+			value = value + _owner.margin.left + _owner.margin.right;
+			if (_vtScrollBar != null)
+				value += _vtScrollBar.width;
+			_owner.width = value;
+		}
+		
+		public function get viewHeight():int
+		{
+			return _viewSize.y;
+		}
+		
+		public function set viewHeight(value:int):void
+		{
+			value = value + _owner.margin.top + _owner.margin.bottom;
+			if (_hzScrollBar != null)
+				value += _hzScrollBar.height;
+			_owner.height = value;
 		}
 		
 		public function get currentPageX():int
@@ -377,8 +479,8 @@ package fairygui
 			if (!_pageMode)
 				return 0;
 			
-			var page:int = Math.floor(_xPos / _pageSizeH);
-			if (_xPos - page * _pageSizeH > _pageSizeH * 0.5)
+			var page:int = Math.floor(_xPos / _pageSize.x);
+			if (_xPos - page * _pageSize.x > _pageSize.x * 0.5)
 				page++;
 			
 			return page;
@@ -386,8 +488,8 @@ package fairygui
 		
 		public function set currentPageX(value:int):void
 		{
-			if (_pageMode && _xOverlap>0)
-				this.setPosX(value * _pageSizeH, false);
+			if (_pageMode && _overlapSize.x>0)
+				this.setPosX(value * _pageSize.x, false);
 		}
 		
 		public function get currentPageY():int
@@ -395,8 +497,8 @@ package fairygui
 			if (!_pageMode)
 				return 0;
 			
-			var page:int = Math.floor(_yPos / _pageSizeV);
-			if (_yPos - page * _pageSizeV > _pageSizeV * 0.5)
+			var page:int = Math.floor(_yPos / _pageSize.y);
+			if (_yPos - page * _pageSize.y > _pageSize.y * 0.5)
 				page++;
 			
 			return page;
@@ -404,8 +506,18 @@ package fairygui
 		
 		public function set currentPageY(value:int):void
 		{
-			if (_pageMode && _yOverlap>0)
-				this.setPosY(value * _pageSizeV, false);
+			if (_pageMode && _overlapSize.y>0)
+				this.setPosY(value * _pageSize.y, false);
+		}
+		
+		public function get isBottomMost():Boolean
+		{
+			return _yPos == _overlapSize.y || _overlapSize.y == 0;
+		}
+		
+		public function get isRightMost():Boolean
+		{
+			return _xPos == _overlapSize.x || _overlapSize.x == 0; 
 		}
 		
 		public function get pageController():Controller
@@ -420,58 +532,12 @@ package fairygui
 		
 		public function get scrollingPosX():Number
 		{
-			return ToolSet.clamp(-_container.x, 0, _xOverlap);
+			return ToolSet.clamp(-_container.x, 0, _overlapSize.x);
 		}
 		
 		public function get scrollingPosY():Number
 		{
-			return ToolSet.clamp(-_container.y, 0, _yOverlap);
-		}
-		
-		public function get contentWidth():Number
-		{
-			return _contentWidth;
-		}
-		
-		public function get contentHeight():Number
-		{
-			return _contentHeight;
-		}
-		
-		public function get viewWidth():int
-		{
-			return _viewWidth;
-		}
-		
-		public function set viewWidth(value:int):void
-		{
-			value = value + _owner.margin.left + _owner.margin.right;
-			if (_vtScrollBar != null)
-				value += _vtScrollBar.width;
-			_owner.width = value;
-		}
-		
-		public function get viewHeight():int
-		{
-			return _viewHeight;
-		}
-		
-		public function set viewHeight(value:int):void
-		{
-			value = value + _owner.margin.top + _owner.margin.bottom;
-			if (_hzScrollBar != null)
-				value += _hzScrollBar.height;
-			_owner.height = value;
-		}
-		
-		private function getDeltaX(move:Number):Number
-		{
-			return (_pageMode?_pageSizeH:move)/(_contentWidth-_viewWidth);
-		}
-		
-		private function getDeltaY(move:Number):Number
-		{
-			return (_pageMode?_pageSizeV:move)/(_contentHeight-_viewHeight);
+			return ToolSet.clamp(-_container.y, 0, _overlapSize.y);
 		}
 		
 		public function scrollTop(ani:Boolean=false):void 
@@ -484,26 +550,38 @@ package fairygui
 			this.setPercY(1, ani);
 		}
 		
-		public function scrollUp(speed:Number=1, ani:Boolean=false):void 
+		public function scrollUp(ratio:Number=1, ani:Boolean=false):void 
 		{
-			this.setPercY(_yPerc - getDeltaY(_scrollSpeed*speed), ani);
+			if (_pageMode)
+				setPosY(_yPos - _pageSize.y * ratio, ani);
+			else
+				setPosY(_yPos - _scrollStep * ratio, ani);;
 		}
 		
-		public function scrollDown(speed:Number=1, ani:Boolean=false):void
+		public function scrollDown(ratio:Number=1, ani:Boolean=false):void
 		{
-			this.setPercY(_yPerc + getDeltaY(_scrollSpeed*speed), ani);
+			if (_pageMode)
+				setPosY(_yPos + _pageSize.y * ratio, ani);
+			else
+				setPosY(_yPos + _scrollStep * ratio, ani);
 		}
 		
-		public function scrollLeft(speed:Number=1, ani:Boolean=false):void
+		public function scrollLeft(ratio:Number=1, ani:Boolean=false):void
 		{
-			this.setPercX(_xPerc - getDeltaX(_scrollSpeed*speed), ani);
+			if (_pageMode)
+				setPosX(_xPos - _pageSize.x * ratio, ani);
+			else
+				setPosX(_xPos - _scrollStep * ratio, ani);
 		}
 		
-		public function scrollRight(speed:Number=1, ani:Boolean=false):void　
+		public function scrollRight(ratio:Number=1, ani:Boolean=false):void　
 		{
-			this.setPercX(_xPerc + getDeltaX(_scrollSpeed*speed), ani);
+			if (_pageMode)
+				setPosX(_xPos + _pageSize.x * ratio, ani);
+			else
+				setPosX(_xPos + _scrollStep * ratio, ani);
 		}
-
+		
 		/**
 		 * @param target GObject: can be any object on stage, not limited to the direct child of this container.
 		 * 				or Rectangle: Rect in local coordinates
@@ -534,46 +612,46 @@ package fairygui
 			}
 			else
 				rect = Rectangle(target);			
-
-
-			if(_yOverlap>0)
+			
+			
+			if(_overlapSize.y>0)
 			{
-				var bottom:Number = _yPos+_viewHeight;
-				if(setFirst || rect.y<=_yPos || rect.height>=_viewHeight)
+				var bottom:Number = _yPos+_viewSize.y;
+				if(setFirst || rect.y<=_yPos || rect.height>=_viewSize.y)
 				{
 					if(_pageMode)
-						this.setPosY(Math.floor(rect.y/_pageSizeV)*_pageSizeV, ani);
+						this.setPosY(Math.floor(rect.y/_pageSize.y)*_pageSize.y, ani);
 					else
 						this.setPosY(rect.y, ani);
 				}
 				else if(rect.y+rect.height>bottom)
 				{
 					if(_pageMode)
-						this.setPosY(Math.floor(rect.y/_pageSizeV)*_pageSizeV, ani);
-					else if (rect.height <= _viewHeight/2)
-						this.setPosY(rect.y+rect.height*2-_viewHeight, ani);
+						this.setPosY(Math.floor(rect.y/_pageSize.y)*_pageSize.y, ani);
+					else if (rect.height <= _viewSize.y/2)
+						this.setPosY(rect.y+rect.height*2-_viewSize.y, ani);
 					else
-						this.setPosY(rect.y+rect.height-_viewHeight, ani);
+						this.setPosY(rect.y+rect.height-_viewSize.y, ani);
 				}
 			}
-			if(_xOverlap>0)
+			if(_overlapSize.x>0)
 			{
-				var right:Number = _xPos+_viewWidth;
-				if(setFirst || rect.x<=_xPos || rect.width>=_viewWidth)
+				var right:Number = _xPos+_viewSize.x;
+				if(setFirst || rect.x<=_xPos || rect.width>=_viewSize.x)
 				{
 					if(_pageMode)
-						this.setPosX(Math.floor(rect.x/_pageSizeH)*_pageSizeH, ani);
+						this.setPosX(Math.floor(rect.x/_pageSize.x)*_pageSize.x, ani);
 					else
 						this.setPosX(rect.x, ani);
 				}
 				else if(rect.x+rect.width>right)
 				{
 					if(_pageMode)
-						this.setPosX(Math.floor(rect.x/_pageSizeH)*_pageSizeH, ani);
-					else if (rect.width <= _viewWidth/2)
-						this.setPosX(rect.x+rect.width*2-_viewWidth, ani);
+						this.setPosX(Math.floor(rect.x/_pageSize.x)*_pageSize.x, ani);
+					else if (rect.width <= _viewSize.x/2)
+						this.setPosX(rect.x+rect.width*2-_viewSize.x, ani);
 					else
-						this.setPosX(rect.x+rect.width-_viewWidth, ani);
+						this.setPosX(rect.x+rect.width-_viewSize.x, ani);
 				}
 			}
 			
@@ -586,17 +664,17 @@ package fairygui
 		 */
 		public function isChildInView(obj:GObject):Boolean
 		{
-			if(_yOverlap>0)
+			if(_overlapSize.y>0)
 			{
 				var dist:Number = obj.y+_container.y;
-				if(dist<-obj.height-20 || dist>_viewHeight+20)
+				if(dist<-obj.height || dist>_viewSize.y)
 					return false;
 			}
 			
-			if(_xOverlap>0)
+			if(_overlapSize.x>0)
 			{
 				dist = obj.x + _container.x;
-				if(dist<-obj.width-20 || dist>_viewWidth+20)
+				if(dist<-obj.width || dist>_viewSize.x)
 					return false;
 			}
 			
@@ -613,6 +691,49 @@ package fairygui
 			_gestureFlag = 0;
 			isDragged = false;
 			_maskContainer.mouseChildren = true;
+		}
+		
+		public function lockHeader(size:int):void
+		{
+			if (_headerLockedSize == size)
+				return;
+			
+			_headerLockedSize = size;
+			
+			if (!_refreshEventDispatching && _container[_refreshBarAxis] >= 0)
+			{
+				_tweenStart.setTo(_container.x, _container.y);
+				_tweenChange.setTo(0,0);
+				_tweenChange[_refreshBarAxis] = _headerLockedSize - _tweenStart[_refreshBarAxis];
+				_tweenDuration.setTo(TWEEN_TIME_DEFAULT, TWEEN_TIME_DEFAULT);
+				_tweenTime.setTo(0,0);
+				_tweening = 2;
+				GTimers.inst.callBy60Fps(tweenUpdate);
+			}
+		}
+
+		public function lockFooter(size:int):void
+		{
+			if (_footerLockedSize == size)
+				return;
+			
+			_footerLockedSize = size;
+			
+			if (!_refreshEventDispatching && _container[_refreshBarAxis] <= -_overlapSize[_refreshBarAxis])
+			{
+				_tweenStart.setTo(_container.x, _container.y);
+				_tweenChange.setTo(0,0);
+				var max:Number = _overlapSize[_refreshBarAxis];
+				if (max == 0)
+					max = Math.max(_contentSize[_refreshBarAxis] + _footerLockedSize - _viewSize[_refreshBarAxis], 0);
+				else
+					max += _footerLockedSize;
+				_tweenChange[_refreshBarAxis] = -max - _tweenStart[_refreshBarAxis];
+				_tweenDuration.setTo(TWEEN_TIME_DEFAULT, TWEEN_TIME_DEFAULT);
+				_tweenTime.setTo(0,0);
+				_tweening = 2;
+				GTimers.inst.callBy60Fps(tweenUpdate);
+			}
 		}
 		
 		internal function onOwnerSizeChanged():void
@@ -714,77 +835,107 @@ package fairygui
 				_vtScrollBar.y = _scrollBarMargin.top;
 			}
 			
-			_viewWidth = aWidth;
-			_viewHeight = aHeight;
+			_viewSize.x = aWidth;
+			_viewSize.y = aHeight;
 			if(_hzScrollBar && !_hScrollNone)
-				_viewHeight -= _hzScrollBar.height;
+				_viewSize.y -= _hzScrollBar.height;
 			if(_vtScrollBar && !_vScrollNone)
-				_viewWidth -= _vtScrollBar.width;
-			_viewWidth -= (_owner.margin.left+_owner.margin.right);
-			_viewHeight -= (_owner.margin.top+_owner.margin.bottom);
+				_viewSize.x -= _vtScrollBar.width;
+			_viewSize.x -= (_owner.margin.left+_owner.margin.right);
+			_viewSize.y -= (_owner.margin.top+_owner.margin.bottom);
 			
-			_viewWidth = Math.max(1, _viewWidth);
-			_viewHeight = Math.max(1, _viewHeight);
-			_pageSizeH = _viewWidth;
-			_pageSizeV = _viewHeight;
+			_viewSize.x = Math.max(1, _viewSize.x);
+			_viewSize.y = Math.max(1, _viewSize.y);
+			_pageSize.x = _viewSize.x;
+			_pageSize.y = _viewSize.y;
 			
 			handleSizeChanged();
 		}
-
+		
 		internal function setContentSize(aWidth:Number, aHeight:Number):void
 		{
-			if(_contentWidth==aWidth && _contentHeight==aHeight)
+			if(_contentSize.x==aWidth && _contentSize.y==aHeight)
 				return;
 			
-			_contentWidth = aWidth;
-			_contentHeight = aHeight;
+			_contentSize.x = aWidth;
+			_contentSize.y = aHeight;
 			handleSizeChanged();
 		}
 		
 		internal function changeContentSizeOnScrolling(deltaWidth:Number, deltaHeight:Number,
 													   deltaPosX:Number, deltaPosY:Number):void
 		{
-			_contentWidth += deltaWidth;
-			_contentHeight += deltaHeight;
+			var isRightmost:Boolean = _xPos == _overlapSize.x;
+			var isBottom:Boolean = _yPos == _overlapSize.y;
 			
-			if (isDragged)
+			_contentSize.x += deltaWidth;
+			_contentSize.y += deltaHeight;
+			handleSizeChanged();
+			
+			if (_tweening == 1)
 			{
-				if (deltaPosX != 0)
-					_container.x -= deltaPosX;
-				if (deltaPosY != 0)
-					_container.y -= deltaPosY;
+				//如果原来滚动位置是贴边，加入处理继续贴边。
+				if (deltaWidth != 0 && isRightmost && _tweenChange.x < 0)
+				{
+					_xPos = _overlapSize.x;
+					_tweenChange.x = -_xPos - _tweenStart.x;
+				}
 				
-				validateHolderPos();
-				
-				_xOffset += deltaPosX;
-				_yOffset += deltaPosY;
-				
-				var tmp:Number = _y2 - _y1;
-				_y1 = _container.y;
-				_y2 = _y1 + tmp;
-				
-				tmp = _x2 - _x1;
-				_x1 = _container.x;
-				_x2 = _x1 + tmp;
-				
-				_yPos = -_container.y;
-				_xPos = -_container.x;
+				if (deltaHeight != 0 && isBottom && _tweenChange.y < 0)
+				{
+					_yPos = _overlapSize.y;
+					_tweenChange.y = -_yPos - _tweenStart.y;
+				}
 			}
 			else if (_tweening == 2)
 			{
+				//重新调整起始位置，确保能够顺滑滚下去
 				if (deltaPosX != 0)
 				{
 					_container.x -= deltaPosX;
-					_throwTween.start.x -= deltaPosX;
+					_tweenStart.x -= deltaPosX;
+					_xPos = -_container.x;
 				}
 				if (deltaPosY != 0)
 				{
 					_container.y -= deltaPosY;
-					_throwTween.start.y -= deltaPosY;
+					_tweenStart.y -= deltaPosY;
+					_yPos = -_container.y;
+				}
+			}
+			else if (isDragged)
+			{
+				if (deltaPosX != 0)
+				{
+					_container.x -= deltaPosX;
+					_containerPos.x -= deltaPosX;
+					_xPos = -_container.x;
+				}
+				if (deltaPosY != 0)
+				{
+					_container.y -= deltaPosY;
+					_containerPos.y -= deltaPosY;
+					_yPos = -_container.y;
+				}
+			}
+			else
+			{
+				//如果原来滚动位置是贴边，加入处理继续贴边。
+				if (deltaWidth != 0 && isRightmost)
+				{
+					_xPos = _overlapSize.x;
+					_container.x = -_xPos;
+				}
+				
+				if (deltaHeight != 0 && isBottom)
+				{
+					_yPos = _overlapSize.y;
+					_container.y = -_yPos;
 				}
 			}
 			
-			handleSizeChanged(true);
+			if (_pageMode)
+				updatePageController();
 		}
 		
 		private function handleSizeChanged(onScrolling:Boolean=false):void
@@ -793,12 +944,12 @@ package fairygui
 			{
 				if(_vtScrollBar)
 				{
-					if(_contentHeight<=_viewHeight)
+					if(_contentSize.y<=_viewSize.y)
 					{
 						if(!_vScrollNone)
 						{
 							_vScrollNone = true;
-							_viewWidth += _vtScrollBar.width;
+							_viewSize.x += _vtScrollBar.width;
 						}
 					}
 					else
@@ -806,18 +957,18 @@ package fairygui
 						if(_vScrollNone)
 						{
 							_vScrollNone = false;
-							_viewWidth -= _vtScrollBar.width;
+							_viewSize.x -= _vtScrollBar.width;
 						}
 					}
 				}
 				if(_hzScrollBar)
 				{
-					if(_contentWidth<=_viewWidth)
+					if(_contentSize.x<=_viewSize.x)
 					{
 						if(!_hScrollNone)
 						{
 							_hScrollNone = true;
-							_viewHeight += _hzScrollBar.height;
+							_viewSize.y += _hzScrollBar.height;
 						}
 					}
 					else
@@ -825,96 +976,105 @@ package fairygui
 						if(_hScrollNone)
 						{
 							_hScrollNone = false;
-							_viewHeight -= _hzScrollBar.height;
+							_viewSize.y -= _hzScrollBar.height;
 						}
 					}
 				}
 			}
-
+			
 			if(_vtScrollBar)
 			{
-				if(_viewHeight<_vtScrollBar.minSize)
+				if(_viewSize.y<_vtScrollBar.minSize)
 					//没有使用_vtScrollBar.visible是因为ScrollBar用了一个trick，它并不在owner的DisplayList里，因此_vtScrollBar.visible是无效的
 					_vtScrollBar.displayObject.visible = false;
 				else
 				{
 					_vtScrollBar.displayObject.visible = _scrollBarVisible && !_vScrollNone;
-					if(_contentHeight==0)
+					if(_contentSize.y==0)
 						_vtScrollBar.displayPerc = 0;
 					else
-						_vtScrollBar.displayPerc = Math.min(1, _viewHeight/_contentHeight);
+						_vtScrollBar.displayPerc = Math.min(1, _viewSize.y/_contentSize.y);
 				}
 			}
 			if(_hzScrollBar)
 			{
-				if(_viewWidth<_hzScrollBar.minSize)
+				if(_viewSize.x<_hzScrollBar.minSize)
 					_hzScrollBar.displayObject.visible = false;
 				else
 				{
 					_hzScrollBar.displayObject.visible = _scrollBarVisible && !_hScrollNone;
-					if(_contentWidth==0)
+					if(_contentSize.x==0)
 						_hzScrollBar.displayPerc = 0;
 					else
-						_hzScrollBar.displayPerc = Math.min(1, _viewWidth/_contentWidth);
+						_hzScrollBar.displayPerc = Math.min(1, _viewSize.x/_contentSize.x);
 				}
 			}
 			
-			if (!_maskDisabled)
+			var rect:Rectangle = _maskContainer.scrollRect;
+			if (rect)
 			{
-				var rect:Rectangle = _maskContainer.scrollRect;
-				rect.width = _viewWidth;
-				rect.height = _viewHeight;
+				rect.width = _viewSize.x;
+				rect.height = _viewSize.y;
 				_maskContainer.scrollRect = rect;
 			}
-
+			
 			if (_scrollType == ScrollType.Horizontal || _scrollType == ScrollType.Both)
-				_xOverlap = Math.ceil(Math.max(0, _contentWidth - _viewWidth));
+				_overlapSize.x = Math.ceil(Math.max(0, _contentSize.x - _viewSize.x));
 			else
-				_xOverlap = 0;
+				_overlapSize.x = 0;
 			if (_scrollType == ScrollType.Vertical || _scrollType == ScrollType.Both)
-				_yOverlap = Math.ceil(Math.max(0, _contentHeight - _viewHeight));
+				_overlapSize.y = Math.ceil(Math.max(0, _contentSize.y - _viewSize.y));
 			else
-				_yOverlap = 0;
+				_overlapSize.y = 0;
 			
-			if(_tweening==0 && onScrolling)
+			//边界检查
+			_xPos = ToolSet.clamp(_xPos, 0, _overlapSize.x);
+			_yPos = ToolSet.clamp(_yPos, 0, _overlapSize.y);
+			if(_refreshBarAxis!=null)
 			{
-				//如果原来是在边缘，且不在缓动状态，那么尝试继续贴边。（如果在缓动状态，需要修改tween的终值，暂时未支持）
-				if(_xPerc==0 || _xPerc==1)
+				var max:Number = _overlapSize[_refreshBarAxis];
+				if (max == 0)
+					max = Math.max(_contentSize[_refreshBarAxis] + _footerLockedSize - _viewSize[_refreshBarAxis], 0);
+				else
+					max += _footerLockedSize;
+			
+				if (_refreshBarAxis == "x")
 				{
-					_xPos = _xPerc * _xOverlap;
-					_container.x = -_xPos;
+					_container.x = ToolSet.clamp(_container.x, -max, _headerLockedSize);
+					_container.y = ToolSet.clamp(_container.y, -_overlapSize.y, 0);
 				}
-				if(_yPerc==0 || _yPerc==1)
+				else
 				{
-					_yPos = _yPerc * _yOverlap;
-					_container.y = -_yPos;
+					_container.x = ToolSet.clamp(_container.x, -_overlapSize.x, 0);
+					_container.y = ToolSet.clamp(_container.y, -max, _headerLockedSize);
 				}
-			}
-			else
-			{
-				//边界检查
-				_xPos = ToolSet.clamp(_xPos, 0, _xOverlap);
-				_xPerc = _xOverlap>0?_xPos/_xOverlap:0;
 				
-				_yPos = ToolSet.clamp(_yPos, 0, _yOverlap);
-				_yPerc = _yOverlap>0?_yPos/_yOverlap:0;
+				if (_header != null)
+				{
+					if (_refreshBarAxis == "x")
+						_header.height = _viewSize.y;
+					else
+						_header.width = _viewSize.x;
+				}
+				
+				if (_footer != null)
+				{
+					if (_refreshBarAxis == "y")
+						_footer.height = _viewSize.y;
+					else
+						_footer.width = _viewSize.x;
+				}
+			}
+			else
+			{
+				_container.x = ToolSet.clamp(_container.x, -_overlapSize.x, 0);
+				_container.y = ToolSet.clamp(_container.y, -_overlapSize.y, 0);
 			}
 			
-			validateHolderPos();
-			
-			if (_vtScrollBar != null)
-				_vtScrollBar.scrollPerc = _yPerc;
-			if (_hzScrollBar != null)
-				_hzScrollBar.scrollPerc = _xPerc;
-			
-			if(_pageMode)
+			syncScrollBar();
+			checkRefreshBar();
+			if (_pageMode)
 				updatePageController();
-		}
-		
-		private function validateHolderPos():void
-		{
-			_container.x = ToolSet.clamp(_container.x, -_xOverlap, 0);
-			_container.y = ToolSet.clamp(_container.y, -_yOverlap, 0);
 		}
 		
 		private function posChanged(ani:Boolean):void
@@ -926,270 +1086,142 @@ package fairygui
 			
 			_needRefresh = true;
 			GTimers.inst.callLater(refresh);
-			
-			//如果在甩手指滚动过程中用代码重新设置滚动位置，要停止滚动
-			if(_tweening==2)
-				killTween();
-		}
-		
-		private function killTween():void
-		{
-			if(_tweening==1)
-			{
-				_tweener.totalTime(_tweener.totalDuration());
-			}
-			else if(_tweening==2)
-			{
-				_tweener.kill();
-				_tweener = null;
-				_tweening = 0;
-
-				validateHolderPos();
-				syncScrollBar(true);
-				dispatchEvent(new Event(SCROLL_END));
-			}			
 		}
 		
 		private function refresh():void
 		{
 			_needRefresh = false;
-			GTimers.inst.remove(refresh);			
-
-			if(_pageMode)
+			GTimers.inst.remove(refresh);
+			
+			if (_pageMode || _snapToItem)
 			{
-				var page:int;
-				var delta:Number;
-				if(_yOverlap>0 && _yPerc!=1 && _yPerc!=0)
-				{
-					page = Math.floor(_yPos / _pageSizeV);
-					delta = _yPos - page*_pageSizeV;
-					if(delta>_pageSizeV/2)
-						page++;
-					_yPos = page * _pageSizeV;
-					if(_yPos>_yOverlap)
-					{
-						_yPos = _yOverlap;
-						_yPerc = 1;
-					}
-					else
-						_yPerc = _yPos / _yOverlap;
-				}
-				
-				if(_xOverlap>0 && _xPerc!=1 && _xPerc!=0)
-				{
-					page = Math.floor(_xPos / _pageSizeH);
-					delta = _xPos - page*_pageSizeH;
-					if(delta>_pageSizeH/2)
-						page++;
-					_xPos = page * _pageSizeH;
-					if(_xPos>_xOverlap)
-					{
-						_xPos = _xOverlap;
-						_xPerc = 1;
-					}
-					else
-						_xPerc = _xPos / _xOverlap;
-				}
-			}
-			else if(_snapToItem)
-			{
-				var pt:Point = _owner.getSnappingPosition(_xPerc==1?0:_xPos, _yPerc==1?0:_yPos, sHelperPoint);
-				if (_xPerc != 1 && pt.x!=_xPos)
-				{
-					_xPos = pt.x;
-					_xPerc = _xPos / _xOverlap;
-					if(_xPerc>1)
-					{
-						_xPerc = 1;
-						_xPos = _xOverlap;
-					}
-				}
-				if (_yPerc != 1 && pt.y!=_yPos)
-				{
-					_yPos = pt.y;
-					_yPerc = _yPos / _yOverlap;
-					if(_yPerc>1)
-					{
-						_yPerc = 1;
-						_yPos = _yOverlap;
-					}
-				}
+				sEndPos.setTo(-_xPos, -_yPos);
+				alignPosition(sEndPos, false);
+				_xPos = -sEndPos.x;
+				_yPos = -sEndPos.y;
 			}
 			
 			refresh2();
 			
 			dispatchEvent(new Event(Event.SCROLL));
-			
-			if (_needRefresh) //user change scroll pos in on scroll
+			if (_needRefresh) //在onScroll事件里开发者可能修改位置，这里再刷新一次，避免闪烁
 			{
 				_needRefresh = false;
 				GTimers.inst.remove(refresh);
-
+				
 				refresh2();
 			}
+			
+			syncScrollBar();
 			_aniFlag = 0;
 		}
 		
 		private function refresh2():void
 		{
-			var contentXLoc:int = int(_xPos);
-			var contentYLoc:int = int(_yPos);
-			
-			if(_aniFlag==1 && !isDragged)
+			if (_aniFlag == 1 && !isDragged)
 			{
-				var toX:Number = _container.x;
-				var toY:Number = _container.y;
+				var posX:Number;
+				var posY:Number;
 				
-				if(_yOverlap>0)
-				{
-					toY = -contentYLoc;
-				}
+				if (_overlapSize.x > 0)
+					posX = -int(_xPos);
 				else
 				{
-					if(_container.y!=0)
-						_container.y = 0;
-				}
-				if(_xOverlap>0)
-				{
-					toX = -contentXLoc;
-				}
-				else
-				{
-					if(_container.x!=0)
+					if (_container.x != 0)
 						_container.x = 0;
+					posX = 0;
+				}
+				if (_overlapSize.y > 0)
+					posY = -int(_yPos);
+				else
+				{
+					if (_container.y != 0)
+						_container.y = 0;
+					posY = 0;
 				}
 				
-				if(toX!=_container.x || toY!=_container.y)
+				if (posX != _container.x || posY != _container.y)
 				{
-					if(_tweener!=null)
-						_tweener.kill();
-					
-					_maskContainer.mouseChildren = false;
 					_tweening = 1;
-					
-					_tweener = TweenLite.to(_container, 0.5, { x:toX, y:toY,
-						onUpdate:__tweenUpdate, onComplete:__tweenComplete, 
-						ease:_easeTypeFunc } );
+					_tweenTime.setTo(0,0);
+					_tweenDuration.setTo(TWEEN_TIME_GO, TWEEN_TIME_GO);
+					_tweenStart.setTo(_container.x, _container.y);
+					_tweenChange.setTo(posX - _tweenStart.x, posY - _tweenStart.y);
+					GTimers.inst.callBy60Fps(tweenUpdate);
 				}
+				else if (_tweening != 0)
+					killTween();
 			}
 			else
 			{
-				if(_tweener!=null)
+				if (_tweening != 0)
 					killTween();
 				
-				//如果在拖动的过程中Refresh，这里要进行处理，保证拖动继续正常进行
-				if (isDragged)
-				{
-					_xOffset += _container.x - (-contentXLoc);
-					_yOffset += _container.y - (-contentYLoc);
-				}
+				_container.x = int(-_xPos);
+				_container.y = int(-_yPos);
 				
-				_container.y = -contentYLoc;
-				_container.x = -contentXLoc;
-				
-				//如果在拖动的过程中Refresh，这里要进行处理，保证手指离开是滚动正常进行
-				if (isDragged)
-				{
-					_y1 = _y2 = _container.y;
-					_x1 = _x2 = _container.x;
-				}
-
-				if(_vtScrollBar)
-					_vtScrollBar.scrollPerc = _yPerc;
-				if(_hzScrollBar)
-					_hzScrollBar.scrollPerc = _xPerc;
+				loopCheckingCurrent();
 			}
 			
-			if(_pageMode)
-				updatePageController();
-		}
-		
-		private function syncPos():void
-		{
-			if(_xOverlap>0)
-			{
-				_xPos = ToolSet.clamp(-_container.x, 0, _xOverlap);
-				_xPerc = _xPos / _xOverlap;
-			}
-			
-			if(_yOverlap>0)
-			{
-				_yPos = ToolSet.clamp(-_container.y, 0, _yOverlap);
-				_yPerc = _yPos / _yOverlap;
-			}
-			
-			if(_pageMode)
+			if (_pageMode)
 				updatePageController();
 		}
 		
 		private function syncScrollBar(end:Boolean=false):void
 		{
+			if (_vtScrollBar != null)
+			{
+				_vtScrollBar.scrollPerc = _overlapSize.y == 0 ? 0 : ToolSet.clamp(-_container.y, 0, _overlapSize.y) / _overlapSize.y;
+				if (_scrollBarDisplayAuto)
+					showScrollBar(!end);
+			}
+			if (_hzScrollBar != null)
+			{
+				_hzScrollBar.scrollPerc = _overlapSize.x == 0 ? 0 : ToolSet.clamp(-_container.x, 0, _overlapSize.x) / _overlapSize.x;
+				if (_scrollBarDisplayAuto)
+					showScrollBar(!end);
+			}
+			
 			if(end)
-			{
-				if(_vtScrollBar)
-				{
-					if(_scrollBarDisplayAuto)
-						showScrollBar(false);
-				}
-				if(_hzScrollBar)
-				{
-					if(_scrollBarDisplayAuto)
-						showScrollBar(false);
-				}
 				_maskContainer.mouseChildren = true;
-			}
-			else
-			{
-				if(_vtScrollBar)
-				{
-					_vtScrollBar.scrollPerc = _yOverlap == 0 ? 0 : ToolSet.clamp(-_container.y, 0, _yOverlap) / _yOverlap;
-					if(_scrollBarDisplayAuto)
-						showScrollBar(true);
-				}
-				if(_hzScrollBar)
-				{
-					_hzScrollBar.scrollPerc =  _xOverlap == 0 ? 0 : ToolSet.clamp(-_container.x, 0, _xOverlap) / _xOverlap;
-					if(_scrollBarDisplayAuto)
-						showScrollBar(true);
-				}
-			}
 		}
-
-		private function __mouseDown(e:Event):void
+		
+		private function __mouseDown(evt:GTouchEvent):void
 		{
 			if(!_touchEffect)
 				return;
-
-			if(_tweener!=null)
+			
+			if(_tweening!=0)
 			{
 				killTween();
 				isDragged = true;
 			}
 			else
 				isDragged = false;
+
+			var pt:Point = _owner.globalToLocal(evt.stageX, evt.stageY);
 			
-			_x1 = _x2 = _container.x;
-			_y1 = _y2 = _container.y;
-			
-			_xOffset = _maskContainer.mouseX - _container.x;
-			_yOffset = _maskContainer.mouseY - _container.y;
-			
-			_time1 = _time2 = getTimer();
-			_holdAreaPoint.x = _maskContainer.mouseX;
-			_holdAreaPoint.y = _maskContainer.mouseY;
+			_containerPos.setTo(_container.x, _container.y);
+			_beginTouchPos.copyFrom(pt);
+			_lastTouchPos.copyFrom(pt);
+			_lastTouchGlobalPos.setTo(evt.stageX, evt.stageY);
 			_isHoldAreaDone = false;
-			isDragged = false;
+			_velocity.setTo(0,0);
+			_velocityScale = 1;
+			_lastMoveTime = getTimer()/1000;
 			
 			_owner.addEventListener(GTouchEvent.DRAG, __mouseMove);
 		}
 		
-		private function __mouseMove(e:GTouchEvent):void
+		private function __mouseMove(evt:GTouchEvent):void
 		{
 			if(!_touchEffect)
 				return;
 			
 			if (draggingPane != null && draggingPane != this || GObject.draggingObject != null) //已经有其他拖动
 				return;
+			
+			var pt:Point = _owner.globalToLocal(evt.stageX, evt.stageY);
 			
 			var sensitivity:int;
 			if (GRoot.touchScreen)
@@ -1207,13 +1239,13 @@ package fairygui
 					//表示正在监测垂直方向的手势
 					_gestureFlag |= 1;
 					
-					diff = Math.abs(_holdAreaPoint.y - _maskContainer.mouseY);
+					diff = Math.abs(_beginTouchPos.y - pt.y);
 					if (diff < sensitivity)
 						return;
 					
 					if ((_gestureFlag & 2) != 0) //已经有水平方向的手势在监测，那么我们用严格的方式检查是不是按垂直方向移动，避免冲突
 					{
-						diff2 = Math.abs(_holdAreaPoint.x - _maskContainer.mouseX);
+						diff2 = Math.abs(_beginTouchPos.x - pt.x);
 						if (diff < diff2) //不通过则不允许滚动了
 							return;
 					}
@@ -1227,13 +1259,13 @@ package fairygui
 				{
 					_gestureFlag |= 2;
 					
-					diff = Math.abs(_holdAreaPoint.x - _maskContainer.mouseX);
+					diff = Math.abs(_beginTouchPos.x - pt.x);
 					if (diff < sensitivity)
 						return;
 					
 					if ((_gestureFlag & 1) != 0)
 					{
-						diff2 = Math.abs(_holdAreaPoint.y - _maskContainer.mouseY);
+						diff2 = Math.abs(_beginTouchPos.y - pt.y);
 						if (diff < diff2)
 							return;
 					}
@@ -1247,10 +1279,10 @@ package fairygui
 				
 				if (!_isHoldAreaDone)
 				{
-					diff = Math.abs(_holdAreaPoint.y - _maskContainer.mouseY);
+					diff = Math.abs(_beginTouchPos.y - pt.y);
 					if (diff < sensitivity)
 					{
-						diff = Math.abs(_holdAreaPoint.x - _maskContainer.mouseX);
+						diff = Math.abs(_beginTouchPos.x - pt.x);
 						if (diff < sensitivity)
 							return;
 					}
@@ -1259,79 +1291,122 @@ package fairygui
 				sv = sh = true;
 			}
 			
-			var t:uint = getTimer();
-			if (t - _time2 > 50)
-			{
-				_time2 = _time1;
-				_time1 = t;
-				st = true;
-			}
+			var newPosX:Number = int(_containerPos.x + pt.x - _beginTouchPos.x);
+			var newPosY:Number = int(_containerPos.y + pt.y - _beginTouchPos.y);
 			
-			if(sv)
+			if (sv)
 			{
-				var y:int = _maskContainer.mouseY - _yOffset;
-				if (y > 0) 
+				if (newPosY > 0)
 				{
-					if (!_bouncebackEffect || _inertiaDisabled)
+					if (!_bouncebackEffect)
 						_container.y = 0;
+					else if (_header != null && _header.maxHeight != 0)
+						_container.y = int(Math.min(newPosY * 0.5, _header.maxHeight));
 					else
-						_container.y = int(y * 0.5);
+						_container.y = int(Math.min(newPosY * 0.5, _viewSize.y * PULL_RATIO));
 				}
-				else if (y < -_yOverlap) 
+				else if (newPosY < -_overlapSize.y)
 				{
-					if (!_bouncebackEffect || _inertiaDisabled)
-						_container.y = -int(_yOverlap);
+					if (!_bouncebackEffect)
+						_container.y = -_overlapSize.y;
+					else if (_footer != null && _footer.maxHeight > 0)
+						_container.y = int(Math.max((newPosY + _overlapSize.y) * 0.5, -_footer.maxHeight) - _overlapSize.y);
 					else
-						_container.y = int((y- _yOverlap) * 0.5);
+					_container.y = int(Math.max((newPosY + _overlapSize.y) * 0.5, -_viewSize.y * PULL_RATIO) - _overlapSize.y);
 				}
-				else 
-				{
-					_container.y = y;
-				}
-				
-				if (st)
-				{
-					_y2 = _y1;
-					_y1 = _container.y;
-				}
+				else
+					_container.y = newPosY;
 			}
 			
-			if(sh)
+			if (sh)
 			{
-				var x:int = _maskContainer.mouseX - _xOffset;
-				if (x > 0) 
+				if (newPosX > 0)
 				{
-					if (!_bouncebackEffect || _inertiaDisabled)
+					if (!_bouncebackEffect)
 						_container.x = 0;
+					else if (_header != null && _header.maxWidth != 0)
+						_container.x = int(Math.min(newPosX * 0.5, _header.maxWidth));
 					else
-						_container.x = int(x * 0.5);
+						_container.x = int(Math.min(newPosX * 0.5, _viewSize.x * PULL_RATIO));
 				}
-				else if (x < 0 - _xOverlap) 
+				else if (newPosX < 0 - _overlapSize.x)
 				{
-					if (!_bouncebackEffect || _inertiaDisabled)
-						_container.x = -int(_xOverlap);
+					if (!_bouncebackEffect)
+						_container.x = -_overlapSize.x;
+					else if (_footer != null && _footer.maxWidth > 0)
+						_container.x = int(Math.max((newPosX + _overlapSize.x) * 0.5, -_footer.maxWidth) - _overlapSize.x);
 					else
-						_container.x = int( (x - _xOverlap) * 0.5);
+						_container.x = int(Math.max((newPosX + _overlapSize.x) * 0.5, -_viewSize.x * PULL_RATIO) - _overlapSize.x);
 				}
-				else 
+				else
+					_container.x = newPosX;
+			}
+			
+			
+			//更新速度
+			var frameRate:Number = _owner.displayObject.stage.frameRate;
+			var now:Number = getTimer()/1000;
+			var deltaTime:Number = Math.max(now - _lastMoveTime, 1/frameRate);
+			var deltaPositionX:Number = pt.x - _lastTouchPos.x;
+			var deltaPositionY:Number = pt.y - _lastTouchPos.y;
+			if (!sh)
+				deltaPositionX = 0;
+			if (!sv)
+				deltaPositionY = 0;
+			if(deltaTime!=0)
+			{
+				var elapsed:Number = deltaTime * frameRate - 1;
+				if (elapsed > 1) //速度衰减
 				{
-					_container.x = x;
+					var factor:Number = Math.pow(0.833, elapsed);
+					_velocity.x = _velocity.x * factor;
+					_velocity.y = _velocity.y * factor;
 				}
-				
-				if (st)
+				_velocity.x = ToolSet.lerp(_velocity.x, deltaPositionX * 60 / frameRate / deltaTime, deltaTime * 10);
+				_velocity.y = ToolSet.lerp(_velocity.y, deltaPositionY * 60 / frameRate / deltaTime, deltaTime * 10);
+			}
+			
+			/*速度计算使用的是本地位移，但在后续的惯性滚动判断中需要用到屏幕位移，所以这里要记录一个位移的比例。
+			*/
+			var deltaGlobalPositionX:Number = _lastTouchGlobalPos.x - evt.stageX;
+			var deltaGlobalPositionY:Number = _lastTouchGlobalPos.y - evt.stageY;
+			if (deltaPositionX != 0)
+				_velocityScale = Math.abs(deltaGlobalPositionX / deltaPositionX);
+			else if (deltaPositionY != 0)
+				_velocityScale = Math.abs(deltaGlobalPositionY / deltaPositionY);
+			
+			_lastTouchPos.setTo(pt.x, pt.y);
+			_lastTouchGlobalPos.setTo(evt.stageX, evt.stageY);
+			_lastMoveTime = now;
+			
+			//同步更新pos值
+			if (_overlapSize.x > 0)
+				_xPos = ToolSet.clamp(-_container.x, 0, _overlapSize.x);
+			if (_overlapSize.y > 0)
+				_yPos = ToolSet.clamp(-_container.y, 0, _overlapSize.y);
+			
+			//循环滚动特别检查
+			if (_loop != 0)
+			{
+				newPosX = _container.x;
+				newPosY = _container.y;
+				if (loopCheckingCurrent())
 				{
-					_x2 = _x1;
-					_x1 = _container.x;
+					_containerPos.x += _container.x - newPosX;
+					_containerPos.y += _container.y - newPosY;
 				}
 			}
 			
 			draggingPane = this;
-			_maskContainer.mouseChildren = false;
 			_isHoldAreaDone = true;
 			isDragged = true;
-			syncPos();
+			_maskContainer.mouseChildren = false;
+			
 			syncScrollBar();
-
+			checkRefreshBar();
+			if (_pageMode)
+				updatePageController();
+			
 			dispatchEvent(new Event(Event.SCROLL));
 		}
 		
@@ -1344,7 +1419,7 @@ package fairygui
 			
 			_gestureFlag = 0;
 			
-			if (!isDragged || !_touchEffect || _inertiaDisabled)
+			if (!isDragged || !_touchEffect)
 			{
 				isDragged = false;
 				_maskContainer.mouseChildren = true;
@@ -1354,157 +1429,109 @@ package fairygui
 			isDragged = false;
 			_maskContainer.mouseChildren = true;
 			
-			var time:Number = (getTimer() - _time2) / 1000;
-			if(time==0)
-				time = 0.001;
-			var yVelocity:Number = (_container.y - _y2) / time * 2 * UIConfig.defaultTouchScrollSpeedRatio;
-			var xVelocity:Number = (_container.x - _x2) / time * 2 * UIConfig.defaultTouchScrollSpeedRatio;
-			var duration:Number = 0.3;
+			_tweenStart.setTo(_container.x, _container.y);
 			
-			_throwTween.start.x = _container.x;
-			_throwTween.start.y = _container.y;
-			
-			var change1:Point = _throwTween.change1;
-			var change2:Point = _throwTween.change2;
-			var endX:Number = 0;
-			var endY:Number = 0;
-			var page:int;
-			var delta:Number;
-			var fireRelease:int = 0;
-			var testPageSize:Number;
-			
-			if(_scrollType==ScrollType.Both || _scrollType==ScrollType.Horizontal)
+			sEndPos.copyFrom(_tweenStart);
+			var flag:Boolean = false;
+			if (_container.x > 0)
 			{
-				if (_container.x > UIConfig.touchDragSensitivity)
-					fireRelease = 1;
-				else if (_container.x <  -_xOverlap - UIConfig.touchDragSensitivity)
-					fireRelease = 2;
-				
-				change1.x = ThrowTween.calculateChange(xVelocity, duration);
-				change2.x = 0;
-				endX = _container.x + change1.x;
-				
-				if(_pageMode && endX<0 && endX>-_xOverlap)
-				{
-					page = Math.floor(-endX / _pageSizeH);
-					testPageSize = Math.min(_pageSizeH, _contentWidth - (page + 1) * _pageSizeH);
-					delta = -endX - page*_pageSizeH;
-					//页面吸附策略
-					if (Math.abs(change1.x) > _pageSizeH)//如果滚动距离超过1页,则需要超过页面的一半，才能到更下一页
-					{
-//						if (delta > testPageSize * 0.5)
-						if (delta > UIConfig.pageScrollMinDistance)
-							page++;
-					}
-					else //否则只需要页面的1/3，当然，需要考虑到左移和右移的情况
-					{
-//						if (delta > testPageSize * (change1.x < 0 ? 0.3 : 0.7))
-						if (delta > (change1.x < 0 ?  UIConfig.pageScrollMinDistance :  testPageSize-UIConfig.pageScrollMinDistance))
-							page++;
-					}
-					
-					//重新计算终点
-					endX = -page * _pageSizeH;
-					if (endX < -_xOverlap) //最后一页未必有_pageSizeH那么大
-						endX = -_xOverlap;
-					
-					change1.x = endX - _container.x;
-				}
+				sEndPos.x = 0;
+				flag = true;
 			}
-			else
-				change1.x = change2.x = 0;
-			
-			if(_scrollType==ScrollType.Both || _scrollType==ScrollType.Vertical)
+			else if (_container.x < -_overlapSize.x)
 			{
-				if (_container.y > UIConfig.touchDragSensitivity)
-					fireRelease = 1;
-				else if (_container.y <  -_yOverlap - UIConfig.touchDragSensitivity)
-					fireRelease = 2;
-				
-				change1.y = ThrowTween.calculateChange(yVelocity, duration);
-				change2.y = 0;
-				endY = _container.y + change1.y;
-				
-				if(_pageMode && endY < 0 && endY > -_yOverlap)
+				sEndPos.x = -_overlapSize.x;
+				flag = true;
+			}
+			if (_container.y > 0)
+			{
+				sEndPos.y = 0;
+				flag = true;
+			}
+			else if (_container.y < -_overlapSize.y)
+			{
+				sEndPos.y = -_overlapSize.y;
+				flag = true;
+			}
+			if (flag)
+			{
+				_tweenChange.setTo(sEndPos.x - _tweenStart.x, sEndPos.y - _tweenStart.y);
+				if (_tweenChange.x < -UIConfig.touchDragSensitivity || _tweenChange.y < -UIConfig.touchDragSensitivity)
 				{
-					page = Math.floor(-endY / _pageSizeV);
-					testPageSize = Math.min(_pageSizeV, _contentHeight - (page + 1) * _pageSizeV);
-					delta = -endY - page * _pageSizeV;
-					if (Math.abs(change1.y) > _pageSizeV)
-					{
-//						if (delta > testPageSize * 0.5)
-						if (delta > UIConfig.pageScrollMinDistance)
-							page++;
-					}
+					_refreshEventDispatching = true;
+					dispatchEvent(new Event(ScrollPane.PULL_DOWN_RELEASE));
+					_refreshEventDispatching = false;
+				}
+				else if (_tweenChange.x > UIConfig.touchDragSensitivity || _tweenChange.y > UIConfig.touchDragSensitivity)
+				{
+					_refreshEventDispatching = true;
+					dispatchEvent(new Event(ScrollPane.PULL_UP_RELEASE));
+					_refreshEventDispatching = false;
+				}
+				
+				if (_headerLockedSize > 0 && sEndPos[_refreshBarAxis] == 0)
+				{
+					sEndPos[_refreshBarAxis] = _headerLockedSize;
+					_tweenChange.x = sEndPos.x - _tweenStart.x;
+					_tweenChange.y = sEndPos.y - _tweenStart.y;
+				}
+				else if (_footerLockedSize > 0 && sEndPos[_refreshBarAxis] == -_overlapSize[_refreshBarAxis])
+				{
+					var max:Number = _overlapSize[_refreshBarAxis];
+					if (max == 0)
+						max = Math.max(_contentSize[_refreshBarAxis] + _footerLockedSize - _viewSize[_refreshBarAxis], 0);
 					else
+						max += _footerLockedSize;
+					sEndPos[_refreshBarAxis] = -max;
+					_tweenChange.x = sEndPos.x - _tweenStart.x;
+					_tweenChange.y = sEndPos.y - _tweenStart.y;
+				}
+				
+				_tweenDuration.setTo(TWEEN_TIME_DEFAULT, TWEEN_TIME_DEFAULT);
+			}
+			else
+			{
+
+				//更新速度
+				if (!_inertiaDisabled)
+				{
+					var frameRate:Number = _owner.displayObject.stage.frameRate;
+					var elapsed:Number = (getTimer()/1000 - _lastMoveTime) * frameRate - 1;
+					if (elapsed > 1)
 					{
-//						if (delta > testPageSize * (change1.y < 0 ? 0.3 : 0.7))
-						if (delta > (change1.y < 0 ?  UIConfig.pageScrollMinDistance :  testPageSize-UIConfig.pageScrollMinDistance))
-							page++;
-					}
-					
-					endY = -page * _pageSizeV;
-					if (endY < -_yOverlap)
-						endY = -_yOverlap;
-					
-					change1.y = endY - _container.y;
+						var factor:Number = Math.pow(0.833, elapsed);
+						_velocity.x = _velocity.x * factor;
+						_velocity.y = _velocity.y * factor;
+					}				}
+				else
+					_tweenDuration.setTo(TWEEN_TIME_DEFAULT, TWEEN_TIME_DEFAULT);
+				sOldChange.setTo(sEndPos.x - _tweenStart.x, sEndPos.y - _tweenStart.y);
+				
+				//调整目标位置
+				loopCheckingTarget(sEndPos);
+				if (_pageMode || _snapToItem)
+					alignPosition(sEndPos, true);
+				
+				_tweenChange.x = sEndPos.x - _tweenStart.x;
+				_tweenChange.y = sEndPos.y - _tweenStart.y;
+				if (_tweenChange.x == 0 && _tweenChange.y == 0)
+				{
+					if (_scrollBarDisplayAuto)
+						showScrollBar(false);
+					return;
+				}
+				
+				//如果目标位置已调整，随之调整需要时间
+				if (_pageMode || _snapToItem)
+				{
+					fixDuration("x", sOldChange.x);
+					fixDuration("y", sOldChange.y);
 				}
 			}
-			else
-				change1.y = change2.y = 0;
 			
-			if (_snapToItem && !_pageMode)
-			{
-				endX = -endX;
-				endY = -endY;
-				var pt:Point = _owner.getSnappingPosition(endX, endY, sHelperPoint);
-				endX = -pt.x;
-				endY = -pt.y;
-				change1.x = endX - _container.x;
-				change1.y = endY - _container.y;
-			}
-			
-			if(_bouncebackEffect)
-			{			
-				if (endX>0)
-					change2.x = 0 - _container.x - change1.x;
-				else if (endX<-_xOverlap)
-					change2.x = -_xOverlap - _container.x - change1.x;
-				
-				if (endY>0)
-					change2.y = 0 - _container.y - change1.y;
-				else if (endY<-_yOverlap)
-					change2.y = -_yOverlap - _container.y - change1.y;
-			}
-			else
-			{
-				if (endX>0)
-					change1.x = 0 - _container.x;
-				else if (endX<-_xOverlap)
-					change1.x = -_xOverlap - _container.x;
-				
-				if (endY>0)
-					change1.y = 0 - _container.y;
-				else if (endY<-_yOverlap)
-					change1.y = -_yOverlap - _container.y;
-			}
-			
-			_throwTween.value = 0;
-			_throwTween.change1 = change1;
-			_throwTween.change2 = change2;
-			
-			if(_tweener!=null)
-				killTween();
-			
-			_tweening = 2;			
-			_tweener = TweenLite.to(_throwTween, duration, { value:1, 
-				onUpdate:__tweenUpdate2, onComplete:__tweenComplete2, 
-				ease:_easeTypeFunc } );
-			
-			if (fireRelease == 1)
-				dispatchEvent(new Event(PULL_DOWN_RELEASE));
-			else if (fireRelease == 2)
-				dispatchEvent(new Event(PULL_UP_RELEASE));
+			_tweening = 2;
+			_tweenTime.setTo(0,0);
+			GTimers.inst.callBy60Fps(tweenUpdate);
 		}
 		
 		private function __mouseWheel(evt:MouseEvent):void
@@ -1512,23 +1539,24 @@ package fairygui
 			if(!_mouseWheelEnabled
 				&& (!_vtScrollBar || !_vtScrollBar._rootContainer.hitTestObject(DisplayObject(evt.target)))
 				&& (!_hzScrollBar || !_hzScrollBar._rootContainer.hitTestObject(DisplayObject(evt.target)))
-				)
+			)
 				return;
 			
 			var delta:Number = evt.delta;
-			if (_xOverlap > 0 && _yOverlap == 0)
+			delta = delta>0?-1:(delta<0?1:0);
+			if (_overlapSize.x > 0 && _overlapSize.y == 0)
 			{
-				if(delta<0)
-					this.setPercX(_xPerc + getDeltaX(_mouseWheelSpeed), false);
+				if (_pageMode)
+					setPosX(_xPos + _pageSize.x * delta, false);
 				else
-					this.setPercX(_xPerc - getDeltaX(_mouseWheelSpeed), false);
+					setPosX(_xPos + _mouseWheelStep * delta, false);
 			}
 			else
 			{
-				if(delta<0)
-					this.setPercY(_yPerc + getDeltaY(_mouseWheelSpeed), false);
+				if (_pageMode)
+					setPosY(_yPos + _pageSize.y * delta, false);
 				else
-					this.setPercY(_yPerc - getDeltaY(_mouseWheelSpeed), false);
+					setPosY(_yPos + _mouseWheelStep * delta, false);
 			}
 		}
 		
@@ -1555,88 +1583,464 @@ package fairygui
 		
 		private function __showScrollBar(val:Boolean):void
 		{
-			_scrollBarVisible = val && _viewWidth>0 && _viewHeight>0;
+			_scrollBarVisible = val && _viewSize.x>0 && _viewSize.y>0;
 			if(_vtScrollBar)
 				_vtScrollBar.displayObject.visible = _scrollBarVisible &&　!_vScrollNone;
 			if(_hzScrollBar)
 				_hzScrollBar.displayObject.visible = _scrollBarVisible &&　!_hScrollNone;
 		}
 		
-		private function __tweenUpdate():void
+		private function getLoopPartSize(division:Number, axis:String):Number
 		{
-			syncScrollBar();
-			
-			dispatchEvent(new Event(Event.SCROLL));
+			return (_contentSize[axis] + (axis == "x" ? GList(_owner).columnGap : GList(_owner).lineGap)) / division;
 		}
 		
-		private function __tweenComplete():void
+		private function loopCheckingCurrent():Boolean
 		{
-			_tweener = null;
-			_tweening = 0;
+			var changed:Boolean = false;
+			if (_loop == 1 && _overlapSize.x > 0)
+			{
+				if (_xPos < 0.001)
+				{
+					_xPos += getLoopPartSize(2, "x");
+					changed = true;
+				}
+				else if (_xPos >= _overlapSize.x)
+				{
+					_xPos -= getLoopPartSize(2, "x");
+					changed = true;
+				}
+			}
+			else if (_loop == 2 && _overlapSize.y > 0)
+			{
+				if (_yPos < 0.001)
+				{
+					_yPos += getLoopPartSize(2, "y");
+					changed = true;
+				}
+				else if (_yPos >= _overlapSize.y)
+				{
+					_yPos -= getLoopPartSize(2, "y");
+					changed = true;
+				}
+			}
 			
-			validateHolderPos();
-			syncScrollBar(true);
+			if (changed)
+			{
+				_container.x = int(-_xPos);
+				_container.y = int(-_yPos);
+			}
 			
-			dispatchEvent(new Event(Event.SCROLL));
-		}
-
-		private function __tweenUpdate2():void
-		{
-			_throwTween.update(_container);
-			
-			syncPos();
-			syncScrollBar();
-
-			dispatchEvent(new Event(Event.SCROLL));
+			return changed;
 		}
 		
-		private function __tweenComplete2():void
-		{			
-			_tweener = null;
-			_tweening = 0;
+		private function loopCheckingTarget(endPos:Point):void
+		{
+			if (_loop == 1)
+				loopCheckingTarget2(endPos, "x");
 			
-			validateHolderPos();
-			syncPos();
-			syncScrollBar(true);
-
-			dispatchEvent(new Event(Event.SCROLL));
+			if (_loop == 2)
+				loopCheckingTarget2(endPos, "y");
+		}
+		
+		private function loopCheckingTarget2(endPos:Point, axis:String):void
+		{
+			var halfSize:Number;
+			var tmp:Number;
+			if (endPos[axis] > 0)
+			{
+				halfSize = getLoopPartSize(2, axis);
+				tmp = _tweenStart[axis] - halfSize;
+				if (tmp <= 0 && tmp >= -_overlapSize[axis])
+				{
+					endPos[axis] -= halfSize;
+					_tweenStart[axis] = tmp;
+				}
+			}
+			else if (endPos[axis] < -_overlapSize[axis])
+			{
+				halfSize = getLoopPartSize(2, axis);
+				tmp = _tweenStart[axis] + halfSize;
+				if (tmp <= 0 && tmp >= -_overlapSize[axis])
+				{
+					endPos[axis] += halfSize;
+					_tweenStart[axis] = tmp;
+				}
+			}
+		}
+		
+		private function loopCheckingNewPos(value:Number, axis:String):Number
+		{
+			if (_overlapSize[axis] == 0)
+				return value;
+			
+			var pos:Number = axis == "x" ? _xPos : _yPos;
+			var changed:Boolean = false;
+			var v:Number;
+			if (value < 0.001)
+			{
+				value += getLoopPartSize(2, axis);
+				if (value > pos)
+				{
+					v = getLoopPartSize(6, axis);
+					v = Math.ceil((value - pos) / v) * v;
+					pos = ToolSet.clamp(pos + v, 0, _overlapSize[axis]);
+					changed = true;
+				}
+			}
+			else if (value >= _overlapSize[axis])
+			{
+				value -= getLoopPartSize(2, axis);
+				if (value < pos)
+				{
+					v = getLoopPartSize(6, axis);
+					v = Math.ceil((pos - value) / v) * v;
+					pos = ToolSet.clamp(pos - v, 0, _overlapSize[axis]);
+					changed = true;
+				}
+			}
+			
+			if (changed)
+			{
+				if (axis == "x")
+					_container.x = -int(pos);
+				else
+					_container.y = -int(pos);
+			}
+			
+			return value;
+		}
+		
+		private function alignPosition(pos:Point, inertialScrolling:Boolean):void
+		{
+			if (_pageMode)
+			{
+				pos.x = alignByPage(pos.x, "x", inertialScrolling);
+				pos.y = alignByPage(pos.y, "y", inertialScrolling);
+			}
+			else if (_snapToItem)
+			{
+				var pt:Point = _owner.getSnappingPosition(-pos.x, -pos.y, sHelperPoint);
+				if (pos.x < 0 && pos.x > -_overlapSize.x)
+					pos.x = -pt.x;
+				if (pos.y < 0 && pos.y > -_overlapSize.y)
+					pos.y = -pt.y;
+			}
+		}
+		
+		private function alignByPage(pos:Number, axis:String, inertialScrolling:Boolean):Number
+		{
+			var page:int;
+			
+			if (pos > 0)
+				page = 0;
+			else if (pos < -_overlapSize[axis])
+				page = Math.ceil(_contentSize[axis] / _pageSize[axis]) - 1;
+			else
+			{
+				page = Math.floor(-pos / _pageSize[axis]);
+				var change:Number = inertialScrolling ? (pos - _containerPos[axis]) : (pos - _container[axis]);
+				var testPageSize:Number = Math.min(_pageSize[axis], _contentSize[axis] - (page + 1) * _pageSize[axis]);
+				var delta:Number = -pos - page * _pageSize[axis];
+				
+				//页面吸附策略
+				if (Math.abs(change) > _pageSize[axis])//如果滚动距离超过1页,则需要超过页面的一半，才能到更下一页
+				{
+					if (delta > testPageSize * 0.5)
+						page++;
+				}
+				else //否则只需要页面的1/3，当然，需要考虑到左移和右移的情况
+				{
+					if (delta > testPageSize * (change < 0 ? 0.3 : 0.7))
+						page++;
+				}
+				
+				//重新计算终点
+				pos = -page * _pageSize[axis];
+				if (pos < -_overlapSize[axis]) //最后一页未必有pageSize那么大
+					pos = -_overlapSize[axis];
+			}
+			
+			//惯性滚动模式下，会增加判断尽量不要滚动超过一页
+			if (inertialScrolling)
+			{
+				var oldPos:Number = _tweenStart[axis];
+				var oldPage:int;
+				if (oldPos > 0)
+					oldPage = 0;
+				else if (oldPos < -_overlapSize[axis])
+					oldPage = Math.ceil(_contentSize[axis] / _pageSize[axis]) - 1;
+				else
+					oldPage = Math.floor(-oldPos / _pageSize[axis]);
+				var startPage:int = Math.floor(-_containerPos[axis] / _pageSize[axis]);
+				if (Math.abs(page - startPage) > 1 && Math.abs(oldPage - startPage) <= 1)
+				{
+					if (page > startPage)
+						page = startPage + 1;
+					else
+						page = startPage - 1;
+					pos = -page * _pageSize[axis];
+				}
+			}
+			
+			return pos;
+		}
+		
+		private function updateTargetAndDuration(orignPos:Point, resultPos:Point):void
+		{
+			resultPos.x = updateTargetAndDuration2(orignPos.x, "x");
+			resultPos.y = updateTargetAndDuration2(orignPos.y, "y");
+		}
+		
+		private function updateTargetAndDuration2(pos:Number, axis:String):Number
+		{
+			var v:Number = _velocity[axis];
+			var duration:Number = 0;
+			if (pos > 0)
+				pos = 0;
+			else if (pos < -_overlapSize[axis])
+				pos = -_overlapSize[axis];
+			else
+			{
+				//以屏幕像素为基准
+				var v2:Number = Math.abs(v) * _velocityScale;
+				//在移动设备上，需要对不同分辨率做一个适配，我们的速度判断以1136分辨率为基准
+				if(GRoot.touchPointInput)
+					v2 *= 1136 / Math.max(GRoot.inst.nativeStage.stageWidth, GRoot.inst.nativeStage.stageHeight);
+				//这里有一些阈值的处理，因为在低速内，不希望产生较大的滚动（甚至不滚动）
+				var ratio:Number = 0;
+				if (_pageMode || !GRoot.touchPointInput)
+				{
+					if (v2 > 500)
+						ratio = Math.pow((v2 - 500) / 500, 2);
+				}
+				else
+				{
+					if (v2 > 1000)
+						ratio = Math.pow((v2 - 1000) / 1000, 2);
+				}
+				if (ratio != 0)
+				{
+					if (ratio > 1)
+						ratio = 1;
+					
+					v2 *= ratio;
+					v *= ratio;
+					_velocity[axis] = v;
+					
+					//算法：v*（_decelerationRate的n次幂）= 60，即在n帧后速度降为60（假设每秒60帧）。
+					duration = Math.log(60 / v2)/Math.log(_decelerationRate) / 60;
+					
+					//计算距离要使用本地速度
+					//理论公式貌似滚动的距离不够，改为经验公式
+					//var change:int = (v/ 60 - 1) / (1 - _decelerationRate);
+					var change:int = int(v * duration * 0.4);
+					pos += change;
+				}
+			}
+			
+			if (duration < TWEEN_TIME_DEFAULT)
+				duration = TWEEN_TIME_DEFAULT;
+			_tweenDuration[axis] = duration;
+			
+			return pos;
+		}
+		
+		private function fixDuration(axis:String, oldChange:Number):void
+		{
+			if (_tweenChange[axis] == 0 || Math.abs(_tweenChange[axis]) >= Math.abs(oldChange))
+				return;
+			
+			var newDuration:Number = Math.abs(_tweenChange[axis] / oldChange) * _tweenDuration[axis];
+			if (newDuration < TWEEN_TIME_DEFAULT)
+				newDuration = TWEEN_TIME_DEFAULT;
+			
+			_tweenDuration[axis] = newDuration;
+		}
+		
+		private function killTween():void
+		{
+			if (_tweening == 1) //取消类型为1的tween需立刻设置到终点
+			{
+				_container.x = _tweenStart.x + _tweenChange.x;
+				_container.y = _tweenStart.y + _tweenChange.y;
+				dispatchEvent(new Event(Event.SCROLL));
+			}
+			
+			_tweening = 0;
+			GTimers.inst.remove(tweenUpdate);
 			dispatchEvent(new Event(SCROLL_END));
 		}
-	}
-}
-import flash.display.DisplayObject;
-import flash.geom.Point;
-
-class ThrowTween
-{
-	public var value:Number;
-	public var start:Point;
-	public var change1:Point;
-	public var change2:Point;
-	
-	private static var checkpoint:Number = 0.05;
-	
-	public function ThrowTween()
-	{
-		start = new Point();
-		change1 = new Point();
-		change2 = new Point();
-	}
-	
-	public function update(obj:DisplayObject):void
-	{
-		obj.x = int(start.x + change1.x * value + change2.x * value * value);
-		obj.y = int(start.y + change1.y * value + change2.y * value * value);
-	}
-	
-	static public function calculateChange(velocity:Number, duration:Number):Number
-	{
-		return (duration * checkpoint * velocity) / easeOutCubic(checkpoint, 0, 1, 1);
-	}
-	
-	static public function easeOutCubic(t:Number, b:Number, c:Number, d:Number):Number
-	{
-		return c * ((t = t / d - 1) * t * t + 1) + b;
+		
+		private function checkRefreshBar():void
+		{
+			if (_header == null && _footer == null)
+				return;
+			
+			var pos:Number = _container[_refreshBarAxis];
+			if (_header != null)
+			{
+				if (pos > 0)
+				{
+					if (_header.displayObject.parent == null)
+						_maskContainer.addChildAt(_header.displayObject, 0);
+					var pt:Point = sHelperPoint;
+					pt.setTo(_header.width, _header.height);
+					pt[_refreshBarAxis] = pos;
+					_header.setSize(pt.x, pt.y);
+				}
+				else
+				{
+					if (_header.displayObject.parent != null)
+						_maskContainer.removeChild(_header.displayObject);
+				}
+			}
+			
+			if (_footer != null)
+			{
+				var max:Number = _overlapSize[_refreshBarAxis];
+				if (pos < -max || max == 0 && _footerLockedSize > 0)
+				{
+					if (_footer.displayObject.parent == null)
+						_maskContainer.addChildAt(_footer.displayObject, 0);
+					
+					pt = sHelperPoint;
+					pt.setTo(_footer.x, _footer.y);
+					if (max > 0)
+						pt[_refreshBarAxis] = pos + _contentSize[_refreshBarAxis];
+					else
+						pt[_refreshBarAxis] = Math.max(Math.min(pos + _viewSize[_refreshBarAxis], _viewSize[_refreshBarAxis] - _footerLockedSize),
+							_viewSize[_refreshBarAxis] - _contentSize[_refreshBarAxis]);
+					_footer.setXY(pt.x, pt.y);
+					
+					pt.setTo(_footer.width, _footer.height);
+					if (max > 0)
+						pt[_refreshBarAxis] = -max - pos;
+					else
+						pt[_refreshBarAxis] = _viewSize[_refreshBarAxis] - _footer[_refreshBarAxis];
+					_footer.setSize(pt.x, pt.y);
+				}
+				else
+				{
+					if (_footer.displayObject.parent != null)
+						_maskContainer.removeChild(_footer.displayObject);
+				}
+			}
+		}
+		
+		private function tweenUpdate():void
+		{
+			var nx:Number = runTween("x");
+			var ny:Number = runTween("y");
+			
+			_container.x = nx;
+			_container.y = ny;
+			
+			if (_tweening == 2)
+			{
+				if (_overlapSize.x > 0)
+					_xPos = ToolSet.clamp(-nx, 0, _overlapSize.x);
+				if (_overlapSize.y > 0)
+					_yPos = ToolSet.clamp(-ny, 0, _overlapSize.y);
+				
+				if (_pageMode)
+					updatePageController();
+			}
+			
+			if (_tweenChange.x == 0 && _tweenChange.y == 0)
+			{
+				_tweening = 0;
+				GTimers.inst.remove(tweenUpdate);
+				
+				loopCheckingCurrent();
+				
+				syncScrollBar(true);
+				checkRefreshBar();
+				dispatchEvent(new Event(Event.SCROLL));
+				dispatchEvent(new Event(SCROLL_END));
+			}
+			else
+			{
+				syncScrollBar(false);
+				checkRefreshBar();
+				dispatchEvent(new Event(Event.SCROLL));
+			}
+		}
+		
+		private function runTween(axis:String):Number
+		{
+			var newValue:Number;
+			if (_tweenChange[axis] != 0)
+			{
+				_tweenTime[axis] += GTimers.deltaTime/1000;
+				if (_tweenTime[axis] >= _tweenDuration[axis])
+				{
+					newValue = _tweenStart[axis] + _tweenChange[axis];
+					_tweenChange[axis] = 0;
+				}
+				else
+				{
+					var ratio:Number = easeFunc(_tweenTime[axis], _tweenDuration[axis]);
+					newValue = _tweenStart[axis] + int(_tweenChange[axis] * ratio);
+				}
+				
+				var threshold1:Number = 0;
+				var threshold2:Number = -_overlapSize[axis];
+				if (_headerLockedSize > 0 && _refreshBarAxis == axis)
+					threshold1 = _headerLockedSize;
+				if (_footerLockedSize > 0 && _refreshBarAxis == axis)
+				{
+					var max:Number = _overlapSize[_refreshBarAxis];
+					if (max == 0)
+						max = Math.max(_contentSize[_refreshBarAxis] + _footerLockedSize - _viewSize[_refreshBarAxis], 0);
+					else
+						max += _footerLockedSize;
+					threshold2 = -max;
+				}
+				
+				if (_tweening == 2 && _bouncebackEffect)
+				{
+					if (newValue > 20 + threshold1 && _tweenChange[axis] > 0
+						|| newValue > threshold1 && _tweenChange[axis] == 0)//开始回弹
+					{
+						_tweenTime[axis] = 0;
+						_tweenDuration[axis] = TWEEN_TIME_DEFAULT;
+						_tweenChange[axis] = -newValue + threshold1;
+						_tweenStart[axis] = newValue;
+					}
+					else if (newValue < threshold2 - 20 && _tweenChange[axis] < 0
+						|| newValue < threshold2 && _tweenChange[axis] == 0)//开始回弹
+					{
+						_tweenTime[axis] = 0;
+						_tweenDuration[axis] = TWEEN_TIME_DEFAULT;
+						_tweenChange[axis] = threshold2 - newValue;
+						_tweenStart[axis] = newValue;
+					}
+				}
+				else
+				{
+					if (newValue > threshold1)
+					{
+						newValue = threshold1;
+						_tweenChange[axis] = 0;
+					}
+					else if (newValue < threshold2)
+					{
+						newValue = threshold2;
+						_tweenChange[axis] = 0;
+					}
+				}
+			}
+			else
+				newValue = _container[axis];
+			
+			return newValue;
+		}
+		
+		private static function easeFunc(t:Number, d:Number):Number
+		{
+			return (t = t / d - 1) * t * t + 1;//cubicOut
+		}
 	}
 }
 
