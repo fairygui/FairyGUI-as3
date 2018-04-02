@@ -136,10 +136,9 @@ package fairygui
 				if(_corner)
 				{
 					if(_corner.length==1)
-						_graphics.drawRoundRect(0,0,w,h,int(_corner[0]), int(_corner[0]));
+						_graphics.drawRoundRectComplex(0,0,w,h,int(_corner[0]),int(_corner[0]),int(_corner[0]),int(_corner[0]));
 					else
-						_graphics.drawRoundRectComplex(0,0,w,h,
-							int(_corner[0]),int(_corner[1]),int(_corner[2]),int(_corner[3]));
+						_graphics.drawRoundRectComplex(0,0,w,h,int(_corner[0]),int(_corner[1]),int(_corner[2]),int(_corner[3]));
 				}
 				else
 					_graphics.drawRect(0,0,w,h);
