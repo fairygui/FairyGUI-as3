@@ -1491,6 +1491,7 @@ package fairygui
 			}
 			else
 			{
+
 				//更新速度
 				if (!_inertiaDisabled)
 				{
@@ -1501,10 +1502,7 @@ package fairygui
 						var factor:Number = Math.pow(0.833, elapsed);
 						_velocity.x = _velocity.x * factor;
 						_velocity.y = _velocity.y * factor;
-					}
-					//根据速度计算目标位置和需要时间
-					updateTargetAndDuration(_tweenStart, sEndPos);
-				}
+					}				}
 				else
 					_tweenDuration.setTo(TWEEN_TIME_DEFAULT, TWEEN_TIME_DEFAULT);
 				sOldChange.setTo(sEndPos.x - _tweenStart.x, sEndPos.y - _tweenStart.y);

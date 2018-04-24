@@ -2,11 +2,19 @@ package fairygui
 {
 	import flash.display.Bitmap;
 	import flash.display.BitmapData;
+	import flash.events.Event;
 	import flash.geom.ColorTransform;
 	import flash.geom.Matrix;
 	
 	import fairygui.display.UIImage;
 	import fairygui.utils.ToolSet;
+	
+	import ktv.managers.ManagerSkin;
+	import ktv.message.local.UIEvent;
+	import ktv.message.local.UIEventDispatcher;
+	import ktv.morn.core.handlers.Handler;
+	import ktv.morn.core.managers.LogManager;
+	import ktv.morn.core.managers.MassLoaderManager;
 
 	public class GImage extends GObject implements IColorGear
 	{
@@ -73,6 +81,7 @@ package fairygui
 		{ 
 			_content = new UIImage(this);
 			setDisplayObject(_content);
+			moreSkin=true;
 		}
 		
 		override public function dispose():void
@@ -87,6 +96,7 @@ package fairygui
 			}
 			
 			super.dispose();
+			moreSkin=false;
 		}
 		
 		override public function constructFromResource():void
@@ -106,13 +116,17 @@ package fairygui
 
 		private function __imageLoaded(pi:PackageItem):void
 		{
-			if(_bmdSource!=null)
+			if(!moreSkin&&_bmdSource!=null)
+			{
+				this.dispatchEvent(new Event(UIEvent.IMAGE_COMPLETE));	
 				return;
+			}
 			
 			_bmdSource = pi.image;
 			_content.bitmapData = _bmdSource;
 			_content.smoothing = packageItem.smoothing;
 			updateBitmap();
+			this.dispatchEvent(new Event(UIEvent.IMAGE_COMPLETE));
 		}
 		
 		override protected function handleSizeChanged():void
@@ -197,6 +211,69 @@ package fairygui
 			str = xml.@flip;
 			if(str)
 				this.flip = FlipType.parse(str);			
+		}
+		
+		private var _moreSkin:Boolean;
+
+		private var url:String;
+		
+		/**
+		 *是否 含有更多皮肤 
+		 * @param value
+		 */
+		public function set moreSkin(value:Boolean):void
+		{
+			_moreSkin = value;
+			if(_moreSkin)
+			{
+				UIEventDispatcher.getInstance().addEventListener(UIEvent.CHANGE_SKIN, changeSkin);
+			}else
+			{
+				UIEventDispatcher.getInstance().removeEventListener(UIEvent.CHANGE_SKIN, changeSkin);
+			}
+		}
+		
+		public function get moreSkin():Boolean
+		{
+			return _moreSkin;
+		}
+		
+		public function changeSkin(event:UIEvent):void
+		{
+			var suffix:String=packageItem.file.substr(packageItem.file.lastIndexOf("."));
+			url=ManagerSkin.assetsHead+packageItem.owner.name+packageItem.path+packageItem.name+suffix;
+			url=ManagerSkin.getSkin(url);
+			MassLoaderManager.getInstance().loadBMD(url,1,new Handler(loadedHandler,[packageItem]),null,new Handler(errorHandler,[packageItem]));
+			function loadedHandler(pi:PackageItem,content:*):void
+			{
+				pi.image = content as BitmapData;
+				__imageLoaded(pi);
+			}
+			function errorHandler(pi:PackageItem,url:String):void
+			{
+				var ary:Array=url.split("/");
+				if(ary.indexOf("skin0") != -1)//默认皮肤
+				{
+					LogManager.log.error("默认皮肤skin0不存在"+url);
+				}else//不是默认皮肤
+				{
+					var index:int=-1;
+					for (var i:int = 0; i < ary.length; i++) 
+					{
+						if(String(ary[i]).indexOf("skin") != -1)
+						{
+							index=i;
+							break;
+						}
+					}
+					if(index != -1)
+					{
+						ary[index]="skin0";//使用默认的皮肤
+						var tempURL:String=ary.join("/");
+						MassLoaderManager.getInstance().loadBMD(tempURL,1,new Handler(loadedHandler,[pi]),null,new Handler(errorHandler));
+					}
+				}
+			}
 		}
 	}
 }

@@ -15,7 +15,9 @@ package fairygui
 	import fairygui.utils.FontUtils;
 	import fairygui.utils.GTimers;
 	import fairygui.utils.ToolSet;
-
+	
+	import ktv.font.ManagerFont;
+	
 	public class GTextField extends GObject implements ITextColorGear
 	{
 		protected var _ubbEnabled:Boolean;
@@ -56,6 +58,25 @@ package fairygui
 		
 		private static const GUTTER_X:int = 2;
 		private static const GUTTER_Y:int = 2;
+		
+		/**
+		 * 文本截断处理
+		 */
+		public static var ellipsis:String="...";
+		/**
+		 * 后缀字符  正播放/预约
+		 */
+		public var suffix:String="";
+		/**
+		 *前缀字符  正播放/预约 
+		 */
+		public var prefix:String="";
+		/**
+		 *是否需要截断文本 
+		 */
+		public var truncationText:Boolean=false;
+		
+		
 		
 		public function GTextField()
 		{
@@ -116,7 +137,7 @@ package fairygui
 			if(_text==null)
 				_text = "";
 			updateGear(6);
-			
+			updateTextFormat();
 			if(parent && parent._underConstruct)
 				renderNow();
 			else
@@ -417,6 +438,7 @@ package fairygui
 				else
 					_textFormat.font = UIConfig.defaultFont;
 				
+				_textFormat.font=ManagerFont.setFontHandler(text,[_textFormat.font]);
 				var charSize:Object = CharSize.getSize(int(_textFormat.size), _textFormat.font, _bold);
 				_fontAdjustment = charSize.yIndent;
 			}
@@ -433,7 +455,8 @@ package fairygui
 			_textFormat.italic = _italic;
 			
 			_textField.defaultTextFormat = _textFormat;
-			_textField.embedFonts = FontUtils.isEmbeddedFont(_textFormat);
+			//			_textField.embedFonts = FontUtils.isEmbeddedFont(_textFormat);
+			_textField.embedFonts =ManagerFont.embedFont;
 			
 			if(!_underConstruct)
 				render();
@@ -494,10 +517,19 @@ package fairygui
 			h = Math.max(_height, int(_textFormat.size));
 			if(h!=_textField.height)
 				_textField.height = h;
-			if(_ubbEnabled)
-				_textField.htmlText = ToolSet.parseUBB(ToolSet.encodeHTML(_text));
-			else
-				_textField.text = _text;
+			
+			if(truncationText)
+			{
+				getTxt(_text);
+			}else
+			{
+				if(_ubbEnabled)
+					_textField.htmlText = ToolSet.parseUBB(ToolSet.encodeHTML(_text));
+				else
+					_textField.text = _text;
+			}
+			
+			
 			_textField.defaultTextFormat = _textFormat;
 			var renderSingleLine:Boolean = _textField.numLines<=1;
 			
@@ -534,6 +566,46 @@ package fairygui
 				_updatingSize = false;
 				
 				doAlign();
+			}
+			
+		}
+		
+		/**做过滤处理,"做截断并...处理",递归// [预约] 文本放在后面  必须设置文本为 单行  singleLine=true*/
+		protected function getTxt(value:String):void
+		{
+			var txt:String=value;
+			setValue(prefix+ txt + ellipsis + suffix);
+			if(_textField.textWidth>_textField.width)//大于文本的宽度 才加 省略号
+			{
+				var i:int=1;
+				var str:String=txt.substr(0,i);
+				setValue(prefix+ str + ellipsis + suffix);
+				while (_textField.textWidth<_textField.width)
+				{
+					i++;
+					str=txt.substr(0,i);
+					setValue(prefix+ str + ellipsis + suffix);
+				}
+				if(_textField.textWidth>_textField.width)// 加上一个字 超出  就不加了
+				{
+					str=txt.substr(0,i-1);
+					setValue(prefix+str + ellipsis + suffix);
+				}
+			}else
+			{
+				setValue(prefix+txt+ suffix);//小于的话 不加
+			}
+			
+		}
+		
+		private function setValue(value:String):void
+		{
+			if(_ubbEnabled)
+			{
+				_textField.htmlText=ToolSet.parseUBB(ToolSet.encodeHTML(value));
+			}else
+			{
+				_textField.htmlText=value;
 			}
 		}
 		
@@ -746,6 +818,7 @@ package fairygui
 				return;
 			
 			_bitmapData = new BitmapData(w, h, true, 0);
+			_bitmap.bitmapData = _bitmapData;
 			
 			var charX:int = GUTTER_X;
 			var lineIndent:int;
@@ -812,7 +885,7 @@ package fairygui
 		override protected function handleGrayedChanged():void
 		{
 			if(_bitmapFont)
-				super.handleGrayedChanged();
+			super.handleGrayedChanged();
 			updateTextFormat();
 		}
 		
@@ -931,8 +1004,16 @@ package fairygui
 			var str:String = xml.@text;
 			if(str)
 				this.text = str;
-
+			
 			_sizeDirty = false;
+		}
+		
+		override internal function setLang(xml:XML):void
+		{
+			super.setLang(xml);
+			var str:String = xml.@text;
+			if(str)
+				this.text = str;
 		}
 	}
 }

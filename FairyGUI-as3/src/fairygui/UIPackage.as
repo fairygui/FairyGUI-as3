@@ -6,6 +6,7 @@ package fairygui
 	import flash.events.Event;
 	import flash.geom.Rectangle;
 	import flash.media.Sound;
+	import flash.net.URLRequest;
 	import flash.system.LoaderContext;
 	import flash.utils.ByteArray;
 	import flash.utils.getTimer;
@@ -16,6 +17,11 @@ package fairygui
 	import fairygui.utils.GTimers;
 	import fairygui.utils.PixelHitTestData;
 	import fairygui.utils.ToolSet;
+	
+	import ktv.managers.ManagerSkin;
+	import ktv.morn.core.handlers.Handler;
+	import ktv.morn.core.managers.LogManager;
+	import ktv.morn.core.managers.MassLoaderManager;
 	
 	public class UIPackage
 	{
@@ -246,6 +252,7 @@ package fairygui
 				pi.id = cxml.@id;
 				pi.name = cxml.@name;
 				pi.file = cxml.@file;
+				pi.path = cxml.@path;
 				str = cxml.@size;
 				arr = str.split(",");
 				pi.width = int(arr[0]);
@@ -464,9 +471,8 @@ package fairygui
 				item.componentData = xml;
 				
 				loadComponentChildren(item);
-				translateComponent(item);
 			}
-			
+			translateComponent(item);
 			return item.componentData;
 		}
 		
@@ -696,14 +702,52 @@ package fairygui
 		private function loadImage(pi:PackageItem):void
 		{
 			var ba:ByteArray = _reader.readResFile(pi.file);
-			var loader:PackageItemLoader = new PackageItemLoader();
-			loader.contentLoaderInfo.addEventListener(Event.COMPLETE, __imageLoaded);
-			loader.loadBytes(ba);
-			
-			loader.item = pi;
+			if(ba)//加载.zip文件
+			{
+				var loader:PackageItemLoader = new PackageItemLoader();
+				loader.contentLoaderInfo.addEventListener(Event.COMPLETE, __imageLoaded);
+				loader.loadBytes(ba);
+				loader.item = pi;
+				_loadingQueue.push(loader);
+			}else//加载 外部文件
+			{
+				var url:String=ManagerSkin.assetsHead+pi.url;
+				MassLoaderManager.getInstance().loadBMD(url,1,new Handler(loadedHandler,[pi]),null,new Handler(errorHandler,[pi]));
+				function loadedHandler(pi:PackageItem,content:*):void
+				{
+					pi.image = content as BitmapData;
+					pi.completeLoading();
+				}
+				function errorHandler(pi:PackageItem,url:String):void
+				{
+					var ary:Array=url.split("/");
+					if(ary.indexOf("skin0") != -1)//默认皮肤
+					{
+						LogManager.log.error("默认皮肤skin0不存在"+url);
+					}else//不是默认皮肤
+					{
+						var index:int=-1;
+						for (var i:int = 0; i < ary.length; i++) 
+						{
+							if(String(ary[i]).indexOf("skin") != -1)
+							{
+								index=i;
+								break;
+							}
+						}
+						if(index != -1)
+						{
+							ary[index]="skin0";//使用默认的皮肤
+							var tempURL:String=ary.join("/");
+							MassLoaderManager.getInstance().loadBMD(tempURL,1,new Handler(loadedHandler,[pi]),null,new Handler(errorHandler));
+						}
+					}
+				}
+			}
 			pi.loading = 1;
-			_loadingQueue.push(loader);
 		}
+		
+		
 		
 		private function __imageLoaded(evt:Event):void
 		{
@@ -722,14 +766,52 @@ package fairygui
 		private function loadSwf(pi:PackageItem):void
 		{
 			var ba:ByteArray = _reader.readResFile(pi.file);
-			var loader:PackageItemLoader = new PackageItemLoader();
-			loader.contentLoaderInfo.addEventListener(Event.COMPLETE, __swfLoaded);
-			var context:LoaderContext = new LoaderContext();
-			context.allowCodeImport = true;
-			loader.loadBytes(ba, context);
-			
-			loader.item = pi;
-			_loadingQueue.push(loader);
+			if(ba)
+			{
+				var loader:PackageItemLoader = new PackageItemLoader();
+				loader.contentLoaderInfo.addEventListener(Event.COMPLETE, __swfLoaded);
+				var context:LoaderContext = new LoaderContext();
+				context.allowCodeImport = true;
+				loader.loadBytes(ba, context);
+				
+				loader.item = pi;
+				_loadingQueue.push(loader);
+			}else//加载 外部文件
+			{
+				var url:String=ManagerSkin.assetsHead+pi.url;
+				MassLoaderManager.getInstance().loadBMD(url,1,new Handler(loadedHandler,[pi]),null,new Handler(errorHandler,[pi]));
+				function loadedHandler(pi:PackageItem,content:*):void
+				{
+					var callback:Function = pi.callbacks.pop();
+					if(callback!=null)
+						callback(content);
+				}
+				function errorHandler(pi:PackageItem,url:String):void
+				{
+					var ary:Array=url.split("/");
+					if(ary.indexOf("skin0") != -1)//默认皮肤
+					{
+						LogManager.log.error("默认皮肤skin0不存在"+url);
+					}else//不是默认皮肤
+					{
+						var index:int=-1;
+						for (var i:int = 0; i < ary.length; i++) 
+						{
+							if(String(ary[i]).indexOf("skin") != -1)
+							{
+								index=i;
+								break;
+							}
+						}
+						if(index != -1)
+						{
+							ary[index]="skin0";//使用默认的皮肤
+							var tempURL:String=ary.join("/");
+							MassLoaderManager.getInstance().loadBMD(tempURL,1,new Handler(loadedHandler,[pi]),null,new Handler(errorHandler));
+						}
+					}
+				}
+			}
 		}
 		
 		private function __swfLoaded(evt:Event):void
@@ -795,6 +877,44 @@ package fairygui
 					loader.frame = frame;
 					_loadingQueue.push(loader);
 					item.loading++;
+				}else//加载 外部文件
+				{
+					var url:String;
+					url=ManagerSkin.assetsHead+item.owner.name+item.path+str;
+					MassLoaderManager.getInstance().loadBMD(url,1,new Handler(loadedHandler,[item,frame]),null,new Handler(errorHandler,[item]));
+					item.loading++;
+					function loadedHandler(pi:PackageItem,frame:Frame,content:*):void
+					{
+						frame.image = content as BitmapData;
+						pi.loading--;
+						if(pi.loading==0)
+							pi.completeLoading();
+					}
+					function errorHandler(pi:PackageItem,url:String):void
+					{
+						var ary:Array=url.split("/");
+						if(ary.indexOf("skin0") != -1)//默认皮肤
+						{
+							LogManager.log.error("默认皮肤skin0不存在"+url);
+						}else//不是默认皮肤
+						{
+							var index:int=-1;
+							for (var i:int = 0; i < ary.length; i++) 
+							{
+								if(String(ary[i]).indexOf("skin") != -1)
+								{
+									index=i;
+									break;
+								}
+							}
+							if(index != -1)
+							{
+								ary[index]="skin0";//使用默认的皮肤
+								var tempURL:String=ary.join("/");
+								MassLoaderManager.getInstance().loadBMD(tempURL,1,new Handler(loadedHandler,[pi]),null,new Handler(errorHandler));
+							}
+						}
+					}
 				}
 			}
 		}
@@ -820,7 +940,14 @@ package fairygui
 		{
 			var sound:Sound = new Sound();
 			var ba:ByteArray = _reader.readResFile(item.file);
-			sound.loadCompressedDataFromByteArray(ba, ba.length);
+			if(ba)
+			{
+				sound.loadCompressedDataFromByteArray(ba, ba.length);
+			}else
+			{
+				var url:String=ManagerSkin.assetsHead+item.url;
+				sound.load(new URLRequest(url));
+			}
 			item.sound = sound;
 			item.loaded = true;
 		}
@@ -913,12 +1040,48 @@ package fairygui
 					if(ttf)
 					{
 						var ba:ByteArray = _reader.readResFile(item.id+".png");
-						var loader:PackageItemLoader = new PackageItemLoader();
-						loader.contentLoaderInfo.addEventListener(Event.COMPLETE, __fontAtlasLoaded);
-						loader.loadBytes(ba);
-						
-						loader.item = item;
-						_loadingQueue.push(loader);
+						if(ba)
+						{
+							var loader:PackageItemLoader = new PackageItemLoader();
+							loader.contentLoaderInfo.addEventListener(Event.COMPLETE, __fontAtlasLoaded);
+							loader.loadBytes(ba);
+							
+							loader.item = item;
+							_loadingQueue.push(loader);
+						}else//加载 外部文件
+						{
+							var url:String=ManagerSkin.assetsHead+item.url;
+							MassLoaderManager.getInstance().loadBMD(url,1,new Handler(loadedHandler,[item]),null,new Handler(errorHandler,[item]));
+							function loadedHandler(pi:PackageItem,content:*):void
+							{
+								pi.bitmapFont.atlas = content as BitmapData;
+							}
+							function errorHandler(pi:PackageItem,url:String):void
+							{
+								var ary:Array=url.split("/");
+								if(ary.indexOf("skin0") != -1)//默认皮肤
+								{
+									LogManager.log.error("默认皮肤skin0不存在"+url);
+								}else//不是默认皮肤
+								{
+									var index:int=-1;
+									for (var i:int = 0; i < ary.length; i++) 
+									{
+										if(String(ary[i]).indexOf("skin") != -1)
+										{
+											index=i;
+											break;
+										}
+									}
+									if(index != -1)
+									{
+										ary[index]="skin0";//使用默认的皮肤
+										var tempURL:String=ary.join("/");
+										MassLoaderManager.getInstance().loadBMD(tempURL,1,new Handler(loadedHandler,[pi]),null,new Handler(errorHandler));
+									}
+								}
+							}
+						}
 					}
 				}
 				else if(str=="common")

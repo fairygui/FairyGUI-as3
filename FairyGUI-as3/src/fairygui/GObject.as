@@ -9,6 +9,7 @@ package fairygui
 	import flash.events.MouseEvent;
 	import flash.events.TouchEvent;
 	import flash.filters.ColorMatrixFilter;
+	import flash.geom.Matrix;
 	import flash.geom.Point;
 	import flash.geom.Rectangle;
 	import flash.text.TextField;
@@ -55,6 +56,8 @@ package fairygui
 		private var _draggable:Boolean;
 		private var _scaleX:Number;
 		private var _scaleY:Number;		
+		private var _skewX:Number;
+		private var _skewY:Number;
 		private var _pivotX:Number;
 		private var _pivotY:Number;
 		private var _pivotAsAnchor:Boolean;
@@ -121,6 +124,8 @@ package fairygui
 			_touchable = true;
 			_scaleX = 1;
 			_scaleY = 1;
+			_skewX=0;
+			_skewY=0;
 			_pivotX = 0;
 			_pivotY = 0;
 			_pivotOffsetX = 0;
@@ -362,6 +367,45 @@ package fairygui
 			}
 		}
 		
+		final public function get skewX():Number
+		{
+			return _skewX;
+		}
+		
+		public function set skewX(value:Number):void
+		{
+			setSkew(value, _skewY);
+		}
+		
+		final public function get skewY():Number
+		{
+			return _skewY;
+		}
+		
+		public function set skewY(value:Number):void
+		{
+			setSkew(_skewX, value);
+		}
+		
+		public function setSkew(xv:Number, yv:Number):void
+		{
+			if(_skewX!=xv || _skewY!=yv)
+			{
+				_skewX = xv;
+				_skewY = yv;
+				if(_displayObject!=null)
+				{
+					var skewMatrix:Matrix=this._displayObject.transform.matrix;
+					var angleX:Number =_skewX*Math.PI/180;
+					var angleY:Number =_skewY*Math.PI/180;
+					skewMatrix.b = Math.tan(angleY);
+					skewMatrix.c= Math.tan(angleX);
+					this._displayObject.transform.matrix=skewMatrix;
+					updatePivotOffset();
+				}				
+			}
+		}
+		
 		final public function get pivotX():Number
 		{
 			return _pivotX;
@@ -404,7 +448,7 @@ package fairygui
 				handlePositionChanged();
 		}
 		
-		private function updatePivotOffset():void
+		private function updatePivotOffset1():void
 		{
 			if(_pivotX!=0 || _pivotY!=0)
 			{
@@ -434,6 +478,43 @@ package fairygui
 				_pivotOffsetX = 0;
 				_pivotOffsetY = 0;
 			}
+		}
+		
+		
+		private function updatePivotOffset():void
+		{
+			if(_skewX!=0||_skewY!=0)
+			{
+				if(_displayObject!=null)
+				{
+					//GObject的特点是旋转和缩放不影响坐标，所以要有一个GObject坐标和DisplayObject坐标的转换。pivotOffset就是两个坐标的偏移值
+					if(_pivotX!=0 || _pivotY!=0)
+					{
+						var pt:Point = transformCoords(_displayObject.transform.matrix, 
+							_pivotX*_width, _pivotY*_height);
+						_pivotOffsetX = _pivotX*_width - (pt.x - _displayObject.x);
+						_pivotOffsetY = _pivotY*_height - (pt.y - _displayObject.y);
+					}
+					else					
+					{
+						_pivotOffsetX = 0;
+						_pivotOffsetY = 0;
+					}				
+				}
+			}else
+			{
+				updatePivotOffset1();
+			}
+		}
+		
+		public static function transformCoords(matrix:Matrix, x:Number, y:Number,out:Point=null):Point
+		{
+			if (out == null) out = new Point();
+			
+			out.x = matrix.a * x + matrix.c * y + matrix.tx;
+			out.y = matrix.d * y + matrix.b * x + matrix.ty;
+			
+			return out;
 		}
 		
 		private function applyPivot():void
@@ -1349,6 +1430,13 @@ package fairygui
 				setScale(parseFloat(arr[0]), parseFloat(arr[1]));
 			}
 			
+			str = xml.@skew;
+			if(str)
+			{
+				arr = str.split(",");
+				setSkew(parseFloat(arr[0]),parseFloat(arr[1]));
+			}
+			
 			str = xml.@rotation;
 			if(str)
 				this.rotation = parseInt(str);
@@ -1424,6 +1512,23 @@ package fairygui
 				var index:* = GearXMLKeys[cxml.name().localName];
 				if(index!=undefined)
 					getGear(int(index)).setup(cxml);
+			}
+		}
+		
+		internal function setLang(xml:XML):void
+		{
+			if(String(xml.@tooltips).length)
+			{
+				tooltips=xml.@tooltips;
+			}
+			var col:Object = xml.elements();
+			for each(var cxml:XML in col)
+			{
+				var index:* = GearXMLKeys[cxml.name().localName];
+				if(index!=undefined && int(index)==6)//只更新文本
+				{
+					getGear(int(index)).setLang(cxml);
+				}
 			}
 		}
 		
@@ -1745,5 +1850,6 @@ package fairygui
 				dispatchEvent(dragEvent);
 			}
 		}
+		//-------------------------------------------------------------------
 	}
 }

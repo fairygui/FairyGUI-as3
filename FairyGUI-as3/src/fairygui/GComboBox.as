@@ -392,6 +392,32 @@ package fairygui
 			}
 		}
 		
+		override internal function setLang(xml:XML):void
+		{
+			super.setLang(xml);
+			xml = xml.ComboBox[0];
+			if(xml)
+			{
+				var str:String;
+				var col:XMLList = xml.item;
+				_items.length=0;
+				for each(var cxml:XML in col)
+				{
+					_items.push(String(cxml.@title));
+				}
+				str = xml.@title;
+				if(str)
+				{
+					this.text = str;
+				}
+				else if(_items.length>0)
+				{
+					this.text = _items[_selectedIndex];
+				}
+				
+			}
+		}
+		
 		protected function showDropdown():void
 		{
 			if(_itemsUpdated)

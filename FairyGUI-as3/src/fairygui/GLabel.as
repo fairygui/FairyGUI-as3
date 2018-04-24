@@ -170,6 +170,28 @@ package fairygui
 				}
 			}
 		}
+		
+		override internal function setLang(xml:XML):void
+		{
+			super.setLang(xml);
+			xml = xml.Label[0];
+			var str:String;
+			if(xml)
+			{
+				str = xml.@title;
+				if(str)
+					this.text = str;
+				var tf:GTextField = getTextField();
+				if(tf is GTextInput)
+				{
+					str = xml.@prompt;
+					if(str)
+					{
+						GTextInput(tf).promptText = str;
+					}
+				}
+			}
+		}
 	}
 }
 

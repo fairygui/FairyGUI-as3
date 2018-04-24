@@ -42,5 +42,12 @@ package fairygui
 		{
 			_storage[_controller.selectedPageId] = _owner.text;
 		}
+		
+		override public function setLang(xml:XML):void
+		{
+			super.setLang(xml);
+			apply();
+		}
+		
 	}
 }

@@ -804,7 +804,6 @@ package fairygui
 			
 			var item:GObject = GObject(evt.currentTarget);
 			setSelectionOnEvent(item);
-			
 			if (_scrollPane != null && scrollItemToViewOnClick)
 				_scrollPane.scrollToView(item, true);
 			
@@ -820,7 +819,6 @@ package fairygui
 			var item:GObject = GObject(evt.currentTarget);
 			if((item is GButton) && !GButton(item).selected)
 				setSelectionOnEvent(item);
-			
 			if (_scrollPane != null && scrollItemToViewOnClick)
 				_scrollPane.scrollToView(item, true);
 			
@@ -1628,7 +1626,6 @@ package fairygui
 		{
 			if (_eventLocked)
 				return;
-
 			enterCounter = 0;
 			if (_layout == ListLayoutType.SingleColumn || _layout == ListLayoutType.FlowHorizontal)
 			{
@@ -2741,6 +2738,31 @@ package fairygui
 			}
 		}
 		
+		override internal function setLang(xml:XML):void
+		{
+			super.setLang(xml);
+			var col:XMLList = xml.item;
+			var i:int=0;
+			for each(var cxml:XML in col)
+			{
+				var url:String = cxml.@url;
+				if(!url)
+					url = _defaultItem;
+				if(!url)
+					continue;
+				
+				var str:String;
+				var obj:GObject = _children[i];
+				if(obj!=null)
+				{
+					str = cxml.@title;
+					if(str)
+						obj.text = str;
+				}
+				i++;
+			}
+		}
+		
 		override public function setup_afterAdd(xml:XML):void
 		{
 			super.setup_afterAdd(xml);
@@ -2749,6 +2771,8 @@ package fairygui
 			str = xml.@selectionController;
 			if(str)
 				_selectionController = parent.getController(str);
+			translateText=false;// 不翻译list
+			setTranslate(this);
 		}
 	}
 }
