@@ -204,6 +204,32 @@ package fairygui
 			}
 		}
 		
+		final public function get xMin():Number
+		{
+			return _pivotAsAnchor ? (_x - _width * _pivotX) : _x;
+		}
+		
+		final public function set xMin(value:Number):void
+		{
+			if (_pivotAsAnchor)
+				setXY(value + _width * _pivotX, _y);
+			else
+				setXY(value, _y);
+		}
+		
+		final public function get yMin():Number
+		{
+			return _pivotAsAnchor ? (_y - _height * _pivotY) : _y;
+		}
+		
+		final public function set yMin(value:Number):void
+		{
+			if (_pivotAsAnchor)
+				setXY(_x, value + _height * _pivotY);
+			else
+				setXY(_x, value);
+		}
+		
 		public function get pixelSnapping():Boolean
 		{
 			return _pixelSnapping;
@@ -306,7 +332,7 @@ package fairygui
 				if(_parent)
 				{
 					_parent.setBoundsChangedFlag();					
-					_relations.onOwnerSizeChanged(dWidth, dHeight);
+					_relations.onOwnerSizeChanged(dWidth, dHeight, _pivotAsAnchor || !ignorePivot);
 					if (_group != null)
 						_group.setBoundsChangedFlag(true);
 				}
@@ -327,7 +353,7 @@ package fairygui
 		final public function get actualHeight():Number
 		{
 			return this.height*_scaleY;
-		}		
+		}
 		
 		final public function get scaleX():Number
 		{
@@ -393,6 +419,11 @@ package fairygui
 				updatePivotOffset();
 				handlePositionChanged();
 			}
+		}
+		
+		final public function get pivotAsAnchor():Boolean
+		{
+			return _pivotAsAnchor;
 		}
 		
 		protected function internalSetPivot(xv:Number, yv:Number, asAnchor:Boolean):void
