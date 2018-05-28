@@ -885,7 +885,7 @@ package fairygui
 		override protected function handleGrayedChanged():void
 		{
 			if(_bitmapFont)
-			super.handleGrayedChanged();
+				super.handleGrayedChanged();
 			updateTextFormat();
 		}
 		
@@ -1004,7 +1004,7 @@ package fairygui
 			var str:String = xml.@text;
 			if(str)
 				this.text = str;
-			
+
 			_sizeDirty = false;
 		}
 		

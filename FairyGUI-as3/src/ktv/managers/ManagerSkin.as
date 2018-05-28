@@ -29,6 +29,7 @@ package ktv.managers
 		 
 		 public static function changeSkin(index:int):void
 		 {
+			 trace("更换皮肤"+ManagerSkin.crtSkinIndex);
 			 crtSkinIndex=index;
 			 UIEventDispatcher.sendEvent(UIEvent.CHANGE_SKIN);
 		 }

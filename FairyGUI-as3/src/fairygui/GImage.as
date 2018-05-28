@@ -15,14 +15,14 @@ package fairygui
 	import ktv.morn.core.handlers.Handler;
 	import ktv.morn.core.managers.LogManager;
 	import ktv.morn.core.managers.MassLoaderManager;
-
+	
 	public class GImage extends GObject implements IColorGear
 	{
 		private var _bmdSource:BitmapData;
 		private var _content:Bitmap;
 		private var _color:uint;
 		private var _flip:int;
-			
+		
 		public function GImage()
 		{
 			_color = 0xFFFFFF;
@@ -113,12 +113,12 @@ package fairygui
 			else
 				packageItem.owner.addItemCallback(packageItem, __imageLoaded);
 		}
-
+		
 		private function __imageLoaded(pi:PackageItem):void
 		{
-			if(!moreSkin&&_bmdSource!=null)
+			if(pi==null||pi.image==null)
 			{
-				this.dispatchEvent(new Event(UIEvent.IMAGE_COMPLETE));	
+				this.dispatchEvent(new Event(UIEvent.IMAGE_ERROR));	
 				return;
 			}
 			
@@ -214,7 +214,7 @@ package fairygui
 		}
 		
 		private var _moreSkin:Boolean;
-
+		
 		private var url:String;
 		
 		/**
@@ -243,35 +243,23 @@ package fairygui
 			var suffix:String=packageItem.file.substr(packageItem.file.lastIndexOf("."));
 			url=ManagerSkin.assetsHead+packageItem.owner.name+packageItem.path+packageItem.name+suffix;
 			url=ManagerSkin.getSkin(url);
-			MassLoaderManager.getInstance().loadBMD(url,1,new Handler(loadedHandler,[packageItem]),null,new Handler(errorHandler,[packageItem]));
-			function loadedHandler(pi:PackageItem,content:*):void
+			MassLoaderManager.getInstance().loadBMD(url,1,new Handler(loadedHandler),null,new Handler(errorHandler));
+			function loadedHandler(content:*):void
 			{
-				pi.image = content as BitmapData;
-				__imageLoaded(pi);
+				packageItem.image = content as BitmapData;
+				__imageLoaded(packageItem);
 			}
-			function errorHandler(pi:PackageItem,url:String):void
+			function errorHandler(url:String):void
 			{
 				var ary:Array=url.split("/");
-				if(ary.indexOf("skin0") != -1)//默认皮肤
+				if(ary.indexOf("skin0") != -1)//默认皮肤加载错误
 				{
+					dispatchEvent(new Event(UIEvent.IMAGE_ERROR));
 					LogManager.log.error("默认皮肤skin0不存在"+url);
 				}else//不是默认皮肤
 				{
-					var index:int=-1;
-					for (var i:int = 0; i < ary.length; i++) 
-					{
-						if(String(ary[i]).indexOf("skin") != -1)
-						{
-							index=i;
-							break;
-						}
-					}
-					if(index != -1)
-					{
-						ary[index]="skin0";//使用默认的皮肤
-						var tempURL:String=ary.join("/");
-						MassLoaderManager.getInstance().loadBMD(tempURL,1,new Handler(loadedHandler,[pi]),null,new Handler(errorHandler));
-					}
+					url=ManagerSkin.getSkin(url,0);//使用默认的皮肤
+					MassLoaderManager.getInstance().loadBMD(url,1,new Handler(loadedHandler),null,new Handler(errorHandler));
 				}
 			}
 		}

@@ -804,6 +804,7 @@ package fairygui
 			
 			var item:GObject = GObject(evt.currentTarget);
 			setSelectionOnEvent(item);
+			
 			if (_scrollPane != null && scrollItemToViewOnClick)
 				_scrollPane.scrollToView(item, true);
 			
@@ -819,6 +820,7 @@ package fairygui
 			var item:GObject = GObject(evt.currentTarget);
 			if((item is GButton) && !GButton(item).selected)
 				setSelectionOnEvent(item);
+			
 			if (_scrollPane != null && scrollItemToViewOnClick)
 				_scrollPane.scrollToView(item, true);
 			
@@ -1626,6 +1628,7 @@ package fairygui
 		{
 			if (_eventLocked)
 				return;
+
 			enterCounter = 0;
 			if (_layout == ListLayoutType.SingleColumn || _layout == ListLayoutType.FlowHorizontal)
 			{

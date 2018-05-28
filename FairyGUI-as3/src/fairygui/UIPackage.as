@@ -252,7 +252,7 @@ package fairygui
 				pi.id = cxml.@id;
 				pi.name = cxml.@name;
 				pi.file = cxml.@file;
-				pi.path = cxml.@path;
+				pi.path = cxml.@path;//资源的路径
 				str = cxml.@size;
 				arr = str.split(",");
 				pi.width = int(arr[0]);

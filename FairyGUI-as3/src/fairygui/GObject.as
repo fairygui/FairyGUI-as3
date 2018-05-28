@@ -479,6 +479,32 @@ package fairygui
 				handlePositionChanged();
 		}
 		
+		private function updatePivotOffset():void
+		{
+			if(_skewX!=0||_skewY!=0)
+			{
+				if(_displayObject!=null)
+				{
+					//GObject的特点是旋转和缩放不影响坐标，所以要有一个GObject坐标和DisplayObject坐标的转换。pivotOffset就是两个坐标的偏移值
+					if(_pivotX!=0 || _pivotY!=0)
+					{
+						var pt:Point = transformCoords(_displayObject.transform.matrix, 
+							_pivotX*_width, _pivotY*_height);
+						_pivotOffsetX = _pivotX*_width - (pt.x - _displayObject.x);
+						_pivotOffsetY = _pivotY*_height - (pt.y - _displayObject.y);
+					}
+					else					
+					{
+						_pivotOffsetX = 0;
+						_pivotOffsetY = 0;
+					}				
+				}
+			}else
+			{
+				updatePivotOffset1();
+			}
+		}
+		
 		private function updatePivotOffset1():void
 		{
 			if(_pivotX!=0 || _pivotY!=0)
@@ -512,31 +538,7 @@ package fairygui
 		}
 		
 		
-		private function updatePivotOffset():void
-		{
-			if(_skewX!=0||_skewY!=0)
-			{
-				if(_displayObject!=null)
-				{
-					//GObject的特点是旋转和缩放不影响坐标，所以要有一个GObject坐标和DisplayObject坐标的转换。pivotOffset就是两个坐标的偏移值
-					if(_pivotX!=0 || _pivotY!=0)
-					{
-						var pt:Point = transformCoords(_displayObject.transform.matrix, 
-							_pivotX*_width, _pivotY*_height);
-						_pivotOffsetX = _pivotX*_width - (pt.x - _displayObject.x);
-						_pivotOffsetY = _pivotY*_height - (pt.y - _displayObject.y);
-					}
-					else					
-					{
-						_pivotOffsetX = 0;
-						_pivotOffsetY = 0;
-					}				
-				}
-			}else
-			{
-				updatePivotOffset1();
-			}
-		}
+		
 		
 		public static function transformCoords(matrix:Matrix, x:Number, y:Number,out:Point=null):Point
 		{

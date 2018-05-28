@@ -24,13 +24,13 @@ package fairygui
 		private var _opaque:Boolean;
 		private var _hitArea:PixelHitTest;
 		private var _applyingController:Controller;
-
+		
 		protected var _margin:Margin;
 		protected var _trackBounds:Boolean;
 		protected var _boundsChanged:Boolean;
 		protected var _childrenRenderOrder:int;
 		protected var _apexIndex:int;
-
+		
 		internal var _buildingDisplayList:Boolean;
 		internal var _children:Vector.<GObject>;
 		internal var _controllers:Vector.<Controller>;
@@ -39,11 +39,7 @@ package fairygui
 		internal var _container:Sprite;
 		internal var _scrollPane:ScrollPane;
 		internal var _alignOffset:Point;
-
-
-
 		private var _translateText:Boolean=false;
-
 		public function GComponent():void
 		{
 			_children=new Vector.<GObject>();

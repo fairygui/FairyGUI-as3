@@ -2,7 +2,6 @@ package ktv.ui
 {
 	import flash.display.Bitmap;
 	import flash.display.BitmapData;
-	import flash.display.DisplayObject;
 	import flash.events.Event;
 	
 	import fairygui.GLoader;
@@ -24,7 +23,6 @@ package ktv.ui
 		private var _assetsURL:String;
 		private var gif:GIFBoy;
 		private var _moreSkin:Boolean;
-		
 		public function KLoader()
 		{
 			
@@ -87,15 +85,17 @@ package ktv.ui
 			if(moreSkin)
 			{
 				var ary:Array=url.split("/");
-				if(ary.indexOf("skin0") != -1)//默认皮肤
+				if(ary.indexOf("skin0") != -1)//默认皮肤加载错误
 				{
 					this.dispatchEvent(new Event(UIEvent.IMAGE_ERROR));
 					LogManager.log.error("默认皮肤skin0不存在"+url);
-				}else
+				}
+				else
 				{
 					url=ManagerSkin.getSkin(url,0);//使用默认的皮肤
 				}
-			}else
+			}
+			else
 			{
 				this.dispatchEvent(new Event(UIEvent.IMAGE_ERROR));
 			}

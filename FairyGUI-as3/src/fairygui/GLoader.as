@@ -93,7 +93,7 @@ package fairygui
 		{
 			if(_url==value)
 				return;
-
+			
 			_url = value;
 			loadContent();
 			updateGear(7);

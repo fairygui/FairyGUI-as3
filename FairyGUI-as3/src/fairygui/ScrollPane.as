@@ -1491,7 +1491,6 @@ package fairygui
 			}
 			else
 			{
-
 				//更新速度
 				if (!_inertiaDisabled)
 				{
@@ -1502,7 +1501,10 @@ package fairygui
 						var factor:Number = Math.pow(0.833, elapsed);
 						_velocity.x = _velocity.x * factor;
 						_velocity.y = _velocity.y * factor;
-					}				}
+					}
+					//根据速度计算目标位置和需要时间
+					updateTargetAndDuration(_tweenStart, sEndPos);
+				}
 				else
 					_tweenDuration.setTo(TWEEN_TIME_DEFAULT, TWEEN_TIME_DEFAULT);
 				sOldChange.setTo(sEndPos.x - _tweenStart.x, sEndPos.y - _tweenStart.y);
@@ -1746,12 +1748,14 @@ package fairygui
 				//页面吸附策略
 				if (Math.abs(change) > _pageSize[axis])//如果滚动距离超过1页,则需要超过页面的一半，才能到更下一页
 				{
-					if (delta > testPageSize * 0.5)
+//					if (delta > testPageSize * 0.5)
+					if (delta > UIConfig.pageScrollMinDistance)
 						page++;
 				}
 				else //否则只需要页面的1/3，当然，需要考虑到左移和右移的情况
 				{
-					if (delta > testPageSize * (change < 0 ? 0.3 : 0.7))
+//					if (delta > testPageSize * (change < 0 ? 0.3 : 0.7))
+					if (delta > (change < 0 ?  UIConfig.pageScrollMinDistance :  testPageSize-UIConfig.pageScrollMinDistance))
 						page++;
 				}
 				
