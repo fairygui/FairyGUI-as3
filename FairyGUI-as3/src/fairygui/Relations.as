@@ -175,14 +175,14 @@ package fairygui
 			clearAll();
 		}
 
-		public function onOwnerSizeChanged(dWidth:Number, dHeight:Number):void
+		public function onOwnerSizeChanged(dWidth:Number, dHeight:Number, applyPivot:Boolean):void
 		{
 			if(_items.length==0)
 				return;
 			
 			for each (var item:RelationItem in _items)
 			{
-				item.applyOnSelfResized(dWidth, dHeight);			
+				item.applyOnSelfResized(dWidth, dHeight, applyPivot);			
 			}
 		}
 		
