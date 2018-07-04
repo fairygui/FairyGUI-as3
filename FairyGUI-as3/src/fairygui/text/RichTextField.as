@@ -330,9 +330,9 @@ package fairygui.text
 					else
 						e.realHeight = e.height;
 					e.textformat.font = _textField.embedFonts?_defaultTextFormat.font:CharSize.PLACEHOLDER_FONT;
-					e.textformat.size = e.realHeight + 2;
+					e.textformat.size = CharSize.getFontSizeByHeight(e.height, e.textformat.font);
 					e.textformat.underline = false;
-					e.textformat.letterSpacing = e.realWidth+4-CharSize.getHolderWidth(e.textformat.font, e.realHeight + 2);
+					e.textformat.letterSpacing = e.width+4-CharSize.getHolderWidth(e.textformat.font, int(e.textformat.size));
 					_textField.setTextFormat(e.textformat, startPos+e.start, startPos+e.end+1);
 				}
 				else
