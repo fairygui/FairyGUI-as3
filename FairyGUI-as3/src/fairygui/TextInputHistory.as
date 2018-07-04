@@ -1,5 +1,6 @@
 package fairygui
 {
+	import flash.events.Event;
 	import flash.text.TextField;
 
 	public class TextInputHistory
@@ -79,6 +80,7 @@ package fairygui
 			_textField.text = text;
 			_currentText = text;
 			_lock = false;
+			_textField.dispatchEvent(new Event(Event.CHANGE));
 		}
 		
 		public function redo(textField:TextField):void
@@ -98,6 +100,7 @@ package fairygui
 				_textField.setSelection(_textField.caretIndex+dlen, _textField.caretIndex+dlen);
 			_currentText = text;
 			_lock = false;
+			_textField.dispatchEvent(new Event(Event.CHANGE));
 		}
 	}
 }

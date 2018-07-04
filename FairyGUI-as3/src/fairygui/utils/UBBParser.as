@@ -96,14 +96,30 @@ package fairygui.utils
 		}
 
 		protected function getTagText(remove:Boolean=false):String {
-			var pos:int = _text.indexOf("[", _readPos);
-			if(pos==-1)
+			var pos1:int = _readPos;
+			var pos2:int
+			var result:String = "";
+			while ((pos2 = _text.indexOf("[", pos1)) != -1)
+			{
+				if (_text.charCodeAt(pos2 - 1) == 92 )//\
+				{
+					result += _text.substring(pos1, pos2 - 1);
+					result += "[";
+					pos1 = pos2 + 1;
+				}
+				else
+				{
+					result += _text.substring(pos1, pos2);
+					break;
+				}
+			}
+			if (pos2 == -1)
 				return null;
 			
-			var ret:String = _text.substring(_readPos, pos);
-			if(remove)
-				_readPos = pos;
-			return ret;
+			if (remove)
+				_readPos = pos2;
+			
+			return result;
 		}		
 		
 		public function parse(text:String):String {
@@ -113,7 +129,17 @@ package fairygui.utils
 			var tag:String, attr:String;
 			var repl:String;
 			var func:Function;
+			var result:String = "";
 			while((pos2=_text.indexOf("[", pos1))!=-1) {
+				if (pos2 > 0 && _text.charCodeAt(pos2 - 1) == 92 )//\
+				{
+					result += _text.substring(pos1, pos2 - 1);
+					result += "[";
+					pos1 = pos2 + 1;
+					continue;
+				}
+
+				result += _text.substring(pos1, pos2);
 				pos1 = pos2;
 				pos2 = _text.indexOf("]", pos1);
 				if(pos2==-1)
@@ -121,8 +147,7 @@ package fairygui.utils
 				
 				end = _text.charAt(pos1+1)=='/';
 				tag = _text.substring(end?pos1+2:pos1+1, pos2);
-				pos2++;
-				_readPos = pos2;
+				_readPos = pos2 + 1;
 				attr = null;
 				repl = null;
 				pos3 = tag.indexOf("=");
@@ -134,16 +159,20 @@ package fairygui.utils
 				func = _handlers[tag];
 				if(func!=null) {
 					repl = func(tag, end, attr);
-					if(repl==null)
-						repl = "";
+					if(repl!=null)
+						result += repl;
 				}
-				else {
-					pos1 = pos2;
-					continue;
-				}
-				_text = _text.substring(0, pos1) + repl + _text.substring(_readPos);
+				else
+					result += _text.substring(pos1, _readPos);
+				pos1 = _readPos;
 			}
-			return _text;
+			
+			if (pos1 < _text.length)
+				result += _text.substr(pos1);
+			
+			_text = null;
+			
+			return result;
 		}
 	}
 }

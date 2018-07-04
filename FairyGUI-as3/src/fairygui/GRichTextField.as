@@ -58,10 +58,13 @@ package fairygui
 		override protected function renderNow(updateBounds:Boolean=true):void
 		{
 			_richTextField.defaultTextFormat = _textFormat;
+			var text2:String = _text;
+			if (_templateVars != null)
+				text2 = parseTemplate(text2);
 			if(_ubbEnabled)
-				_richTextField.text = ToolSet.parseUBB(_text);
+				_richTextField.text = ToolSet.parseUBB(text2);
 			else
-				_richTextField.text = _text;
+				_richTextField.text = text2;
 			
 			var renderSingleLine:Boolean = _richTextField.numLines<=1;
 			
