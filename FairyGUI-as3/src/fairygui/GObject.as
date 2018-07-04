@@ -1382,7 +1382,7 @@ package fairygui
 			
 			str = xml.@rotation;
 			if(str)
-				this.rotation = parseInt(str);
+				this.rotation = parseFloat(str);
 			
 			str = xml.@alpha;
 			if(str)

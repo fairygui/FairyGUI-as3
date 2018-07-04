@@ -301,7 +301,7 @@ package fairygui
 						break;
 					
 					case TransitionActionType.Rotation:
-						value.f1 = parseInt(args[0]);
+						value.f1 = parseFloat(args[0]);
 						break;
 					
 					case TransitionActionType.Color:
@@ -499,7 +499,11 @@ package fairygui
 						startTime = delay + item.time;
 					
 					if (startTime == 0)
+					{
 						applyValue(item, item.value);
+						if (item.hook != null)
+							item.hook();
+					}
 					else
 					{
 						item.completed = false;
@@ -1072,7 +1076,7 @@ package fairygui
 					break;
 				
 				case TransitionActionType.Rotation:
-					value.f1 = parseInt(str);
+					value.f1 = parseFloat(str);
 					break;
 				
 				case TransitionActionType.Scale:
