@@ -7,6 +7,8 @@ package fairygui
 	import flash.events.MouseEvent;
 	import flash.geom.Point;
 	import flash.geom.Rectangle;
+	import flash.text.TextField;
+	import flash.text.TextFieldType;
 	import flash.ui.Mouse;
 	import flash.utils.getTimer;
 	
@@ -488,8 +490,7 @@ package fairygui
 		
 		public function set currentPageX(value:int):void
 		{
-			if (_pageMode && _overlapSize.x>0)
-				this.setPosX(value * _pageSize.x, false);
+			setCurrentPageX(value, false);
 		}
 		
 		public function get currentPageY():int
@@ -506,9 +507,21 @@ package fairygui
 		
 		public function set currentPageY(value:int):void
 		{
-			if (_pageMode && _overlapSize.y>0)
-				this.setPosY(value * _pageSize.y, false);
+			setCurrentPageY(value, false);
 		}
+		
+		public function setCurrentPageX(value:int, ani:Boolean):void
+		{
+			if (_pageMode && _overlapSize.x>0)
+				this.setPosX(value * _pageSize.x, ani);
+		}
+		
+		public function setCurrentPageY(value:int, ani:Boolean):void
+		{
+			if (_pageMode && _overlapSize.y>0)
+				this.setPosY(value * _pageSize.y, ani);
+		}
+		
 		
 		public function get isBottomMost():Boolean
 		{
@@ -747,9 +760,9 @@ package fairygui
 			if (_pageController == c)
 			{
 				if (_scrollType == ScrollType.Horizontal)
-					this.currentPageX = c.selectedIndex;
+					this.setCurrentPageX(c.selectedIndex, true);
 				else
-					this.currentPageY = c.selectedIndex;
+					this.setCurrentPageY(c.selectedIndex, true);
 			}
 		}
 		
@@ -1542,6 +1555,10 @@ package fairygui
 				&& (!_vtScrollBar || !_vtScrollBar._rootContainer.hitTestObject(DisplayObject(evt.target)))
 				&& (!_hzScrollBar || !_hzScrollBar._rootContainer.hitTestObject(DisplayObject(evt.target)))
 			)
+				return;
+				
+			var focus:DisplayObject = _owner.displayObject.stage.focus;
+			if((focus is TextField) && TextField(focus).type==TextFieldType.INPUT)
 				return;
 			
 			var delta:Number = evt.delta;
