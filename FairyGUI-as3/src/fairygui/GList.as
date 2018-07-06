@@ -2737,6 +2737,23 @@ package fairygui
 					str = cxml.@selectedIcon;
 					if(str && (obj is GButton))
 						GButton(obj).selectedIcon = str;
+					str = cxml.@selectedTitle;
+					if(str && (obj is GButton))
+						GButton(obj).selectedTitle = str;
+					if(obj is GComponent)
+					{
+						str = cxml.@controllers;
+						if(str)
+						{
+							arr = str.split(",");
+							for(var j:int=0;j<arr.length;j+=2)
+							{
+								var cc:Controller = GComponent(obj).getController(arr[j]);
+								if(cc!=null)
+									cc.selectedPageId = arr[j+1];
+							}
+						}
+					}
 				}
 			}
 		}
