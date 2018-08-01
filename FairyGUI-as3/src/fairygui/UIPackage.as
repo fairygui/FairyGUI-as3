@@ -796,6 +796,8 @@ package fairygui
 					_loadingQueue.push(loader);
 					item.loading++;
 				}
+				else
+					frame.rect.setEmpty();
 			}
 		}
 		

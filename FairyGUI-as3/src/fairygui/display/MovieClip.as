@@ -9,47 +9,52 @@ package fairygui.display
 	
 	public class MovieClip extends Sprite
 	{
+		/**
+		 * Fixed time between frames, in miniseconds.
+		 */
 		public var interval:int;
 		public var swing:Boolean;
 		public var repeatDelay:int;
+		public var timeScale:Number;
 		
 		private var _bitmap:Bitmap;
-		private var _playing:Boolean;
-		private var _playState:PlayState;
 		private var _frameCount:int;
 		private var _frames:Vector.<Frame>;
-		private var _currentFrame:int;
 		private var _boundsRect:Rectangle;
+		private var _smoothing:Boolean;
+		
+		private var _frame:int;
+		private var _playing:Boolean;
+		private var _ready:Boolean;
 		private var _start:int;
 		private var _end:int;
 		private var _times:int;
 		private var _endAt:int;
 		private var _status:int; //0-none, 1-next loop, 2-ending, 3-ended
+
+		private var _frameElapsed:Number; //当前帧延迟
+		private var _reversed:Boolean;
+		private var _repeatedCount:int;
 		private var _callback:Function;
-		private var _smoothing:Boolean;
 		
 		public function MovieClip()
 		{
 			_bitmap = new Bitmap();
 			addChild(_bitmap);
-			_playState = new PlayState();
-			_playing = true;
-			setPlaySettings();
 			
+			_playing = true;
+			_frameCount = 0;
+			_frame = 0;
 			_smoothing = true;
+			_reversed = false;
+			_frameElapsed = 0;
+			_repeatedCount = 0;
+			timeScale = 1;
+			
+			setPlaySettings();
 			
 			this.addEventListener(Event.ADDED_TO_STAGE, __addedToStage);
 			this.addEventListener(Event.REMOVED_FROM_STAGE, __removedFromStage);
-		}
-		
-		public function get playState():PlayState
-		{
-			return _playState;
-		}
-		
-		public function set playState(value:PlayState):void
-		{
-			_playState = value;
 		}
 		
 		public function get frames():Vector.<Frame>
@@ -70,14 +75,17 @@ package fairygui.display
 			if(_endAt==-1 || _endAt>_frameCount - 1)
 				_endAt = _frameCount - 1;
 			
-			if(_currentFrame<0 || _currentFrame>_frameCount - 1)
-				_currentFrame = _frameCount - 1;			
+			if(_frame<0 || _frame>_frameCount - 1)
+				_frame = _frameCount - 1;			
 			
-			if(_frameCount>0)
-				setFrame(_frames[_currentFrame]);
-			else
-				setFrame(null);
-			_playState.rewind();
+			_ready = checkReady();
+			drawFrame();
+
+			_frameElapsed = 0;
+			_repeatedCount = 0;
+			_reversed = false;
+			
+			checkTimer();
 		}
 		
 		public function get frameCount():int
@@ -95,18 +103,21 @@ package fairygui.display
 			_boundsRect = value;
 		}
 		
-		public function get currentFrame():int
+		public function get frame():int
 		{
-			return _currentFrame;
+			return _frame;
 		}
 		
-		public function set currentFrame(value:int):void
+		public function set frame(value:int):void
 		{
-			if (_currentFrame != value)
+			if (_frame != value)
 			{
-				_currentFrame = value;
-				_playState.currentFrame = value;
-				setFrame(_currentFrame<_frameCount?_frames[_currentFrame]:null);
+				if(_frames!=null && value>=_frameCount)
+					value = _frameCount-1;
+				
+				_frame = value;
+				_frameElapsed = 0;
+				drawFrame();
 			}
 		}
 		
@@ -117,12 +128,11 @@ package fairygui.display
 		
 		public function set playing(value:Boolean):void
 		{
-			_playing = value;
-
-			if (_playing && this.stage!=null)
-				GTimers.inst.add(1,0,update);
-			else
-				GTimers.inst.remove(update);
+			if(_playing!=value)
+			{
+				_playing = value;
+				checkTimer();
+			}
 		}
 		
 		public function get smoothing():Boolean
@@ -134,6 +144,87 @@ package fairygui.display
 		{
 			_smoothing = value;
 			_bitmap.smoothing = _smoothing;
+		}
+		
+		public function rewind():void
+		{
+			_frame = 0;
+			_frameElapsed = 0;
+			_reversed = false;
+			_repeatedCount = 0;
+			
+			drawFrame();
+		}
+
+		public function syncStatus(anotherMc:MovieClip):void
+		{
+			_frame = anotherMc._frame;
+			_frameElapsed = anotherMc._frameElapsed;
+			_reversed = anotherMc._reversed;
+			_repeatedCount = anotherMc._repeatedCount;
+			
+			drawFrame();
+		}
+		
+		public function advance(timeInMiniseconds:Number):void
+		{
+			var beginFrame:int = _frame;
+			var beginReversed:Boolean = _reversed;
+			var backupTime:int = timeInMiniseconds;
+			while (true)
+			{
+				var tt:int = interval + _frames[_frame].addDelay;
+				if (_frame == 0 && _repeatedCount > 0)
+					tt += repeatDelay;
+				if (timeInMiniseconds < tt)
+				{
+					_frameElapsed = 0;
+					break;
+				}
+				
+				timeInMiniseconds -= tt;
+				
+				if (swing)
+				{
+					if (_reversed)
+					{
+						_frame--;
+						if (_frame <= 0)
+						{
+							_frame = 0;
+							_repeatedCount++;
+							_reversed = !_reversed;
+						}
+					}
+					else
+					{
+						_frame++;
+						if (_frame > _frameCount - 1)
+						{
+							_frame = Math.max(0, _frameCount - 2);
+							_repeatedCount++;
+							_reversed = !_reversed;
+						}
+					}
+				}
+				else
+				{
+					_frame++;
+					if (_frame > _frameCount - 1)
+					{
+						_frame = 0;
+						_repeatedCount++;
+					}
+				}
+				
+				if (_frame == beginFrame && _reversed == beginReversed) //走了一轮了
+				{
+					var roundTime:int = backupTime - timeInMiniseconds; //这就是一轮需要的时间
+					timeInMiniseconds -= Math.floor(timeInMiniseconds / roundTime) * roundTime; //跳过
+				}
+			}
+			
+			drawFrame();
 		}
 		
 		//从start帧开始，播放到end帧（-1表示结尾），重复times次（0表示无限循环），循环结束后，停止在endAt帧（-1表示参数end）
@@ -149,67 +240,135 @@ package fairygui.display
 				_endAt = _end;
 			_status = 0;
 			_callback = endCallback;
-			this.currentFrame = start;
+			this.frame = start;
+		}
+		
+		private function checkReady():Boolean
+		{
+			for(var i:int=0;i<_frameCount;i++)
+			{
+				var frame:Frame = _frames[i];
+				if(frame.rect.width!=0 && frame.image==null)
+					return false;
+			}
+			
+			return true;
 		}
 		
 		private function update():void
 		{
-			if (_playing && _frameCount != 0 && _status != 3)
+			if(!_ready)
 			{
-				_playState.update(this);
-				if (_currentFrame != _playState.currentFrame)
+				if(checkReady())
 				{
-					if (_status == 1)
+					_ready = true;
+					if(!_playing)
 					{
-						_currentFrame = _start;
-						_playState.currentFrame = _currentFrame;
-						_status = 0;
+						GTimers.inst.remove(update);
+						drawFrame();
 					}
-					else if (_status == 2)
-					{
-						_currentFrame = _endAt;
-						_playState.currentFrame = _currentFrame;
-						_status = 3;
-						
-						//play end
-						if(_callback!=null)
-						{
-							var f:Function = _callback;
-							_callback = null;
-							if(f.length == 1)
-								f(this);
-							else
-								f();
-						}
-					}
-					else
-					{
-						_currentFrame = _playState.currentFrame;
-						if (_currentFrame == _end)
-						{
-							if (_times > 0)
-							{
-								_times--;
-								if (_times == 0)
-									_status = 2;
-								else
-									_status = 1;
-							}
-							else if(_start!=0)
-								_status = 1;
-						}
-					}
-					
-					//draw
-					setFrame(_frames[_currentFrame]);
 				}
 			}
+			
+			if (!_playing || _frameCount == 0 || _status == 3)
+				return;
+			
+			var dt:int = GTimers.deltaTime;
+			if(timeScale!=1)
+				dt *= timeScale;
+			
+			_frameElapsed += dt;
+			var tt:int = interval + _frames[_frame].addDelay;
+			if (_frame == 0 && _repeatedCount > 0)
+				tt += repeatDelay;
+			if (_frameElapsed < tt)
+				return;
+			
+			_frameElapsed -= tt;
+			if (_frameElapsed > interval)
+				_frameElapsed = interval;
+			
+			if (swing)
+			{
+				if (_reversed)
+				{
+					_frame--;
+					if (_frame <= 0)
+					{
+						_frame = 0;
+						_repeatedCount++;
+						_reversed = !_reversed;
+					}
+				}
+				else
+				{
+					_frame++;
+					if (_frame > _frameCount - 1)
+					{
+						_frame = Math.max(0, _frameCount - 2);
+						_repeatedCount++;
+						_reversed = !_reversed;
+					}
+				}
+			}
+			else
+			{
+				_frame++;
+				if (_frame > _frameCount - 1)
+				{
+					_frame = 0;
+					_repeatedCount++;
+				}
+			}
+			
+			if (_status == 1) //new loop
+			{
+				_frame = _start;
+				_frameElapsed = 0;
+				_status = 0;
+			}
+			else if (_status == 2) //ending
+			{
+				_frame = _endAt;
+				_frameElapsed = 0;
+				_status = 3; //ended
+				
+				//play end
+				if(_callback!=null)
+				{
+					var f:Function = _callback;
+					_callback = null;
+					if(f.length == 1)
+						f(this);
+					else
+						f();
+				}
+			}
+			else
+			{
+				if (_frame == _end)
+				{
+					if (_times > 0)
+					{
+						_times--;
+						if (_times == 0)
+							_status = 2;  //ending
+						else
+							_status = 1; //new loop
+					}
+					else if (_start != 0)
+						_status = 1; //new loop
+				}
+			}
+			
+			drawFrame();
 		}
 
-		private function setFrame(frame:Frame):void
+		private function drawFrame():void
 		{
-			if(frame!=null)
+			if (_frameCount>0 && _frame < _frames.length)
 			{
+				var frame:Frame = _frames[_frame];
 				_bitmap.bitmapData = frame.image;
 				if(_bitmap.smoothing!=_smoothing)
 					_bitmap.smoothing = _smoothing;
@@ -220,9 +379,17 @@ package fairygui.display
 				_bitmap.bitmapData = null;
 		}
 		
+		private function checkTimer():void
+		{
+			if ((_playing || !_ready) && _frameCount>0 && this.stage!=null)
+				GTimers.inst.add(1,0,update);
+			else
+				GTimers.inst.remove(update);
+		}
+		
 		private function __addedToStage(evt:Event):void
 		{
-			if (_playing)
+			if ((_playing || !_ready) && _frameCount>0)
 				GTimers.inst.add(1,0,update);
 		}
 		

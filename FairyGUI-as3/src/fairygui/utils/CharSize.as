@@ -18,7 +18,6 @@ package fairygui.utils
 		private static var helperBmd:BitmapData;
 		
 		public static var TEST_STRING:String = "fj|_我案爱";
-		public static var PLACEHOLDER_FONT:String = "Arial";
 		
 		public static function getSize(size:int, font:String, bold:Boolean):Object {
 			if(!testTextField){

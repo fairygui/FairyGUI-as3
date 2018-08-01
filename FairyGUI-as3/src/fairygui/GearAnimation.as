@@ -1,6 +1,5 @@
 package fairygui
 {
-
 	public class GearAnimation extends GearBase
 	{
 		private var _storage:Object;

@@ -85,7 +85,7 @@ package fairygui
 			super.dispose();
 		}
 
-		public function get url():String
+		final public function get url():String
 		{
 			return _url;
 		}
@@ -110,7 +110,7 @@ package fairygui
 			this.url = value;
 		}
 		
-		public function get align():int
+		final public function get align():int
 		{
 			return _align;
 		}
@@ -124,7 +124,7 @@ package fairygui
 			}
 		}
 		
-		public function get verticalAlign():int
+		final public function get verticalAlign():int
 		{
 			return _verticalAlign;
 		}
@@ -138,7 +138,7 @@ package fairygui
 			}
 		}
 		
-		public function get fill():int
+		final public function get fill():int
 		{
 			return _fill;
 		}
@@ -152,7 +152,7 @@ package fairygui
 			}
 		}		
 		
-		public function get shrinkOnly():Boolean
+		final public function get shrinkOnly():Boolean
 		{
 			return _shrinkOnly;
 		}
@@ -166,7 +166,7 @@ package fairygui
 			}
 		}
 		
-		public function get autoSize():Boolean
+		final public function get autoSize():Boolean
 		{
 			return _autoSize;
 		}
@@ -180,7 +180,7 @@ package fairygui
 			}
 		}
 
-		public function get playing():Boolean
+		final public function get playing():Boolean
 		{
 			return _playing;
 		}
@@ -198,7 +198,7 @@ package fairygui
 			}
 		}
 		
-		public function get frame():int
+		final public function get frame():int
 		{
 			return _frame;
 		}
@@ -209,7 +209,7 @@ package fairygui
 			{
 				_frame = value;
 				if(_content is fairygui.display.MovieClip)
-					fairygui.display.MovieClip(_content).currentFrame = value;
+					fairygui.display.MovieClip(_content).frame= value;
 				else if(_content is flash.display.MovieClip)
 				{
 					if(_playing)
@@ -221,7 +221,27 @@ package fairygui
 			}
 		}
 		
-		public function get color():uint
+		final public function get timeScale():Number
+		{
+			if(_content is fairygui.display.MovieClip)
+				return fairygui.display.MovieClip(_content).timeScale;
+			else
+				return 1;
+		}
+		
+		public function set timeScale(value:Number):void
+		{
+			if(_content is fairygui.display.MovieClip)
+				fairygui.display.MovieClip(_content).timeScale = value;
+		}
+		
+		public function advance(timeInMiniseconds:int):void
+		{
+			if(_content is fairygui.display.MovieClip)
+				fairygui.display.MovieClip(_content).advance(timeInMiniseconds);
+		}
+		
+		final public function get color():uint
 		{
 			return _color;
 		}
@@ -245,7 +265,7 @@ package fairygui
 			_container.transform.colorTransform = ct;
 		}
 
-		public function get showErrorSign():Boolean
+		final public function get showErrorSign():Boolean
 		{
 			return _showErrorSign;
 		}
@@ -650,6 +670,7 @@ package fairygui
 			
 			if(_content2!=null)
 			{
+				_container.removeChild(_content2.displayObject);
 				_content2.dispose();
 				_content2 = null;
 			}

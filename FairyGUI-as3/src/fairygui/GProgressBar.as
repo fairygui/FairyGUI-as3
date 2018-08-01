@@ -1,7 +1,8 @@
 package fairygui
 {	
-	import com.greensock.TweenLite;
-	import com.greensock.easing.Linear;
+	import fairygui.tween.EaseType;
+	import fairygui.tween.GTween;
+	import fairygui.tween.GTweener;
 
 	public class GProgressBar extends GComponent
 	{
@@ -21,8 +22,7 @@ package fairygui
 		private var _barStartX:int;
 		private var _barStartY:int;
 		
-		private var _tweener:TweenLite;		
-		public var _tweenValue:int;
+		private var _tweening:Boolean;
 		
 		public function GProgressBar()
 		{
@@ -68,10 +68,10 @@ package fairygui
 		
 		final public function set value(value:Number):void
 		{
-			if(_tweener)
+			if(_tweening)
 			{
-				_tweener.kill();
-				_tweener = null;
+				GTween.kill(this, true, this.update);
+				_tweening = false;
 			}
 			
 			if(_value != value)
@@ -81,31 +81,25 @@ package fairygui
 			}
 		}
 		
-		public function tweenValue(value:Number, duration:Number):TweenLite
+		public function tweenValue(value:Number, duration:Number):GTweener
 		{
 			if(_value != value)
 			{
-				if(_tweener)
-					_tweener.kill();
+				if(_tweening)
+				{
+					GTween.kill(this, false, this.update);
+					_tweening = false;
+				}
 				
-				_tweenValue = _value;
+				var oldValule:Number = _value;
 				_value = value;
-				_tweener = TweenLite.to(this, duration,
-					{_tweenValue:value, onUpdate:onTweenUpdate, onComplete:onTweenComplete, ease: Linear.ease});
-				return _tweener;
+				
+				_tweening = true;
+				return GTween.to(oldValule, _value, duration).setTarget(this, this.update).setEase(EaseType.Linear)
+					.onComplete(function():void { _tweening = false; });
 			}
 			else
 				return null;
-		}
-		
-		private function onTweenUpdate():void
-		{
-			update(_tweenValue);
-		}
-		
-		private function onTweenComplete():void
-		{
-			_tweener = null;
 		}
 		
 		public function update(newValue:int):void
@@ -225,8 +219,8 @@ package fairygui
 		
 		override public function dispose():void
 		{
-			if(_tweener)
-				_tweener.kill();
+			if(_tweening)
+				GTween.kill(this);
 			super.dispose();
 		}
 	}

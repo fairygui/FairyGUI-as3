@@ -1335,9 +1335,7 @@ package fairygui
 			var cnt:int = _transitions.length;
 			for (var i:int = 0; i < cnt; ++i)
 			{
-				var trans:Transition = _transitions[i];
-				if (trans.autoPlay)
-					trans.play(null, null, trans.autoPlayRepeat, trans.autoPlayDelay);
+				_transitions[i].onOwnerAddedToStage();
 			}
 		}
 		
@@ -1346,7 +1344,7 @@ package fairygui
 			var cnt:int = _transitions.length;
 			for (var i:int = 0; i < cnt; ++i)
 			{
-				_transitions[i].OnOwnerRemovedFromStage();
+				_transitions[i].onOwnerRemovedFromStage();
 			}
 		}
 	}	

@@ -72,6 +72,21 @@ package fairygui
 			}
 		}
 		
+		final public function get timeScale():Number
+		{
+			return 1;
+		}
+		
+		public function set timeScale(value:Number):void
+		{
+			//not supported.
+		}
+		
+		public function advance(timeInMiniseconds:int):void
+		{
+			//not supported.
+		}
+		
 		override public function dispose():void
 		{
 			packageItem.owner.removeItemCallback(packageItem, __swfLoaded);

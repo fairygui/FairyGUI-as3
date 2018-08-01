@@ -1,16 +1,15 @@
 package fairygui
 {
-	import com.greensock.TweenLite;
+	import flash.geom.Point;
 	
-	import flash.geom.Point;	
+	import fairygui.tween.GTween;
+	import fairygui.tween.GTweener;
 	
 	public class GearXY extends GearBase
 	{
-		public var tweener:TweenLite;
-		
 		private var _storage:Object;
 		private var _default:Point;
-		private var _tweenValue:Point;
+		private var _tweener:GTweener;
 		
 		public function GearXY(owner:GObject)
 		{
@@ -49,17 +48,12 @@ package fairygui
 
 			if(_tween && !UIPackage._constructing && !disableAllTweenEffect)
 			{
-				if(tweener!=null)
+				if (_tweener != null)
 				{
-					if(tweener.vars.x!=pt.x || tweener.vars.y!=pt.y)
+					if (_tweener.endValue.x != pt.x || _tweener.endValue.y != pt.y)
 					{
-						_owner._gearLocked = true;
-						_owner.setXY(tweener.vars.x, tweener.vars.y);
-						_owner._gearLocked = false;
-						tweener.kill();
-						tweener = null;
-						_owner.releaseDisplayLock(_displayLockToken);
-						_displayLockToken = 0;
+						_tweener.kill(true);
+						_tweener = null;
 					}
 					else
 						return;
@@ -69,21 +63,13 @@ package fairygui
 				{
 					if(_owner.checkGearController(0, _controller))
 						_displayLockToken = _owner.addDisplayLock();
-					var vars:Object = 
-						{
-							x: pt.x,
-							y: pt.y,
-							ease: _easeType,
-							delay: _delay,
-							overwrite:0
-						};
-					vars.onUpdate = __tweenUpdate;
-					vars.onComplete = __tweenComplete;
-					if(_tweenValue==null)
-						_tweenValue = new Point();
-					_tweenValue.x = _owner.x;
-					_tweenValue.y = _owner.y;
-					tweener = TweenLite.to(_tweenValue, _tweenTime, vars);
+					
+					_tweener = GTween.to2(_owner.x, _owner.y, pt.x, pt.y, _tweenTime)
+						.setDelay(_delay)
+						.setEase(_easeType)
+						.setTarget(this)
+						.onUpdate(__tweenUpdate)
+						.onComplete(__tweenComplete);
 				}
 			}
 			else
@@ -94,10 +80,10 @@ package fairygui
 			}
 		}
 		
-		private function __tweenUpdate():void
+		private function __tweenUpdate(tweener:GTweener):void
 		{
 			_owner._gearLocked = true;
-			_owner.setXY(_tweenValue.x, _tweenValue.y);
+			_owner.setXY(tweener.value.x, tweener.value.y);
 			_owner._gearLocked = false;
 		}
 		
@@ -108,7 +94,7 @@ package fairygui
 				_owner.releaseDisplayLock(_displayLockToken);
 				_displayLockToken = 0;
 			}
-			tweener = null;
+			_tweener = null;
 		}
 		
 		override public function updateState():void

@@ -14,6 +14,8 @@ package fairygui.utils
 		public var defaultImgWidth:int = 0;
 		public var defaultImgHeight:int = 0;
 		
+		public var maxFontSize:int = 0;
+		
 		public static var inst:UBBParser = new UBBParser();
 		
 		public function UBBParser()
@@ -79,17 +81,22 @@ package fairygui.utils
 		
 		protected function onTag_SIZE(tagName:String, end:Boolean, attr:String):String {
 			if(!end) {
+				var size:int;
 				if(attr=="normal")
-					attr = ""+normalFontSize;
+					size = normalFontSize;
 				else if(attr=="small")
-					attr = ""+smallFontSize;
+					size = smallFontSize;
 				else if(attr=="large")
-					attr = ""+largeFontSize;
+					size = largeFontSize;
 				else if(attr.length && attr.charAt(0)=="+")
-					attr = ""+(smallFontSize+int(attr.substr(1)));
+					size = (smallFontSize+int(attr.substr(1)));
 				else if(attr.length && attr.charAt(0)=="-")
-					attr = ""+(smallFontSize-int(attr.substr(1)));
-				return "<font size=\""+ attr + "\">";
+					size = (smallFontSize-int(attr.substr(1)));
+				else
+					size = parseInt(attr);
+				if(size>maxFontSize)
+					maxFontSize = size;
+				return "<font size=\""+ size + "\">";
 			}
 			else
 				return "</font>";
@@ -124,6 +131,8 @@ package fairygui.utils
 		
 		public function parse(text:String):String {
 			_text = text;
+			maxFontSize = 0;
+			
 			var pos1:int = 0, pos2:int, pos3:int;
 			var end:Boolean;
 			var tag:String, attr:String;

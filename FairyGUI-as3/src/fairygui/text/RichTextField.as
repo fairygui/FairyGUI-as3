@@ -329,7 +329,7 @@ package fairygui.text
 						e.realHeight = imageHeight;
 					else
 						e.realHeight = e.height;
-					e.textformat.font = _textField.embedFonts?_defaultTextFormat.font:CharSize.PLACEHOLDER_FONT;
+					e.textformat.font = _defaultTextFormat.font;
 					e.textformat.size = CharSize.getFontSizeByHeight(e.height, e.textformat.font);
 					e.textformat.underline = false;
 					e.textformat.letterSpacing = e.width+4-CharSize.getHolderWidth(e.textformat.font, int(e.textformat.size));
@@ -552,7 +552,8 @@ package fairygui.text
 					lineOffset = _textField.getLineOffset(j);
 					addLinkButton(j, lineOffset, lineOffset+_textField.getLineLength(j)-1, element);
 				}
-				addLinkButton(line2, _textField.getLineOffset(line2), end, element);
+				if(line2<_textField.numLines)
+					addLinkButton(line2, _textField.getLineOffset(line2), end, element);
 			}
 		}
 		

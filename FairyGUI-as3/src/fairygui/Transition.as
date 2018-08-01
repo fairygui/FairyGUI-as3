@@ -1,22 +1,17 @@
 package fairygui
 {
-	import com.greensock.TweenMax;
-	import com.greensock.easing.EaseLookup;
-	
 	import flash.filters.ColorMatrixFilter;
-	import flash.media.Sound;
-	import flash.utils.getTimer;
 	
+	import fairygui.tween.EaseType;
+	import fairygui.tween.GTween;
+	import fairygui.tween.GTweener;
 	import fairygui.utils.ColorMatrix;
-	import fairygui.utils.GTimers;
 	import fairygui.utils.ToolSet;
 	
 	public class Transition
 	{
 		public var name:String;
-		public var autoPlayRepeat:int;
-		public var autoPlayDelay:Number;
-
+		
 		private var _owner:GComponent;
 		private var _ownerBaseX:Number;
 		private var _ownerBaseY:Number;
@@ -24,43 +19,65 @@ package fairygui
 		private var _totalTimes:int;
 		private var _totalTasks:int;
 		private var _playing:Boolean;
+		private var _paused:Boolean;
 		private var _onComplete:Function;
 		private var _onCompleteParam:Object;
 		private var _options:int;
 		private var _reversed:Boolean;
-		private var _maxTime:Number;
-		private var  _autoPlay:Boolean;
+		private var _totalDuration:Number;
+		private var _autoPlay:Boolean;
+		private var _autoPlayTimes:int;
+		private var _autoPlayDelay:Number;
 		private var _timeScale:Number;
+		private var _startTime:Number;
+		private var _endTime:Number;
 		
-		public const OPTION_IGNORE_DISPLAY_CONTROLLER:int = 1;
-		public const OPTION_AUTO_STOP_DISABLED:int = 2;
-		public const OPTION_AUTO_STOP_AT_END:int = 4;
-		
-		private const FRAME_RATE:int = 24;
-		
+		private const OPTION_IGNORE_DISPLAY_CONTROLLER:int = 1;
+		private const OPTION_AUTO_STOP_DISABLED:int = 2;
+		private const OPTION_AUTO_STOP_AT_END:int = 4;
+
 		public function Transition(owner:GComponent)
 		{
 			_owner = owner;
 			_items = new Vector.<TransitionItem>();
-			_maxTime = 0;
-			autoPlayDelay = 0;
+			_totalDuration = 0;
+			_autoPlayTimes = 1;
+			_autoPlayDelay = 0;
 			_timeScale = 1;
+			_startTime = 0;
+			_endTime = 0;
 		}
 		
-		public function get autoPlay():Boolean
+		public function play(onComplete:Function = null, onCompleteParam:Object = null,
+							 times:int = 1, delay:Number = 0, startTime:Number = 0, endTime:Number = -1):void
 		{
-			return _autoPlay;
+			_play(onComplete, onCompleteParam, times, delay, startTime, endTime, false);
 		}
 		
-		public function set autoPlay(value:Boolean):void
+		public function playReverse(onComplete:Function = null, onCompleteParam:Object = null,
+									times:int = 1, delay:Number = 0, startTime:Number = 0, endTime:Number = -1):void
+		{
+			_play(onComplete, onCompleteParam, 1, delay, startTime, endTime, true);
+		}
+		
+		
+		public function changePlayTimes(value:int):void
+		{
+			_totalTimes = value;
+		}
+		
+		public function setAutoPlay(value:Boolean, times:int = 1, delay:Number = 0):void
 		{
 			if (_autoPlay != value)
 			{
 				_autoPlay = value;
+				_autoPlayTimes = times;
+				_autoPlayDelay = delay;
+				
 				if (_autoPlay)
 				{
 					if (_owner.onStage)
-						play(null, null, autoPlayRepeat, autoPlayDelay);
+						play(null, null, _autoPlayTimes, _autoPlayDelay);
 				}
 				else
 				{
@@ -69,103 +86,121 @@ package fairygui
 				}
 			}
 		}
-
-		public function play(onComplete:Function = null, onCompleteParam:Object = null,
-							 times:int = 1, delay:Number = 0):void
-		{
-			_play(onComplete, onCompleteParam, times, delay, false);
-		}
-		
-		public function playReverse(onComplete:Function = null, onCompleteParam:Object = null,
-									times:int = 1, delay:Number = 0):void
-		{
-			_play(onComplete, onCompleteParam, 1, delay, true);
-		}
-		
-		
-		public function changeRepeat(value:int):void
-		{
-			_totalTimes = value;
-		}
 		
 		private function _play(onComplete:Function = null, onCompleteParam:Object = null,
-							times:int = 1, delay:Number = 0, reversed:Boolean = false):void
+							   times:int = 1, delay:Number = 0, startTime:Number = 0, endTime:Number = -1, 
+							   reversed:Boolean = false):void
 		{
-			stop();
+			stop(true, true);
 			
 			_totalTimes = times;
 			_reversed = reversed;
-			internalPlay(delay);
-			_playing = _totalTasks>0;
+			_startTime = startTime;
+			_endTime = endTime;
+			_playing = true;
+			_paused = false;
+			_onComplete = onComplete;
+			_onCompleteParam = onCompleteParam;
 			
-			if (_playing)
+			var cnt:int = _items.length;
+			for (var i:int = 0; i < cnt; i++)
 			{
-				_onComplete = onComplete;
-				_onCompleteParam = onCompleteParam;
-
-				if ((_options & OPTION_IGNORE_DISPLAY_CONTROLLER) != 0)
+				var item:TransitionItem = _items[i];
+				if(item.target == null)
 				{
-					var cnt:int = _items.length;
-					for (var i:int = 0; i < cnt; i++)
+					if (item.targetId)
+						item.target = _owner.getChildById(item.targetId);
+					else
+						item.target = _owner;
+				}
+				else if (item.target != _owner && item.target.parent != _owner)
+					item.target = null;
+				
+				if (item.target != null && item.type == TransitionActionType.Transition)
+				{
+					var trans:Transition = GComponent(item.target).getTransition(item.value.transName);
+					if(trans==this)
+						trans = null;
+					if (trans != null)
 					{
-						var item:TransitionItem = _items[i];
-						if (item.target != null && item.target!=_owner)
-							item.displayLockToken = item.target.addDisplayLock();
+						if (item.value.playTimes == 0) //stop
+						{
+							var j:int;
+							for (j = i - 1; j >= 0; j--)
+							{
+								var item2:TransitionItem = _items[j];
+								if (item2.type == TransitionActionType.Transition)
+								{
+									if (item2.value.trans == trans)
+									{
+										item2.value.stopTime = item.time - item2.time;
+										break;
+									}
+								}
+							}
+							if(j<0)
+								item.value.stopTime = 0;
+							else
+								trans = null;//no need to handle stop anymore
+						}
+						else
+							item.value.stopTime = -1;
 					}
+					item.value.trans = trans;
 				}
 			}
-			else if (onComplete != null)
-			{
-				if(onComplete.length>0)
-					onComplete(onCompleteParam);
-				else
-					onComplete();
-			}
+			
+			if(delay==0)
+				onDelayedPlay();
+			else
+				GTween.delayedCall(delay).onComplete(onDelayedPlay);
 		}
 		
 		public function stop(setToComplete:Boolean = true, processCallback:Boolean = false):void
 		{
-			if (_playing)
+			if (!_playing)
+				return;
+			
+			_playing = false;
+			_totalTasks = 0;
+			_totalTimes = 0;
+			var func:Function = _onComplete;
+			var param:Object = _onCompleteParam;
+			_onComplete = null;
+			_onCompleteParam = null;
+			
+			GTween.kill(this);//delay start
+			
+			var cnt:int = _items.length;
+			if(_reversed)
 			{
-				_playing = false;
-				_totalTasks = 0;
-				_totalTimes = 0;
-				var func:Function = _onComplete;
-				var param:Object = _onCompleteParam;
-				_onComplete = null;
-				_onCompleteParam = null;
-				
-				var cnt:int = _items.length;
-				if(_reversed)
+				for (var i:int = cnt-1; i >=0 ; i--)
 				{
-					for (var i:int = cnt-1; i >=0 ; i--)
-					{
-						var item:TransitionItem = _items[i];
-						if(item.target==null)
-							continue;
-						
-						stopItem(item, setToComplete);
-					}
+					var item:TransitionItem = _items[i];
+					if(item.target==null)
+						continue;
+					
+					stopItem(item, setToComplete);
 				}
+			}
+			else
+			{
+				for (i = 0; i < cnt; i++)
+				{
+					item = _items[i];
+					if(item.target==null)
+						continue;
+					
+					stopItem(item, setToComplete);
+				}
+			}
+			
+			if (processCallback && func != null)
+			{
+				if(func.length>0)
+					func(param);
 				else
-				{
-					for (i = 0; i < cnt; i++)
-					{
-						item = _items[i];
-						if(item.target==null)
-							continue;
-						
-						stopItem(item, setToComplete);
-					}
-				}
-				
-				if (processCallback && func != null)
-				{
-					if(func.length>0)
-						func(param);
-					else
-						func();
-				}
+					func();
 			}
 		}
 		
@@ -177,81 +212,90 @@ package fairygui
 				item.displayLockToken = 0;
 			}
 			
-			if (item.type == TransitionActionType.ColorFilter && item.filterCreated)
-				item.target.filters = null;
-			
-			if(item.completed)
-				return;
-			
 			if (item.tweener != null)
 			{
-				item.tweener.kill();
+				item.tweener.kill(setToComplete);
 				item.tweener = null;
+				
+				if (item.type == TransitionActionType.Shake && !setToComplete) //震动必须归位，否则下次就越震越远了。
+				{
+					item.target._gearLocked = true;
+					item.target.setXY(item.target.x - item.value.lastOffsetX, item.target.y - item.value.lastOffsetY);
+					item.target._gearLocked = false;
+				}
 			}
 			
 			if (item.type == TransitionActionType.Transition)
 			{
-				var trans:Transition  = GComponent(item.target).getTransition(item.value.s);
+				var trans:Transition = item.value.trans;
 				if (trans != null)
 					trans.stop(setToComplete, false);
 			}
-			else if(item.type == TransitionActionType.Shake)
-			{
-				if (GTimers.inst.exists(item.__shake))
-				{
-					GTimers.inst.remove(item.__shake);
-					item.target._gearLocked = true;
-					item.target.setXY(item.target.x-item.startValue.f1, item.target.y-item.startValue.f2);
-					item.target._gearLocked = false;
-				}
-			}
-			else
-			{
-				if (setToComplete)
-				{
-					if (item.tween)
-					{
-						if (!item.yoyo || item.repeat % 2 == 0)
-							applyValue(item, _reversed?item.startValue:item.endValue);
-						else
-							applyValue(item, _reversed?item.endValue:item.startValue);
-					}
-					else if(item.type != TransitionActionType.Sound)
-						applyValue(item, item.value);
-				}
-			}
-		}		
+		}
 		
-		public function dispose():void
+		public function setPaused(paused:Boolean):void
 		{
-			if (!_playing)
+			if (!_playing || _paused == paused)
 				return;
 			
-			_playing = false;
+			_paused = paused;
+			var tweener:GTweener = GTween.getTween(this);
+			if (tweener != null)
+				tweener.setPaused(paused);
+			
 			var cnt:int = _items.length;
 			for (var i:int = 0; i < cnt; i++)
 			{
 				var item:TransitionItem = _items[i];
-				if (item.target == null || item.completed)
+				if (item.target == null)
 					continue;
 				
+				if (item.type == TransitionActionType.Transition)
+				{
+					if (item.value.trans != null)
+						item.value.trans.setPaused(paused);
+				}
+				else if (item.type == TransitionActionType.Animation)
+				{
+					if (paused)
+					{
+						item.value.flag = IAnimationGear(item.target).playing;
+						IAnimationGear(item.target).playing = false;
+					}
+					else
+						IAnimationGear(item.target).playing = item.value.flag;
+				}
+				
+				if (item.tweener != null)
+					item.tweener.setPaused(paused);
+			}
+		}
+		
+		public function dispose():void
+		{
+			if(_playing)
+				GTween.kill(this);//delay start
+			
+			var cnt:int = _items.length;
+			for (var i:int = 0; i < cnt; i++)
+			{
+				var item:TransitionItem = _items[i];
 				if (item.tweener != null)
 				{
 					item.tweener.kill();
 					item.tweener = null;
 				}
 				
-				if (item.type == TransitionActionType.Transition)
-				{
-					var trans:Transition = GComponent(item.target).getTransition(item.value.s);
-					if (trans != null)
-						trans.dispose();
-				}
-				else if (item.type == TransitionActionType.Shake)
-				{
-					GTimers.inst.remove(item.__shake);
-				}
+				item.target = null;
+				item.hook = null;
+				if (item.tweenConfig != null)
+					item.tweenConfig.endHook = null;
 			}
+			
+			_items.length = 0;
+			_playing = false;
+			_onComplete = null;
+			_onCompleteParam = null;
 		}
 		
 		public function get playing():Boolean
@@ -262,23 +306,20 @@ package fairygui
 		public function setValue(label:String, ...args):void
 		{
 			var cnt:int = _items.length;
-			var value:TransitionValue;
+			var value:Object;
 			for (var i:int = 0; i < cnt; i++)
 			{
 				var item:TransitionItem = _items[i];
-				if (item.label == null && item.label2 == null)
-					continue;
-				
 				if (item.label == label)
 				{
-					if (item.tween)
-						value = item.startValue;
+					if (item.tweenConfig != null)
+						value = item.tweenConfig.startValue;
 					else
 						value = item.value;
 				}
-				else if (item.label2 == label)
+				else if (item.tweenConfig != null && item.tweenConfig.endLabel == label)
 				{
-					value = item.endValue;
+					value = item.tweenConfig.endValue;
 				}
 				else
 					continue;
@@ -305,35 +346,35 @@ package fairygui
 						break;
 					
 					case TransitionActionType.Color:
-						value.c = parseFloat(args[0]);
+						value.f1 = parseFloat(args[0]);
 						break;
 					
 					case TransitionActionType.Animation:
-						value.i = parseInt(args[0]);
+						value.frame = parseInt(args[0]);
 						if (args.length > 1)
-							value.b = args[1];
+							value.playing = args[1];
 						break;
 					
 					case TransitionActionType.Visible:
-						value.b = args[0];
+						value.visible = args[0];
 						break;
 					
 					case TransitionActionType.Sound:
-						value.s = args[0];
+						value.sound = args[0];
 						if(args.length > 1)
-							value.f1 = parseFloat(args[1]);
+							value.volume = parseFloat(args[1]);
 						break;
 					
 					case TransitionActionType.Transition:
-						value.s = args[0];
+						value.transName = args[0];
 						if (args.length > 1)
-							value.i = parseInt(args[1]);
+							value.playTimes = parseInt(args[1]);
 						break;
 					
 					case TransitionActionType.Shake:
-						value.f1 = parseFloat(args[0]);
+						value.amplitude = parseFloat(args[0]);
 						if (args.length > 1)
-							value.f2 = parseFloat(args[1]);
+							value.duration = parseFloat(args[1]);
 						break;
 					
 					case TransitionActionType.ColorFilter:
@@ -357,9 +398,9 @@ package fairygui
 					item.hook = callback;
 					break;
 				}
-				else if (item.label2 == label)
+				else if (item.tweenConfig != null && item.tweenConfig.endLabel == label)
 				{
-					item.hook2 = callback;
+					item.tweenConfig.endHook = callback;
 					break;
 				}
 			}
@@ -372,7 +413,8 @@ package fairygui
 			{
 				var item:TransitionItem = _items[i];
 				item.hook = null;
-				item.hook2 = null;
+				if (item.tweenConfig != null)
+					item.tweenConfig.endHook = null;
 			}
 		}
 		
@@ -393,9 +435,24 @@ package fairygui
 			for (var i:int = 0; i < cnt; i++)
 			{
 				var item:TransitionItem = _items[i];
-				if (item.tween && item.label == label)
-					item.duration = value;
+				if (item.tweenConfig != null && item.label == label)
+					item.tweenConfig.duration = value;
 			}
+		}
+		
+		public function getLabelTime(label:String):Number
+		{
+			var cnt:int = _items.length;
+			for (var i:int = 0; i < cnt; i++)
+			{
+				var item:TransitionItem = _items[i];
+				if (item.label == label)
+					return item.time;
+				else if (item.tweenConfig != null && item.tweenConfig.endLabel == label)
+					return item.time + item.tweenConfig.duration;
+			}
+			
+			return Number.NaN;
 		}
 		
 		public function get timeScale():Number
@@ -406,15 +463,27 @@ package fairygui
 		public function set timeScale(value:Number):void
 		{
 			_timeScale = value;
-			
-			if (_playing)
-			{
-				var cnt:int = _items.length;
-				for (var i:int = 0; i < cnt; i++)
+			if(_timeScale != value)
+			{			
+				if (_playing)
 				{
-					var item:TransitionItem = _items[i];
-					if (item.tweener != null)
-						item.tweener.timeScale(_timeScale);
+					var cnt:int = _items.length;
+					for (var i:int = 0; i < cnt; i++)
+					{
+						var item:TransitionItem = _items[i];
+						if (item.tweener != null)
+							item.tweener.setTimeScale(value);
+						else if (item.type == TransitionActionType.Transition)
+						{
+							if(item.value.trans != null)
+								item.value.trans.timeScale = value;
+						}
+						else if(item.type == TransitionActionType.Animation)
+						{
+							if(item.target != null)
+								IAnimationGear(item.target).timeScale = value;
+						}
+					}
 				}
 			}
 		}
@@ -430,12 +499,12 @@ package fairygui
 				var item:TransitionItem = _items[i];
 				if (item.type == TransitionActionType.XY && item.targetId == targetId)
 				{
-					if (item.tween)
+					if (item.tweenConfig!=null)
 					{
-						item.startValue.f1 += dx;
-						item.startValue.f2 += dy;
-						item.endValue.f1 += dx;
-						item.endValue.f2 += dy;
+						item.tweenConfig.startValue.f1 += dx;
+						item.tweenConfig.startValue.f2 += dy;
+						item.tweenConfig.endValue.f1 += dx;
+						item.tweenConfig.endValue.f2 += dy;
 					}
 					else
 					{
@@ -446,250 +515,410 @@ package fairygui
 			}
 		}
 		
-		internal function OnOwnerRemovedFromStage():void
+		internal function onOwnerAddedToStage():void
+		{
+			if (_autoPlay && !_playing)
+				play(null, null, _autoPlayTimes, _autoPlayDelay);
+		}
+		
+		internal function onOwnerRemovedFromStage():void
 		{
 			if ((_options & OPTION_AUTO_STOP_DISABLED) == 0)
 				stop((_options & OPTION_AUTO_STOP_AT_END) != 0 ? true : false, false);
 		}
 		
-		private function internalPlay(delay:Number):void
+		private function onDelayedPlay():void
+		{
+			internalPlay();
+			
+			_playing = _totalTasks>0;
+			if (_playing)
+			{				
+				if ((_options & OPTION_IGNORE_DISPLAY_CONTROLLER) != 0)
+				{
+					var cnt:int = _items.length;
+					for (var i:int = 0; i < cnt; i++)
+					{
+						var item:TransitionItem = _items[i];
+						if (item.target != null && item.target!=_owner)
+							item.displayLockToken = item.target.addDisplayLock();
+					}
+				}
+			}
+			else if (_onComplete != null)
+			{
+				var func:Function = _onComplete;
+				var param:Object = _onCompleteParam;
+				_onComplete = null;
+				_onCompleteParam = null;
+				if(func.length>0)
+					func(param);
+				else
+					func();
+			}
+		}
+		
+		private function internalPlay():void
 		{
 			_ownerBaseX = _owner.x;
 			_ownerBaseY = _owner.y;
 			
 			_totalTasks = 0;
-			var cnt:int = _items.length;
-			var parms:Object;
-			var i:int;
-			var item:TransitionItem;
-			var startTime:Number;
-
-			for (i = 0; i < cnt; i++)
-			{
-				item = _items[i];
-				if (item.targetId)
-					item.target = _owner.getChildById(item.targetId);
-				else
-					item.target = _owner;
-				if (item.target == null)
-					continue;
-				
-				if (item.tween)
-				{
-					if(_reversed)
-						startTime = delay + _maxTime - item.time - item.duration;
-					else
-						startTime = delay + item.time;
-					if(startTime>0 && (item.type==TransitionActionType.XY || item.type==TransitionActionType.Size))
-					{
-						_totalTasks++;
-						item.completed = false;
-						item.tweener = TweenMax.delayedCall(startTime, __delayCall, item.params);
-						if(_timeScale!=1)
-							item.tweener.timeScale(_timeScale);
-					}
-					else
-						startTween(item, startTime);
-				}
-				else
-				{
-					if(_reversed)
-						startTime = delay + _maxTime - item.time;
-					else
-						startTime = delay + item.time;
-					
-					if (startTime == 0)
-					{
-						applyValue(item, item.value);
-						if (item.hook != null)
-							item.hook();
-					}
-					else
-					{
-						item.completed = false;
-						_totalTasks++;
-						item.tweener =  TweenMax.delayedCall(startTime, __delayCall2, item.params);
-						if(_timeScale!=1)
-							item.tweener.timeScale(_timeScale);
-					}
-				}
-			}
-		}
-		
-		private function startTween(item:TransitionItem, delay:Number):void
-		{
-			var parms:Object = {};
-			parms.onStart = __tweenStart;
-			parms.onStartParams = item.params;
-			parms.onUpdate = __tweenUpdate;
-			parms.onUpdateParams = item.params;
-			parms.onComplete = __tweenComplete;
-			parms.onCompleteParams = item.params;
-			parms.ease = item.easeType;
 			
-			var startValue:TransitionValue;
-			var endValue:TransitionValue;
-			if(_reversed)
+			var cnt:int = _items.length;
+			var item:TransitionItem;
+			var needSkipAnimations:Boolean = false;
+			
+			if (!_reversed)
 			{
-				startValue = item.endValue;
-				endValue = item.startValue;
+				for (var i:int = 0; i < cnt; i++)
+				{
+					item = _items[i];
+					if (item.target == null)
+						continue;
+					
+					if (item.type == TransitionActionType.Animation && _startTime != 0 && item.time <= _startTime)
+					{
+						needSkipAnimations = true;
+						item.value.flag = false;
+					}
+					else
+						playItem(item);
+				}
 			}
 			else
 			{
-				startValue = item.startValue;
-				endValue = item.endValue;
+				for (i = 0; i < cnt; i++)
+				{
+					item = _items[i];
+					if (item.target == null)
+						continue;
+					
+					playItem(item);
+				}
 			}
 			
-			switch(item.type)
+			if (needSkipAnimations)
+				skipAnimations();
+		}
+		
+		private function playItem(item:TransitionItem):void
+		{
+			var time:Number;
+			if (item.tweenConfig != null)
 			{
-				case TransitionActionType.XY:
-				case TransitionActionType.Size:
-					if(item.type==TransitionActionType.XY)
+				if (_reversed)
+					time = (_totalDuration - item.time - item.tweenConfig.duration);
+				else
+					time = item.time;
+				if (_endTime == -1 || time <= _endTime)
+				{
+					var startValue:TValue;
+					var endValue:TValue;
+					if(_reversed)
 					{
-						if (item.target == _owner)
-						{
-							if(!startValue.b1)
-								startValue.f1 = 0;
-							if(!startValue.b2)
-								startValue.f2 = 0;
-						}
-						else
-						{
-							if(!startValue.b1)
-								startValue.f1 = item.target.x;
-							if(!startValue.b2)
-								startValue.f2 = item.target.y;
-						}
+						startValue = item.tweenConfig.endValue;
+						endValue = item.tweenConfig.startValue;
 					}
 					else
 					{
-						if(!startValue.b1)
-							startValue.f1 = item.target.width;
-						if(!startValue.b2)
-							startValue.f2 = item.target.height;
+						startValue = item.tweenConfig.startValue;
+						endValue = item.tweenConfig.endValue;
 					}
-					item.value.f1 = startValue.f1;
-					item.value.f2 = startValue.f2;
-
-					if(!endValue.b1)
-						endValue.f1 = item.value.f1;
-					if(!endValue.b2)
-						endValue.f2 = item.value.f2;
 					
 					item.value.b1 = startValue.b1 || endValue.b1;
 					item.value.b2 = startValue.b2 || endValue.b2;
 					
-					parms.f1 = endValue.f1;
-					parms.f2 = endValue.f2;
-					break;
+					switch(item.type)
+					{
+						case TransitionActionType.XY:
+						case TransitionActionType.Size:
+						case TransitionActionType.Scale:
+						case TransitionActionType.Skew:
+							item.tweener = GTween.to2(startValue.f1, startValue.f2, endValue.f1, endValue.f2, item.tweenConfig.duration);
+							break;
+						
+						case TransitionActionType.Alpha:
+						case TransitionActionType.Rotation:
+							item.tweener = GTween.to(startValue.f1, endValue.f1, item.tweenConfig.duration);
+							break;
+						
+						case TransitionActionType.Color:
+							item.tweener = GTween.toColor(startValue.f1, endValue.f1, item.tweenConfig.duration);
+							break;
+						
+						case TransitionActionType.ColorFilter:
+							item.tweener = GTween.to4(startValue.f1,startValue.f2,startValue.f3,startValue.f4,
+								endValue.f1,endValue.f2,endValue.f3,endValue.f4, item.tweenConfig.duration);
+							break;
+					}
+					
+					item.tweener.setDelay(time)
+						.setEase(item.tweenConfig.easeType)
+						.setRepeat(item.tweenConfig.repeat, item.tweenConfig.yoyo)
+						.setTimeScale(_timeScale)
+						.setTarget(item)
+						.onStart(onTweenStart)
+						.onUpdate(onTweenUpdate)
+						.onComplete(onTweenComplete);
+					
+					if (_endTime >= 0)
+						item.tweener.setBreakpoint(_endTime - time);
+					
+					_totalTasks++;
+				}
+			}
+			else if(item.type==TransitionActionType.Shake)
+			{
+				if (_reversed)
+					time = (_totalDuration - item.time - item.value.duration);
+				else
+					time = item.time;
 				
+				item.value.offsetX = item.value.offsetY = 0;
+				item.value.lastOffsetX = item.value.lastOffsetY = 0;
+				item.tweener = GTween.shake(0, 0, item.value.amplitude, item.value.duration)
+					.setDelay(time)
+					.setTimeScale(_timeScale)
+					.setTarget(item)
+					.onUpdate(onTweenUpdate)
+					.onComplete(onTweenComplete);
+				
+				if (_endTime >= 0)
+					item.tweener.setBreakpoint(_endTime - item.time);
+				
+				_totalTasks++;
+			}
+			else
+			{
+				if (_reversed)
+					time = (_totalDuration - item.time);
+				else
+					time = item.time;
+				
+				if (time <= _startTime)
+				{
+					applyValue(item);
+					callHook(item, false);
+				}
+				else if (_endTime == -1 || time <= _endTime)
+				{
+					_totalTasks++;
+					item.tweener = GTween.delayedCall(time)
+						.setTimeScale(_timeScale)
+						.setTarget(item)
+						.onComplete(onDelayedPlayItem);
+				}
+			}
+			
+			if (item.tweener != null)
+				item.tweener.seek(_startTime);
+		}
+		
+		private function skipAnimations():void
+		{
+			var frame:int;
+			var playStartTime:Number;
+			var playTotalTime:Number;
+			var value:TValue_Animation;
+			var target:IAnimationGear;
+			var item:TransitionItem;
+			
+			var cnt:int = _items.length;
+			for (var i:int = 0; i < cnt; i++)
+			{
+				item = _items[i];
+				if (item.type != TransitionActionType.Animation || item.time > _startTime)
+					continue;
+				
+				value = TValue_Animation(item.value);
+				if (value.flag)
+					continue;
+				
+				target = IAnimationGear(item.target);
+				frame = target.frame;
+				playStartTime = target.playing ? 0 : -1;
+				playTotalTime = 0;
+				
+				for (var j:int = i; j < cnt; j++)
+				{
+					item = _items[j];
+					if (item.type != TransitionActionType.Animation || item.target != target || item.time > _startTime)
+						continue;
+					
+					value = TValue_Animation(item.value);
+					value.flag = true;
+					
+					if (value.frame != -1)
+					{
+						frame = value.frame;
+						if (value.playing)
+							playStartTime = item.time;
+						else
+							playStartTime = -1;
+						playTotalTime = 0;
+					}
+					else
+					{
+						if (value.playing)
+						{
+							if (playStartTime < 0)
+								playStartTime = item.time;
+						}
+						else
+						{
+							if (playStartTime >= 0)
+								playTotalTime += (item.time - playStartTime);
+							playStartTime = -1;
+						}
+					}
+					
+					callHook(item, false);
+				}
+				
+				if (playStartTime >= 0)
+					playTotalTime += (_startTime - playStartTime);
+				
+				target.playing = playStartTime>=0;
+				target.frame = frame;
+				if (playTotalTime > 0)
+					target.advance(playTotalTime*1000);
+			}
+		}
+		
+		private function onDelayedPlayItem(tweener:GTweener):void
+		{
+			var item:TransitionItem = TransitionItem(tweener.target);
+			item.tweener = null;
+			_totalTasks--;
+			
+			applyValue(item);
+			callHook(item, false);
+			
+			checkAllComplete();
+		}
+		
+		private function onTweenStart(tweener:GTweener):void
+		{
+			var item:TransitionItem = TransitionItem(tweener.target);
+
+			if (item.type == TransitionActionType.XY || item.type == TransitionActionType.Size) //位置和大小要到start才最终确认起始值
+			{
+				var startValue:TValue;
+				var endValue:TValue;
+				
+				if (_reversed)
+				{
+					startValue = item.tweenConfig.endValue;
+					endValue = item.tweenConfig.startValue;
+				}
+				else
+				{
+					startValue = item.tweenConfig.startValue;
+					endValue = item.tweenConfig.endValue;
+				}
+				
+				if (item.type == TransitionActionType.XY)
+				{
+					if (item.target != _owner)
+					{
+						if (!startValue.b1)
+							startValue.f1 = item.target.x;
+						if (!startValue.b2)
+							startValue.f2 = item.target.y;
+					}
+				}
+				else
+				{
+					if (!startValue.b1)
+						startValue.f1 = item.target.width;
+					if (!startValue.b2)
+						startValue.f2 = item.target.height;
+				}
+				
+				if (!endValue.b1)
+					endValue.f1 = startValue.f1;
+				if (!endValue.b2)
+					endValue.f2 = startValue.f2;
+				
+				tweener.startValue.x = startValue.f1;
+				tweener.startValue.y = startValue.f2;
+				tweener.endValue.x = endValue.f1;
+				tweener.endValue.y = endValue.f2;
+			}
+			
+			callHook(item, false);
+		}
+		
+		private function onTweenUpdate(tweener:GTweener):void
+		{
+			var item:TransitionItem = TransitionItem(tweener.target);
+			switch (item.type)
+			{
+				case TransitionActionType.XY:
+				case TransitionActionType.Size:
 				case TransitionActionType.Scale:
 				case TransitionActionType.Skew:
-					item.value.f1 = startValue.f1;
-					item.value.f2 = startValue.f2;
-					parms.f1 = endValue.f1;
-					parms.f2 = endValue.f2;
+					item.value.f1 = tweener.value.x;
+					item.value.f2 = tweener.value.y;
 					break;
 				
 				case TransitionActionType.Alpha:
-					item.value.f1 = startValue.f1;
-					parms.f1 = endValue.f1;
-					break;
-				
 				case TransitionActionType.Rotation:
-					item.value.f1 = startValue.f1;
-					parms.f1 = endValue.f1;							
+					item.value.f1 = tweener.value.x;
 					break;
 				
 				case TransitionActionType.Color:
-					item.value.c = startValue.c;
-					parms.hexColors = { c:endValue.c};
+					item.value.f1 = tweener.value.color;
 					break;
 				
 				case TransitionActionType.ColorFilter:
-					item.value.f1 = startValue.f1;
-					item.value.f2 = startValue.f2;
-					item.value.f3 = startValue.f3;
-					item.value.f4 = startValue.f4;
-					parms.f1 = endValue.f1;
-					parms.f2 = endValue.f2;
-					parms.f3 = endValue.f3;
-					parms.f4 = endValue.f4;
+					item.value.f1 = tweener.value.x;
+					item.value.f2 = tweener.value.y;
+					item.value.f3 = tweener.value.z;
+					item.value.f4 = tweener.value.w;
+					break;
+				
+				case TransitionActionType.Shake:
+					item.value.offsetX = tweener.deltaValue.x;
+					item.value.offsetY = tweener.deltaValue.y;
 					break;
 			}
 			
-			if (delay > 0)
-				parms.delay = delay;
-			else
-				applyValue(item, item.value);
+			applyValue(item);
+		}
+		
+		private function onTweenComplete(tweener:GTweener):void
+		{
+			var item:TransitionItem = TransitionItem(tweener.target);
+			item.tweener = null;
+			_totalTasks--;
 			
-			if (item.repeat != 0)
+			if (tweener.allCompleted) //当整体播放结束时间在这个tween的中间时不应该调用结尾钩子
+				callHook(item, true);
+			
+			checkAllComplete();
+		}
+		
+		private function onPlayTransCompleted(item:TransitionItem):void
+		{
+			_totalTasks--;
+			
+			checkAllComplete();
+		}
+		
+		private function callHook(item:TransitionItem, tweenEnd:Boolean):void
+		{
+			if (tweenEnd)
 			{
-				if(item.repeat==-1)
-					parms.repeat = int.MAX_VALUE;
-				else
-					parms.repeat = item.repeat;
-				parms.yoyo = item.yoyo;
+				if (item.tweenConfig!=null && item.tweenConfig.endHook != null)
+					item.tweenConfig.endHook();
 			}
-			
-			_totalTasks++;
-			item.completed = false;
-			
-			item.tweener = TweenMax.to(item.value, item.duration, parms);
-			if(_timeScale!=1)
-				item.tweener.timeScale(_timeScale);
-		}
-		
-		private function __delayCall(item:TransitionItem):void
-		{
-			item.tweener = null;
-			_totalTasks--;
-			
-			startTween(item, 0);
-		}
-		
-		private function __delayCall2(item:TransitionItem):void
-		{
-			item.tweener = null;
-			_totalTasks--;
-			item.completed = true;
-			
-			applyValue(item, item.value);
-			if (item.hook != null)
-				item.hook();
-			
-			checkAllComplete();
-		}
-		
-		private function __tweenStart(item:TransitionItem):void
-		{
-			if (item.hook != null)
-				item.hook();
-		}        
-		
-		private function __tweenUpdate(item:TransitionItem):void
-		{
-			applyValue(item, item.value);
-		}
-		
-		private function __tweenComplete(item:TransitionItem):void
-		{
-			item.tweener = null;
-			_totalTasks--;
-			item.completed = true;
-			
-			if (item.hook2 != null)
-				item.hook2();
-			
-			checkAllComplete();
-		}
-		
-		private function __playTransComplete(item:TransitionItem):void
-		{
-			_totalTasks--;
-			item.completed = true;
-			
-			checkAllComplete();
+			else
+			{
+				if (item.time >= _startTime && item.hook != null)
+					item.hook();
+			}
 		}
 		
 		private function checkAllComplete():void
@@ -698,13 +927,13 @@ package fairygui
 			{
 				if (_totalTimes < 0)
 				{
-					internalPlay(0);
+					internalPlay();
 				}
 				else
 				{
 					_totalTimes--;
 					if (_totalTimes > 0)
-						internalPlay(0);
+						internalPlay();
 					else
 					{
 						_playing = false;
@@ -713,22 +942,13 @@ package fairygui
 						for (var i:int = 0; i < cnt; i++)
 						{
 							var item:TransitionItem = _items[i];
-							if (item.target != null)
+							if (item.target != null && item.displayLockToken!=0)
 							{
-								if(item.displayLockToken!=0)
-								{
-									item.target.releaseDisplayLock(item.displayLockToken);
-									item.displayLockToken = 0;
-								}
-
-								if (item.filterCreated)
-								{
-									item.filterCreated = false;
-									item.target.filters = null;
-								}
+								item.target.releaseDisplayLock(item.displayLockToken);
+								item.displayLockToken = 0;
 							}
 						}
-
+						
 						if (_onComplete != null)
 						{
 							var func:Function = _onComplete;
@@ -745,7 +965,7 @@ package fairygui
 			}
 		}
 		
-		private function applyValue(item:TransitionItem, value:TransitionValue):void
+		private function applyValue(item:TransitionItem):void
 		{
 			item.target._gearLocked = true;
 			
@@ -755,48 +975,48 @@ package fairygui
 					if(item.target==_owner)
 					{
 						var f1:Number, f2:Number;
-						if (!value.b1)
+						if (!item.value.b1)
 							f1 = item.target.x;
 						else
-							f1 = value.f1+_ownerBaseX;
-						if (!value.b2)
+							f1 = item.value.f1+_ownerBaseX;
+						if (!item.value.b2)
 							f2 = item.target.y;
 						else
-							f2 = value.f2+_ownerBaseY;
+							f2 = item.value.f2+_ownerBaseY;
 						item.target.setXY(f1, f2);
 					}
 					else
 					{
-						if (!value.b1)
-							value.f1 = item.target.x;
-						if (!value.b2)
-							value.f2 = item.target.y;
-						item.target.setXY(value.f1, value.f2);
+						if (!item.value.b1)
+							item.value.f1 = item.target.x;
+						if (!item.value.b2)
+							item.value.f2 = item.target.y;
+						item.target.setXY(item.value.f1, item.value.f2);
 					}
 					break;
 				
 				case TransitionActionType.Size:
-					if (!value.b1)
-						value.f1 = item.target.width;
-					if (!value.b2)
-						value.f2 = item.target.height;
-					item.target.setSize(value.f1, value.f2);
+					if (!item.value.b1)
+						item.value.f1 = item.target.width;
+					if (!item.value.b2)
+						item.value.f2 = item.target.height;
+					item.target.setSize(item.value.f1, item.value.f2);
 					break;
 				
 				case TransitionActionType.Pivot:
-					item.target.setPivot(value.f1, value.f2);
+					item.target.setPivot(item.value.f1, item.value.f2, item.target.pivotAsAnchor);
 					break;
 				
 				case TransitionActionType.Alpha:
-					item.target.alpha = value.f1;
+					item.target.alpha = item.value.f1;
 					break;
 				
 				case TransitionActionType.Rotation:
-					item.target.rotation = value.f1;
+					item.target.rotation = item.value.f1;
 					break;
 				
 				case TransitionActionType.Scale: 
-					item.target.setScale(value.f1, value.f2);
+					item.target.setScale(item.value.f1, item.value.f2);
 					break;
 				
 				case TransitionActionType.Skew:
@@ -804,118 +1024,82 @@ package fairygui
 					break;
 				
 				case TransitionActionType.Color:
-					IColorGear(item.target).color = value.c;
+					IColorGear(item.target).color = item.value.f1;
 					break;
 				
 				case TransitionActionType.Animation:
-					if (!value.b1)
-						value.i = IAnimationGear(item.target).frame;
-					IAnimationGear(item.target).frame = value.i;
-					IAnimationGear(item.target).playing = value.b;
+					if (item.value.frame>=0)
+						IAnimationGear(item.target).frame = item.value.frame;
+					IAnimationGear(item.target).playing = item.value.playing;
+					IAnimationGear(item.target).timeScale = _timeScale;
 					break;
 				
 				case TransitionActionType.Visible:
-					item.target.visible = value.b;
+					item.target.visible = item.value.visible;
 					break;
-
+				
 				case TransitionActionType.Transition:
-					var trans:Transition = GComponent(item.target).getTransition(value.s);
-					if (trans != null)
+					if (_playing)
 					{
-						if (value.i == 0)
-							trans.stop(false, true);
-						else if (trans.playing)
-							trans._totalTimes = value.i;
-						else
+						var trans:Transition = item.value.trans;
+						if (trans != null)
 						{
-							item.completed = false;
 							_totalTasks++;
-							if(_reversed)
-								trans.playReverse(__playTransComplete, item, value.i);
-							else
-								trans.play(__playTransComplete, item, value.i);
-							if (_timeScale != 1)
-								trans.timeScale = _timeScale;
+							var startTime:Number = _startTime > item.time ? (_startTime - item.time) : 0;
+							var endTime:Number = _endTime >= 0 ? (_endTime - item.time) : -1;
+							if (item.value.stopTime >= 0 && (endTime < 0 || endTime > item.value.stopTime))
+								endTime = item.value.stopTime;
+							trans.timeScale = _timeScale;
+							trans._play(onPlayTransCompleted, item, item.value.playTimes, 0, startTime, endTime, _reversed);
 						}
 					}
 					break;
 				
 				case TransitionActionType.Sound:
-					var pi:PackageItem = UIPackage.getItemByURL(value.s);
-					if(pi)
+					if (_playing && item.time >= _startTime)
 					{
-						var sound:Sound = pi.owner.getSound(pi);
-						if(sound)
-							GRoot.inst.playOneShotSound(sound, value.f1);
+						if(item.value.audioClip==null)
+						{
+							var pi:PackageItem = UIPackage.getItemByURL(item.value.sound);
+							if(pi)
+								item.value.audioClip = pi.owner.getSound(pi);
+						}
+						if(item.value.audioClip)
+							GRoot.inst.playOneShotSound(item.value.audioClip, item.value.volume);
 					}
 					break;
 				
 				case TransitionActionType.Shake:
-					item.startValue.f1 = 0; //offsetX
-					item.startValue.f2 = 0; //offsetY
-					item.startValue.f3 = item.value.f2;//shakePeriod
-					item.startValue.i = getTimer(); //startTime
-					GTimers.inst.add(1, 0, item.__shake, this.shakeItem);
-					_totalTasks++;
-					item.completed = false;
+					item.target.setXY(item.target.x - item.value.lastOffsetX + item.value.offsetX, item.target.y - item.value.lastOffsetY + item.value.offsetY);
+					item.value.lastOffsetX = item.value.offsetX;
+					item.value.lastOffsetY = item.value.offsetY;
 					break;
 				
 				case TransitionActionType.ColorFilter:
-					var cf:ColorMatrixFilter;
-					var arr:Array = item.target.filters;
-					
-					if (arr == null || !(arr[0] is ColorMatrixFilter))
 					{
-						cf = new ColorMatrixFilter();	
-						arr = [cf];
-						item.filterCreated = true;
+						var cf:ColorMatrixFilter;
+						var arr:Array = item.target.filters;
+						
+						if (arr == null || !(arr[0] is ColorMatrixFilter))
+						{
+							cf = new ColorMatrixFilter();	
+							arr = [cf];
+						}
+						else
+							cf = ColorMatrixFilter(arr[0]);
+						
+						var cm:ColorMatrix = new ColorMatrix();
+						cm.adjustBrightness(item.value.f1);
+						cm.adjustContrast(item.value.f2);
+						cm.adjustSaturation(item.value.f3);
+						cm.adjustHue(item.value.f4);
+						cf.matrix = cm;
+						item.target.filters = arr;
 					}
-					else
-						cf = ColorMatrixFilter(arr[0]);
-
-					var cm:ColorMatrix = new ColorMatrix();
-					cm.adjustBrightness(value.f1);
-					cm.adjustContrast(value.f2);
-					cm.adjustSaturation(value.f3);
-					cm.adjustHue(value.f4);
-					cf.matrix = cm;
-					item.target.filters = arr;
 					break;
 			}
 			
 			item.target._gearLocked = false;
-		}
-		
-		private function shakeItem(item:TransitionItem):void
-		{
-			var r:Number = Math.ceil(item.value.f1 * item.startValue.f3 / item.value.f2);
-			var rx:Number = (Math.random()*2-1)*r;
-			var ry:Number = (Math.random()*2-1)*r;
-			rx = rx > 0 ? Math.ceil(rx) : Math.floor(rx);
-			ry = ry > 0 ? Math.ceil(ry) : Math.floor(ry);
-			
-			item.target._gearLocked = true;
-			item.target.setXY(item.target.x-item.startValue.f1+rx, item.target.y-item.startValue.f2+ry);
-			item.target._gearLocked = false;
-			
-			item.startValue.f1 = rx;
-			item.startValue.f2 = ry;
-
-			var t:int = getTimer();
-			item.startValue.f3 -= (t-item.startValue.i)/1000;
-			item.startValue.i = t;
-			if(item.startValue.f3<=0)
-			{
-				item.target._gearLocked = true;
-				item.target.setXY(item.target.x-item.startValue.f1, item.target.y-item.startValue.f2);
-				item.target._gearLocked = false;
-				
-				item.completed = true;
-				_totalTasks--;
-				GTimers.inst.remove(item.__shake);
-				
-				checkAllComplete();
-			}
 		}
 		
 		public function setup(xml:XML):void
@@ -924,127 +1108,132 @@ package fairygui
 			var str:String = xml.@options;
 			if(str)
 				_options = parseInt(str); 
-			this._autoPlay = xml.@autoPlay=="true";
-			if(this._autoPlay) {
+			_autoPlay = xml.@autoPlay=="true";
+			if(_autoPlay) {
 				str = xml.@autoPlayRepeat;
 				if(str)
-					this.autoPlayRepeat = parseInt(str);
+					_autoPlayTimes = parseInt(str);
 				str = xml.@autoPlayDelay;
 				if(str)
-					this.autoPlayDelay = parseFloat(str);
+					_autoPlayDelay = parseFloat(str);
 			}
+			str = xml.@fps;
+			var frameInterval:Number;
+			if(str)
+				frameInterval = 1/parseInt(str);
+			else
+				frameInterval = 1/24;
 			
 			var col:XMLList = xml.item;
 			for each (var cxml:XML in col)
 			{
-				var item:TransitionItem = new TransitionItem();
+				var item:TransitionItem = new TransitionItem(parseItemType(cxml.@type));
 				_items.push(item);
 				
-				item.time = parseInt(cxml.@time) / FRAME_RATE;
+				item.time = parseInt(cxml.@time) * frameInterval;
 				item.targetId = cxml.@target;
-				str = cxml.@type;
-				switch(str)
-				{
-					case "XY":
-						item.type = TransitionActionType.XY;
-						break;
-					case "Size":
-						item.type = TransitionActionType.Size;
-						break;
-					case "Scale":
-						item.type = TransitionActionType.Scale;
-						break;
-					case "Pivot":
-						item.type = TransitionActionType.Pivot;
-						break;
-					case "Alpha":
-						item.type = TransitionActionType.Alpha;
-						break;
-					case "Rotation":
-						item.type = TransitionActionType.Rotation;
-						break;
-					case "Color":
-						item.type = TransitionActionType.Color;
-						break;
-					case "Animation":
-						item.type = TransitionActionType.Animation;
-						break;
-					case "Visible":
-						item.type = TransitionActionType.Visible;
-						break;
-					case "Sound":
-						item.type = TransitionActionType.Sound;
-						break;
-					case "Transition":
-						item.type = TransitionActionType.Transition;
-						break;
-					case "Shake":
-						item.type = TransitionActionType.Shake;
-						break;
-					case "ColorFilter":
-						item.type = TransitionActionType.ColorFilter;
-						break;
-					case "Skew":
-						item.type = TransitionActionType.Skew;
-						break;
-					default:
-						item.type = TransitionActionType.Unknown;
-						break;
-				}
-				item.tween = cxml.@tween=="true";
+				
+				if(cxml.@tween=="true")
+					item.tweenConfig = new TweenConfig();
 				item.label = cxml.@label;
 				if(item.label.length==0)
 					item.label = null;
-
-				if (item.tween)
+				
+				if (item.tweenConfig != null)
 				{
-					item.duration = parseInt(cxml.@duration) / FRAME_RATE;
-					if(item.time+item.duration>_maxTime)
-						_maxTime = item.time+item.duration;
+					item.tweenConfig.duration = parseInt(cxml.@duration) * frameInterval;
+					if(item.time+item.tweenConfig.duration>_totalDuration)
+						_totalDuration = item.time+item.tweenConfig.duration;
 					
 					str = cxml.@ease;
 					if (str)
-					{
-						var pos:int = str.indexOf(".");
-						if(pos!=-1)
-							str = str.substr(0,pos) + ".ease" + str.substr(pos+1);
-						if(str=="Linear")
-							item.easeType = EaseLookup.find("linear.easenone");
-						else
-							item.easeType = EaseLookup.find(str);
-					}
+						item.tweenConfig.easeType = EaseType.parseEaseType(str);
 					
-					item.repeat = parseInt(cxml.@repeat);
-					item.yoyo = cxml.@yoyo=="true";
-					item.label2 = cxml.@label2;
-					if(item.label2.length==0)
-						item.label2 = null;
+					item.tweenConfig.repeat = parseInt(cxml.@repeat);
+					item.tweenConfig.yoyo = cxml.@yoyo=="true";
+					item.tweenConfig.endLabel = cxml.@label2;
+					if(item.tweenConfig.endLabel.length==0)
+						item.tweenConfig.endLabel = null;
 					
 					var v:String = cxml.@endValue;
 					if (v)
 					{
-						decodeValue(item.type, cxml.@startValue, item.startValue);
-						decodeValue(item.type, v, item.endValue);
+						decodeValue(item, cxml.@startValue, item.tweenConfig.startValue);
+						decodeValue(item, v, item.tweenConfig.endValue);
 					}
 					else
 					{
-						item.tween = false;
-						decodeValue(item.type, cxml.@startValue, item.value);
+						item.tweenConfig = null;
+						decodeValue(item, cxml.@startValue, item.value);
 					}
 				}
 				else
 				{
-					if(item.time>_maxTime)
-						_maxTime = item.time;
-					decodeValue(item.type, cxml.@value, item.value);
+					if(item.time>_totalDuration)
+						_totalDuration = item.time;
+					decodeValue(item, cxml.@value, item.value);
 				}
 			}
 		}
 		
-		private function decodeValue(type:int, str:String, value:TransitionValue):void
+		private function parseItemType(str:String):int
+		{
+			var type:int;
+			switch(str)
+			{
+				case "XY":
+					type = TransitionActionType.XY;
+					break;
+				case "Size":
+					type = TransitionActionType.Size;
+					break;
+				case "Scale":
+					type = TransitionActionType.Scale;
+					break;
+				case "Pivot":
+					type = TransitionActionType.Pivot;
+					break;
+				case "Alpha":
+					type = TransitionActionType.Alpha;
+					break;
+				case "Rotation":
+					type = TransitionActionType.Rotation;
+					break;
+				case "Color":
+					type = TransitionActionType.Color;
+					break;
+				case "Animation":
+					type = TransitionActionType.Animation;
+					break;
+				case "Visible":
+					type = TransitionActionType.Visible;
+					break;
+				case "Sound":
+					type = TransitionActionType.Sound;
+					break;
+				case "Transition":
+					type = TransitionActionType.Transition;
+					break;
+				case "Shake":
+					type = TransitionActionType.Shake;
+					break;
+				case "ColorFilter":
+					type = TransitionActionType.ColorFilter;
+					break;
+				case "Skew":
+					type = TransitionActionType.Skew;
+					break;
+				default:
+					type = TransitionActionType.Unknown;
+					break;
+			}
+			return type;
+		}
+		
+		private function decodeValue(item:TransitionItem, str:String, value:Object):void
 		{
 			var arr:Array;
-			switch(type)
+			switch(item.type)
 			{
 				case TransitionActionType.XY:
 				case TransitionActionType.Size:
@@ -1086,55 +1275,50 @@ package fairygui
 					break;
 				
 				case TransitionActionType.Color:
-					value.c = ToolSet.convertFromHtmlColor(str);
+					value.f1 = ToolSet.convertFromHtmlColor(str);
 					break;
 				
 				case TransitionActionType.Animation:
 					arr = str.split(",");
 					if(arr[0]=="-")
-					{
-						value.b1 = false;
-					}
+						value.frame = -1;
 					else
-					{
-						value.i = parseInt(arr[0]);
-						value.b1 = true;
-					}
-					value.b = arr[1]=="p";
+						value.frame = parseInt(arr[0]);
+					value.playing = arr[1]=="p";
 					break;
 				
 				case TransitionActionType.Visible:
-					value.b = str=="true";
+					value.visible = str=="true";
 					break;
 				
 				case TransitionActionType.Sound:
 					arr = str.split(",");
-					value.s = arr[0];
+					value.sound = arr[0];
 					if(arr.length>1)
 					{
 						var intv:int = parseInt(arr[1]);
 						if(intv==0 || intv==100)
-							value.f1 = 1;
+							value.volume = 1;
 						else
-							value.f1 = intv/100;
+							value.volume = intv/100;
 					}
 					else
-						value.f1 = 1;
+						value.volume = 1;
 					break;
 				
 				case TransitionActionType.Transition:
 					arr = str.split(",");
-					value.s = arr[0];
+					value.transName = arr[0];
 					if (arr.length > 1)
-						value.i = parseInt(arr[1]);
+						value.playTimes = parseInt(arr[1]);
 					else
-						value.i = 1;
+						value.playTimes = 1;
 					break;
 				
 				case TransitionActionType.Shake:
 					arr = str.split(",");
-					value.f1 = parseFloat(arr[0]);
-					value.f2 = parseFloat(arr[1]);
+					value.amplitude = parseFloat(arr[0]);
+					value.duration = parseFloat(arr[1]);
 					break;
 				
 				case TransitionActionType.ColorFilter:
@@ -1149,11 +1333,12 @@ package fairygui
 	}
 }
 
-import com.greensock.TweenLite;
-import com.greensock.easing.Ease;
-import com.greensock.easing.Quad;
+import flash.media.Sound;
 
 import fairygui.GObject;
+import fairygui.Transition;
+import fairygui.tween.EaseType;
+import fairygui.tween.GTweener;
 
 class TransitionActionType
 {
@@ -1179,56 +1364,125 @@ class TransitionItem
 	public var time:Number;
 	public var targetId:String;
 	public var type:int;
-	public var duration:Number;
-	public var value:TransitionValue;
-	public var startValue:TransitionValue;
-	public var endValue:TransitionValue;
-	public var easeType:Ease;
-	public var repeat:int;
-	public var yoyo:Boolean;
-	public var tween:Boolean;
+	public var tweenConfig:TweenConfig;
 	public var label:String;
-	public var label2:String;
+	public var value:Object;
 	public var hook:Function;
-	public var hook2:Function;
-	public var tweener:TweenLite;
-	public var completed:Boolean;
+	
+	public var tweener:GTweener;
 	public var target:GObject;
-	public var filterCreated:Boolean;
 	public var displayLockToken:uint;
 	
-	public var params:Array;
-	public function TransitionItem()
+	public function TransitionItem(type:int)
 	{
-		easeType = Quad.easeOut;
-		value = new TransitionValue();
-		startValue = new TransitionValue();
-		endValue = new TransitionValue();
-		params = [this];
-	}
-	
-	public function __shake(param:Object):void
-	{
-		param(this);
+		this.type = type;
+		
+		switch (type)
+		{
+			case TransitionActionType.XY:
+			case TransitionActionType.Size:
+			case TransitionActionType.Scale:
+			case TransitionActionType.Pivot:
+			case TransitionActionType.Skew:
+			case TransitionActionType.Alpha:
+			case TransitionActionType.Rotation:
+			case TransitionActionType.Color:
+			case TransitionActionType.ColorFilter:
+				value = new TValue();
+				break;
+			
+			case TransitionActionType.Animation:
+				value = new TValue_Animation();
+				break;
+			
+			case TransitionActionType.Shake:
+				value = new TValue_Shake();
+				break;
+			
+			case TransitionActionType.Sound:
+				value = new TValue_Sound();
+				break;
+			
+			case TransitionActionType.Transition:
+				value = new TValue_Transition();
+				break;
+			
+			case TransitionActionType.Visible:
+				value = new TValue_Visible();
+				break;
+		}
 	}
 }
 
-class TransitionValue
+class TweenConfig
 {
-	public var f1:Number;//x, scalex, pivotx,alpha,shakeAmplitude,rotation
-	public var f2:Number;//y, scaley, pivoty, shakePeriod
+	public var duration:Number;
+	public var easeType:int;
+	public var repeat:int;
+	public var yoyo:Boolean;
+	public var startValue:TValue;
+	public var endValue:TValue;
+	public var endLabel:String;
+	public var endHook:Function;
+	
+	public function TweenConfig()
+	{
+		easeType = EaseType.QuadOut;
+		startValue = new TValue();
+		endValue = new TValue();
+	}
+}
+
+class TValue_Visible
+{
+	public var visible:Boolean;
+}
+
+class TValue_Animation
+{
+	public var frame:int;
+	public var playing:Boolean;
+	public var flag:Boolean;
+}
+
+class TValue_Sound
+{
+	public var sound:String;
+	public var volume:Number;
+	public var audioClip:Sound;
+}
+
+class TValue_Transition
+{
+	public var transName:String;
+	public var playTimes:int;
+	public var trans:Transition;
+	public var stopTime:Number;
+}
+
+class TValue_Shake
+{
+	public var amplitude:Number;
+	public var duration:Number;
+	public var offsetX:Number;
+	public var offsetY:Number;
+	public var lastOffsetX:Number;
+	public var lastOffsetY:Number;
+}
+
+class TValue
+{
+	public var f1:Number;
+	public var f2:Number;
 	public var f3:Number;
 	public var f4:Number;
-	public var i:int;//frame
-	public var c:uint;//color
-	public var b:Boolean;//playing
-	public var s:String;//sound,transName
 	
-	public var b1:Boolean = true;
-	public var b2:Boolean = true;
+	public var b1:Boolean;
+	public var b2:Boolean;
 	
-	public function TransitionValue()
+	public function TValue()
 	{
+		b1 = b2 = true;
 	}
 }
 

@@ -511,7 +511,14 @@ package fairygui
 			if(_textHeight>0)
 			{
 				if(_textField.numLines==1) //单行时文本高度的测算可能受leading的影响（flash问题），所以不使用textHeight
-					_textHeight = CharSize.getSize(int(_textFormat.size), _textFormat.font, _textFormat.bold).height;
+				{
+					var maxFontSize:int = 0;
+					if(_ubbEnabled)
+						maxFontSize = ToolSet.defaultUBBParser.maxFontSize;
+					if(maxFontSize==0)
+						maxFontSize = int(_textFormat.size);					
+					_textHeight = CharSize.getSize(maxFontSize, _textFormat.font, _textFormat.bold).height;
+				}
 				_textHeight += 4;
 			}
 

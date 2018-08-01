@@ -1178,18 +1178,12 @@ package fairygui
 		{
 			_setVirtual(false);
 		}
-		
-		/// <summary>
-		/// Set the list to be virtual list, and has loop behavior.
-		/// </summary>
+	
 		public function setVirtualAndLoop():void
 		{
 			_setVirtual(true);
 		}
-		
-		/// <summary>
-		/// Set the list to be virtual list.
-		/// </summary>
+
 		private function _setVirtual(loop:Boolean):void
 		{
 			if (!_virtual)
@@ -1246,11 +1240,6 @@ package fairygui
 			}
 		}
 		
-		/// <summary>
-		/// Set the list item count. 
-		/// If the list is not virtual, specified number of items will be created. 
-		/// If the list is virtual, only items in view will be created.
-		/// </summary>
 		public function get numItems():int
 		{
 			if (_virtual)
@@ -2493,6 +2482,15 @@ package fairygui
 						if (foldInvisibleItems && !child.visible)
 							continue;
 						
+						if (j==0 && (_lineCount != 0 && k >= _lineCount
+							|| _lineCount == 0 && curY + child.height > viewHeight))
+						{
+							//new page
+							page++;
+							curY = 0;
+							k = 0;
+						}
+						
 						lineSize += child.sourceWidth;
 						j++;
 						if (j == _columnCount || i == cnt - 1)
@@ -2528,15 +2526,6 @@ package fairygui
 							lineSize = 0;
 							
 							k++;
-							
-							if (_lineCount != 0 && k >= _lineCount
-								|| _lineCount == 0 && curY + child.height > viewHeight)
-							{
-								//new page
-								page++;
-								curY = 0;
-								k = 0;
-							}
 						}
 					}
 				}
