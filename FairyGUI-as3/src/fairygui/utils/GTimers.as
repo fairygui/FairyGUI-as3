@@ -112,8 +112,8 @@ package fairygui.utils  {
 			deltaTime = time-_lastTime;
 			_lastTime = time;
 			
-			if(deltaTime>125)
-				deltaTime = 125;
+			if(deltaTime>100)
+				deltaTime = 100;
 
 			_enumI = 0;
 			_enumCount = _items.length;

@@ -105,8 +105,8 @@ package fairygui.tween
 			var dt:Number = time-_lastTime;
 			_lastTime = time;
 			
-			if(dt>125)
-				dt = 125;
+			if(dt>100)
+				dt = 100;
 			dt /= 1000;
 			
 			var cnt:int = _totalActiveTweens;
