@@ -104,9 +104,6 @@ package fairygui.tween
 			var time:int =  getTimer();
 			var dt:Number = time-_lastTime;
 			_lastTime = time;
-			
-			if(dt>100)
-				dt = 100;
 			dt /= 1000;
 			
 			var cnt:int = _totalActiveTweens;

@@ -588,7 +588,7 @@ package fairygui
 			}
 			else
 			{
-				for (i = 0; i < cnt; i++)
+				for (i = cnt - 1; i >= 0; i--)
 				{
 					item = _items[i];
 					if (item.target == null)

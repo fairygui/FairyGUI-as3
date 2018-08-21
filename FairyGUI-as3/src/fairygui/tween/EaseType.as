@@ -73,7 +73,7 @@ package fairygui.tween
 		{
 			var type:* = easeTypeMap[value];
 			if(type==undefined)
-				return EaseType.ExpoOut;
+				return EaseType.QuadOut;
 			else
 				return int(type);
 		}
