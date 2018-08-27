@@ -51,6 +51,7 @@ package fairygui
 		protected var _textWidth:int;
 		protected var _textHeight:int;
 		protected var _fontAdjustment:int;
+		protected var _maxFontSize:int;
 		
 		protected var _bitmapFont:BitmapFont;
 		protected var _lines:Vector.<LineInfo>;
@@ -87,15 +88,15 @@ package fairygui
 			setDisplayObject(_textField);
 		}
 		
-		private function switchBitmapMode(val:Boolean):void
+		private function switchBitmapMode(value:Boolean):void
 		{
-			if(val && this.displayObject==_textField)
+			if(value && this.displayObject==_textField)
 			{
 				if(_bitmap==null)
 					_bitmap = new UIImage(this);
 				switchDisplayObject(_bitmap);
 			}
-			else if(!val && this.displayObject==_bitmap)
+			else if(!value && this.displayObject==_bitmap)
 				switchDisplayObject(_textField);
 		}
 		
@@ -404,7 +405,7 @@ package fairygui
 		protected function updateTextFormat():void
 		{
 			_textFormat.size = _fontSize;
-			if(ToolSet.startsWith(_font, "ui://"))
+			if(ToolSet.startsWith(_font, "ui://") && !(this is GRichTextField)/*not supported*/)
 			{
 				_bitmapFont = UIPackage.getBitmapFontByURL(_font);
 				_fontAdjustment = 0;
@@ -474,15 +475,26 @@ package fairygui
 			if(_requireRender)
 				renderNow();
 		}
+		
+		protected function updateTextFieldText(value:String):void
+		{
+			if(_ubbEnabled)
+			{
+				_textField.htmlText = ToolSet.parseUBB(ToolSet.encodeHTML(value));
+				_maxFontSize = Math.max(_maxFontSize, ToolSet.defaultUBBParser.maxFontSize);
+			}
+			else
+				_textField.text = value;
+		}
 
-		protected function renderNow(updateBounds:Boolean=true):void
+		protected function renderNow():void
 		{
 			_requireRender = false;
 			_sizeDirty = false;
 			
 			if(_bitmapFont!=null)
 			{
-				renderWithBitmapFont(updateBounds);
+				renderWithBitmapFont();
 				return;
 			}
 			
@@ -495,14 +507,13 @@ package fairygui
 			h = Math.max(_height, int(_textFormat.size));
 			if(h!=_textField.height)
 				_textField.height = h;
+			_textField.defaultTextFormat = _textFormat;
+			_maxFontSize = int(_textFormat.size);
+			
 			var text2:String = _text;
 			if (_templateVars != null)
 				text2 = parseTemplate(text2);
-			if(_ubbEnabled)
-				_textField.htmlText = ToolSet.parseUBB(ToolSet.encodeHTML(text2));
-			else
-				_textField.text = text2;
-			_textField.defaultTextFormat = _textFormat;
+			updateTextFieldText(text2);
 			
 			_textWidth = Math.ceil(_textField.textWidth);
 			if(_textWidth>0)
@@ -511,13 +522,8 @@ package fairygui
 			if(_textHeight>0)
 			{
 				if(_textField.numLines==1) //单行时文本高度的测算可能受leading的影响（flash问题），所以不使用textHeight
-				{
-					var maxFontSize:int = 0;
-					if(_ubbEnabled)
-						maxFontSize = ToolSet.defaultUBBParser.maxFontSize;
-					if(maxFontSize==0)
-						maxFontSize = int(_textFormat.size);					
-					_textHeight = CharSize.getSize(maxFontSize, _textFormat.font, _textFormat.bold).height;
+				{			
+					_textHeight = CharSize.getSize(_maxFontSize, _textFormat.font, _textFormat.bold).height;
 				}
 				_textHeight += 4;
 			}
@@ -536,17 +542,14 @@ package fairygui
 			
 			_textField.height = _textHeight + _fontAdjustment + 3;
 
-			if(updateBounds)
-			{
-				_updatingSize = true;
-				this.setSize(w,h);
-				_updatingSize = false;
-				
-				doAlign();
-			}
+			_updatingSize = true;
+			this.setSize(w,h);
+			_updatingSize = false;
+			
+			doAlign();
 		}
 		
-		private function renderWithBitmapFont(updateBounds:Boolean):void
+		private function renderWithBitmapFont():void
 		{
 			switchBitmapMode(true);
 			
@@ -742,14 +745,11 @@ package fairygui
 			if(maxHeight>0 && h>maxHeight)
 				h = maxHeight;
 			
-			if(updateBounds)
-			{
-				_updatingSize = true;
-				this.setSize(w,h);
-				_updatingSize = false;
-				
-				doAlign();
-			}
+			_updatingSize = true;
+			this.setSize(w,h);
+			_updatingSize = false;
+			
+			doAlign();
 			
 			if(_bitmapData!=null)
 				_bitmapData.dispose();

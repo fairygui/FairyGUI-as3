@@ -2,7 +2,7 @@ package fairygui.text
 {
 	import flash.display.Sprite;
 
-	internal class LinkButton extends Sprite
+	public class LinkButton extends Sprite
 	{
 		public var owner:HtmlNode;
 		
@@ -11,6 +11,7 @@ package fairygui.text
 		}
 		
 		public function setSize(w:Number, h:Number):void {
+			graphics.clear();
 			graphics.beginFill(0, 0);
 			graphics.drawRect(0, 0, w, h);
 			graphics.endFill();

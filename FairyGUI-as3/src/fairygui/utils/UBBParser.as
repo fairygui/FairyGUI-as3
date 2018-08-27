@@ -31,6 +31,7 @@ package fairygui.utils
 			_handlers["color"] = onTag_COLOR;
 			_handlers["font"] = onTag_FONT;
 			_handlers["size"] = onTag_SIZE;
+			_handlers["align"] = onTag_ALIGN;
 		}
 		
 		protected function onTag_URL(tagName:String, end:Boolean, attr:String):String {
@@ -77,6 +78,13 @@ package fairygui.utils
 				return "<font face=\"" + attr + "\">";
 			else
 				return "</font>";
+		}
+		
+		protected function onTag_ALIGN(tagName:String, end:Boolean, attr:String):String {
+			if (!end)
+				return "<p align=\"" + attr + "\">";
+			else
+				return "</p>";
 		}
 		
 		protected function onTag_SIZE(tagName:String, end:Boolean, attr:String):String {

@@ -123,6 +123,93 @@ package fairygui.utils
 				return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/'/g, "&apos;");
 		}
 		
+		public static function decodeXML(source:String):String {
+			var len:int = source.length;
+			var result:String = "";
+			var pos1:int = 0, pos2:int = 0;
+			
+			while (true)
+			{
+				pos2 = source.indexOf("&", pos1);
+				if (pos2 == -1)
+				{
+					result += source.substr(pos1);
+					break;
+				}
+				result += source.substr(pos1, pos2 - pos1);
+				
+				pos1 = pos2 + 1;
+				pos2 = pos1;
+				var end:int = Math.min(len, pos2 + 10);
+				for (; pos2 < end; pos2++)
+				{
+					if (source.charCodeAt(pos2) == 59) // ;
+						break;
+				}
+				if (pos2 < end && pos2 > pos1)
+				{
+					var entity:String = source.substr(pos1, pos2 - pos1);
+					var u:int = 0;
+					if (entity.charCodeAt(0) == 35)
+					{
+						if (entity.length > 1)
+						{
+							if (entity[1] == 'x')
+								u = parseInt(entity.substr(2), 16);
+							else
+								u = parseInt(entity.substr(1));
+							result += String.fromCharCode(u);
+							pos1 = pos2 + 1;
+						}
+						else
+							result += "&";
+					}
+					else
+					{
+						switch (entity)
+						{
+							case "amp":
+								u = 38;
+								break;
+							
+							case "apos":
+								u = 39;
+								break;
+							
+							case "gt":
+								u = 62;
+								break;
+							
+							case "lt":
+								u = 60;
+								break;
+							
+							case "nbsp":
+								u = 32;
+								break;
+							
+							case "quot":
+								u = 34;
+								break;
+						}
+						if (u > 0)
+						{
+							result += String.fromCharCode(u);
+							pos1 = pos2 + 1;
+						}
+						else
+							result += "&";
+					}
+				}
+				else
+				{
+					result += "&";
+				}
+			}
+			
+			return result;
+		}
+		
 		public static var defaultUBBParser:UBBParser = new UBBParser();
 		public static function parseUBB(text:String):String {
 			return defaultUBBParser.parse(text);
