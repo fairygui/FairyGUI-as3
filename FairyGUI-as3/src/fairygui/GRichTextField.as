@@ -72,6 +72,8 @@ package fairygui
 		{
 			super.createDisplayObject();
 			
+			_textField.mouseEnabled = true;
+			
 			_objectsContainer = new Sprite();
 			_objectsContainer.mouseEnabled = false;
 			

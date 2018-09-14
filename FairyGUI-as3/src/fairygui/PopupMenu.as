@@ -257,10 +257,14 @@ package fairygui
 			
 			if((item.data!=null) && !(item.data is PopupMenu))
 			{
-				if(item.data.length==1)
-					item.data(evt);
-				else
-					item.data();
+				var func:Function = item.data as Function;
+				if(func!=null)
+				{
+					if(func.length==1)
+						func(evt);
+					else
+						func();
+				}
 			}
 		}
 		
