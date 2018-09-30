@@ -528,6 +528,7 @@ package fairygui
 			var cnt:int = item.displayList.length;
 			var value:*;
 			var cxml:XML, dxml:XML;
+			var j:int;
 			for(var i:int=0;i<cnt;i++)
 			{
 				cxml = item.displayList[i].desc;
@@ -544,9 +545,19 @@ package fairygui
 				dxml = cxml.gearText[0];
 				if (dxml)
 				{
-					value = strings[elementId+"-texts"];
-					if(value!=undefined)
-						dxml.@values = value;
+					var str:String = dxml.@values;
+					var arr:Array;
+					if(str)
+					{
+						arr = str.split("|");
+						for(j=0;j<arr.length;j++)
+						{
+							value = strings[elementId+"-texts_"+j];
+							if(value!=null)
+								arr[j] = value;
+						}
+						dxml.@values = arr.join("|");
+					}
 					
 					value = strings[elementId+"-texts_def"];
 					if(value!=undefined)
@@ -565,7 +576,7 @@ package fairygui
 				else if(ename=="list")
 				{
 					var items:XMLList = cxml.item;
-					var j:int = 0;
+					j = 0;
 					for each(var exml:XML in items)
 					{
 						value = strings[elementId+"-"+j];
