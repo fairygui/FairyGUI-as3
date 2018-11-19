@@ -1082,13 +1082,13 @@ package fairygui
 				var i:int;
 				if (_layout == ListLayoutType.SingleColumn || _layout == ListLayoutType.FlowHorizontal)
 				{
-					for (i = 0; i < index; i += _curLineItemCount)
+					for (i = _curLineItemCount-1; i < index; i += _curLineItemCount)
 						pos += _virtualItems[i].height + _lineGap;
 					rect = new Rectangle(0, pos, _itemSize.x, ii.height);
 				}
 				else if (_layout == ListLayoutType.SingleRow || _layout == ListLayoutType.FlowVertical)
 				{
-					for (i = 0; i < index; i += _curLineItemCount)
+					for (i = _curLineItemCount-1; i < index; i += _curLineItemCount)
 						pos += _virtualItems[i].width + _columnGap;
 					rect = new Rectangle(pos, 0, ii.width, _itemSize.y);
 				}
@@ -1663,8 +1663,8 @@ package fairygui
 			_firstIndex = newFirstIndex;
 			var curIndex:int = newFirstIndex;
 			var forward:Boolean = oldFirstIndex > newFirstIndex;
-			var oldCount:int = this.numChildren;
-			var lastIndex:int = oldFirstIndex + oldCount - 1;
+			var childCount:int = this.numChildren;
+			var lastIndex:int = oldFirstIndex + childCount - 1;
 			var reuseIndex:int = forward ? lastIndex : oldFirstIndex;
 			var curX:Number = 0, curY:Number = pos;
 			var needRender:Boolean;
@@ -1792,7 +1792,7 @@ package fairygui
 				curIndex++;
 			}
 			
-			for (i = 0; i < oldCount; i++)
+			for (i = 0; i < childCount; i++)
 			{
 				ii = _virtualItems[oldFirstIndex + i];
 				if (ii.updateFlag != itemInfoVer && ii.obj != null)
@@ -1802,6 +1802,14 @@ package fairygui
 					removeChildToPool(ii.obj);
 					ii.obj = null;
 				}
+			}
+			
+			childCount = _children.length;
+			for (i = 0; i < childCount; i++)
+			{
+				var obj:GObject = _virtualItems[newFirstIndex + i].obj;
+				if (_children[i] != obj)
+					setChildIndex(obj, i);
 			}
 			
 			if (deltaSize != 0 || firstItemDeltaSize != 0)
@@ -1835,8 +1843,8 @@ package fairygui
 			_firstIndex = newFirstIndex;
 			var curIndex:int = newFirstIndex;
 			var forward:Boolean = oldFirstIndex > newFirstIndex;
-			var oldCount:int = this.numChildren;
-			var lastIndex:int = oldFirstIndex + oldCount - 1;
+			var childCount:int = this.numChildren;
+			var lastIndex:int = oldFirstIndex + childCount - 1;
 			var reuseIndex:int = forward ? lastIndex : oldFirstIndex;
 			var curX:Number = pos, curY:Number = 0;
 			var needRender:Boolean;
@@ -1963,7 +1971,7 @@ package fairygui
 				curIndex++;
 			}
 			
-			for (i = 0; i < oldCount; i++)
+			for (i = 0; i < childCount; i++)
 			{
 				ii = _virtualItems[oldFirstIndex + i];
 				if (ii.updateFlag != itemInfoVer && ii.obj != null)
@@ -1973,6 +1981,14 @@ package fairygui
 					removeChildToPool(ii.obj);
 					ii.obj = null;
 				}
+			}
+			
+			childCount = _children.length;
+			for (i = 0; i < childCount; i++)
+			{
+				var obj:GObject = _virtualItems[newFirstIndex + i].obj;
+				if (_children[i] != obj)
+					setChildIndex(obj, i);
 			}
 			
 			if (deltaSize != 0 || firstItemDeltaSize != 0)
