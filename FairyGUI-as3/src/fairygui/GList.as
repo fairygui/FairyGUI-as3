@@ -55,7 +55,6 @@ package fairygui
 		private var _eventLocked:Boolean;
 		private var _virtualItems:Vector.<ItemInfo>;
 		private var itemInfoVer:uint = 0; //用来标志item是否在本次处理中已经被重用了
-		private var enterCounter:uint = 0; //因为HandleScroll是会重入的，这个用来避免极端情况下的死锁
 		
 		public function GList()
 		{
@@ -1618,15 +1617,34 @@ package fairygui
 			if (_eventLocked)
 				return;
 
-			enterCounter = 0;
 			if (_layout == ListLayoutType.SingleColumn || _layout == ListLayoutType.FlowHorizontal)
 			{
-				handleScroll1(forceUpdate);
+				var enterCounter:int = 0;
+				while(handleScroll1(forceUpdate))
+				{
+					enterCounter++;
+					forceUpdate = false;
+					if(enterCounter>20)
+					{
+						trace("FairyGUI: list will never be filled as the item renderer function always returns a different size.");
+						break;
+					}
+				}
 				handleArchOrder1();
 			}
 			else if (_layout == ListLayoutType.SingleRow || _layout == ListLayoutType.FlowVertical)
 			{
-				handleScroll2(forceUpdate);
+				enterCounter = 0;
+				while(handleScroll2(forceUpdate))
+				{
+					enterCounter++;
+					forceUpdate = false;
+					if(enterCounter>20)
+					{
+						trace("FairyGUI: list will never be filled as the item renderer function always returns a different size.");
+						break;
+					}
+				}
 				handleArchOrder2();
 			}
 			else
@@ -1639,15 +1657,8 @@ package fairygui
 		
 		private static var pos_param:Number;
 		
-		private function handleScroll1(forceUpdate:Boolean):void
+		private function handleScroll1(forceUpdate:Boolean):Boolean
 		{
-			enterCounter++;
-			if (enterCounter > 3)
-			{
-				trace("FairyGUI: list will never be filled as the item renderer function always returns a different size.");
-				return;
-			}
-
 			var pos:Number = _scrollPane.scrollingPosY;
 			var max:Number = pos + _scrollPane.viewHeight;
 			var end:Boolean = max == _scrollPane.contentHeight;//这个标志表示当前需要滚动到最末，无论内容变化大小
@@ -1657,7 +1668,7 @@ package fairygui
 			var newFirstIndex:int = getIndexOnPos1(forceUpdate);
 			pos = GList.pos_param;
 			if (newFirstIndex == _firstIndex && !forceUpdate)
-				return;
+				return false;
 
 			var oldFirstIndex:int = _firstIndex;
 			_firstIndex = newFirstIndex;
@@ -1816,18 +1827,13 @@ package fairygui
 				_scrollPane.changeContentSizeOnScrolling(0, deltaSize, 0, firstItemDeltaSize);
 			
 			if (curIndex > 0 && this.numChildren > 0 && _container.y < 0 && getChildAt(0).y > -_container.y)//最后一页没填满！
-				handleScroll1(false);
+				return true;
+			else
+				return false;
 		}
 		
-		private function handleScroll2(forceUpdate:Boolean):void
+		private function handleScroll2(forceUpdate:Boolean):Boolean
 		{
-			enterCounter++;
-			if (enterCounter > 3)
-			{
-				trace("FairyGUI: list will never be filled as the item renderer function always returns a different size.");
-				return;
-			}
-			
 			var pos:Number = _scrollPane.scrollingPosX;
 			var max:Number = pos + _scrollPane.viewWidth;
 			var end:Boolean = pos == _scrollPane.contentWidth;//这个标志表示当前需要滚动到最末，无论内容变化大小
@@ -1837,7 +1843,7 @@ package fairygui
 			var newFirstIndex:int = getIndexOnPos2(forceUpdate);
 			pos = GList.pos_param;
 			if (newFirstIndex == _firstIndex && !forceUpdate)
-				return;
+				return false;
 			
 			var oldFirstIndex:int = _firstIndex;
 			_firstIndex = newFirstIndex;
@@ -1995,7 +2001,9 @@ package fairygui
 				_scrollPane.changeContentSizeOnScrolling(deltaSize, 0, firstItemDeltaSize, 0);
 			
 			if (curIndex > 0 && this.numChildren > 0 && _container.x < 0 && getChildAt(0).x > - _container.x)//最后一页没填满！
-				handleScroll2(false);
+				return true;
+			else
+				return false;
 		}
 		
 		private function handleScroll3(forceUpdate:Boolean):void
