@@ -19,8 +19,7 @@ package fairygui.utils
 		
 		private static var helperBmd:BitmapData;
 		
-		public static var TEST_STRING:String = "fj|_我案愛爱";
-		public static var PLACEHOLDER_FONT:String = "Arial";
+		public static var TEST_STRING:String = "fj|_我案爱";
 		
 		public static function getSize(size:int, font:String, bold:Boolean):Object {
 			if(!testTextField){
@@ -69,6 +68,8 @@ package fairygui.utils
 			helperBmd.draw(testTextField);
 			var bounds:Rectangle = helperBmd.getColorBoundsRect(0xFF000000, 0, false);
 			ret.yIndent = bounds.top-2-int((ret.height - Math.max(bounds.height, size))/2);
+			if(ret.yIndent<0)
+				ret.yIndent = 0;
 			
 			return ret;
 		}
@@ -106,6 +107,27 @@ package fairygui.utils
 			}
 			
 			return int(ret);
+		}
+		
+		public static function getFontSizeByHeight(height:Number, font:String):int
+		{
+			var low:int = 0;
+			var high:int = height;
+			var cur:int = height/2;
+			
+			while(high-low>1)
+			{
+				var textHeight:Number = getSize(cur, font, false).height;
+				if(Math.abs(height-textHeight)<1)
+					return cur;
+				
+				if(textHeight>height)
+					high = cur;
+				else
+					low = cur;
+				cur = low+(high-low)/2;
+			}
+			return cur;
 		}
 	}
 }

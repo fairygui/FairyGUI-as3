@@ -121,10 +121,10 @@ package fairygui
 		
 		override protected function render():void
 		{
-			renderNow(true);
+			renderNow();
 		}
 		
-		override protected function renderNow(updateBounds:Boolean=true):void
+		override protected function renderNow():void
 		{
 			var w:Number, h:Number;
 			w = this.width;

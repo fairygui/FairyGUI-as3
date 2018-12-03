@@ -299,8 +299,8 @@ package fairygui
 			if(downEffect && _mode==ButtonMode.Common)
 			{
 				setState(OVER);
-				GTimers.inst.add(100, 1, setState, DOWN);
-				GTimers.inst.add(200, 1, setState, UP);
+				GTimers.inst.add(100, 1, function():void { setState(DOWN); });
+				GTimers.inst.add(200, 1, function():void { setState(UP); });
 			}
 			__click(null);
 		}

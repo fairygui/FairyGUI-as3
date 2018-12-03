@@ -41,6 +41,7 @@ package fairygui
 		protected var _strokeColor:uint;
 		protected var _shadowOffset:Point;
 		protected var _textFilters:Array;
+		protected var _templateVars:Object;
 
 		protected var _textField:TextField;
 		protected var _bitmap:UIImage;
@@ -52,6 +53,7 @@ package fairygui
 		protected var _textWidth:int;
 		protected var _textHeight:int;
 		protected var _fontAdjustment:int;
+		protected var _maxFontSize:int;
 		
 		protected var _bitmapFont:BitmapFont;
 		protected var _lines:Vector.<LineInfo>;
@@ -107,15 +109,15 @@ package fairygui
 			setDisplayObject(_textField);
 		}
 		
-		private function switchBitmapMode(val:Boolean):void
+		private function switchBitmapMode(value:Boolean):void
 		{
-			if(val && this.displayObject==_textField)
+			if(value && this.displayObject==_textField)
 			{
 				if(_bitmap==null)
 					_bitmap = new UIImage(this);
 				switchDisplayObject(_bitmap);
 			}
-			else if(!val && this.displayObject==_bitmap)
+			else if(!value && this.displayObject==_bitmap)
 				switchDisplayObject(_textField);
 		}
 		
@@ -424,7 +426,7 @@ package fairygui
 		protected function updateTextFormat():void
 		{
 			_textFormat.size = _fontSize;
-			if(ToolSet.startsWith(_font, "ui://"))
+			if(ToolSet.startsWith(_font, "ui://") && !(this is GRichTextField)/*not supported*/)
 			{
 				_bitmapFont = UIPackage.getBitmapFontByURL(_font);
 				_fontAdjustment = 0;
@@ -496,15 +498,26 @@ package fairygui
 			if(_requireRender)
 				renderNow();
 		}
+		
+		protected function updateTextFieldText(value:String):void
+		{
+			if(_ubbEnabled)
+			{
+				_textField.htmlText = ToolSet.parseUBB(ToolSet.encodeHTML(value));
+				_maxFontSize = Math.max(_maxFontSize, ToolSet.defaultUBBParser.maxFontSize);
+			}
+			else
+				_textField.text = value;
+		}
 
-		protected function renderNow(updateBounds:Boolean=true):void
+		protected function renderNow():void
 		{
 			_requireRender = false;
 			_sizeDirty = false;
 			
 			if(_bitmapFont!=null)
 			{
-				renderWithBitmapFont(updateBounds);
+				renderWithBitmapFont();
 				return;
 			}
 			
@@ -517,7 +530,7 @@ package fairygui
 			h = Math.max(_height, int(_textFormat.size));
 			if(h!=_textField.height)
 				_textField.height = h;
-			
+
 			if(truncationText)
 			{
 				getTxt(_text);
@@ -528,10 +541,13 @@ package fairygui
 				else
 					_textField.text = _text;
 			}
+						_textField.defaultTextFormat = _textFormat;
+			_maxFontSize = int(_textFormat.size);
 			
-			
-			_textField.defaultTextFormat = _textFormat;
-			var renderSingleLine:Boolean = _textField.numLines<=1;
+			var text2:String = _text;
+			if (_templateVars != null)
+				text2 = parseTemplate(text2);
+			updateTextFieldText(text2);
 			
 			_textWidth = Math.ceil(_textField.textWidth);
 			if(_textWidth>0)
@@ -539,10 +555,11 @@ package fairygui
 			_textHeight = Math.ceil(_textField.textHeight);
 			if(_textHeight>0)
 			{
-				if(renderSingleLine)
-					_textHeight+=1;
-				else
-					_textHeight+=4;
+				if(_textField.numLines==1) //单行时文本高度的测算可能受leading的影响（flash问题），所以不使用textHeight
+				{			
+					_textHeight = CharSize.getSize(_maxFontSize, _textFormat.font, _textFormat.bold).height;
+				}
+				_textHeight += 4;
 			}
 
 			if(_widthAutoSize)
@@ -559,14 +576,11 @@ package fairygui
 			
 			_textField.height = _textHeight + _fontAdjustment + 3;
 
-			if(updateBounds)
-			{
-				_updatingSize = true;
-				this.setSize(w,h);
-				_updatingSize = false;
-				
-				doAlign();
-			}
+			_updatingSize = true;
+			this.setSize(w,h);
+			_updatingSize = false;
+			
+			doAlign();
 			
 		}
 		
@@ -609,8 +623,7 @@ package fairygui
 			}
 		}
 		
-		private function renderWithBitmapFont(updateBounds:Boolean):void
-		{
+private function renderWithBitmapFont(updateBounds:Boolean):voidprivate function renderWithBitmapFont():void		{
 			switchBitmapMode(true);
 			
 			if(!_lines)
@@ -633,10 +646,13 @@ package fairygui
 			_textWidth = 0;
 			_textHeight = 0;
 			
-			var textLength:int = _text.length;
+			var text2:String = _text;
+			if (_templateVars != null)
+				text2 = parseTemplate(text2);
+			var textLength:int = text2.length;
 			for (var offset:int = 0; offset < textLength; ++offset)
 			{
-				var ch:String = _text.charAt(offset);
+				var ch:String = text2.charAt(offset);
 				var cc:int = ch.charCodeAt(0);
 				
 				if (cc == 10) //\n
@@ -802,14 +818,11 @@ package fairygui
 			if(maxHeight>0 && h>maxHeight)
 				h = maxHeight;
 			
-			if(updateBounds)
-			{
-				_updatingSize = true;
-				this.setSize(w,h);
-				_updatingSize = false;
-				
-				doAlign();
-			}
+			_updatingSize = true;
+			this.setSize(w,h);
+			_updatingSize = false;
+			
+			doAlign();
 			
 			if(_bitmapData!=null)
 				_bitmapData.dispose();
@@ -871,6 +884,87 @@ package fairygui
 			_bitmap.smoothing = true;
 		}
 		
+		protected function parseTemplate(template:String):String
+		{
+			var pos1:int = 0, pos2:int, pos3:int;
+			var tag:String;
+			var value:String;
+			var result:String = "";
+			while((pos2=template.indexOf("{", pos1))!=-1) {
+				if (pos2 > 0 && template.charCodeAt(pos2 - 1) == 92 )//\
+				{
+					result += template.substring(pos1, pos2 - 1);
+					result += "{";
+					pos1 = pos2 + 1;
+					continue;
+				}
+				
+				result += template.substring(pos1, pos2);				
+				pos1 = pos2;
+				pos2 = template.indexOf("}", pos1);
+				if(pos2==-1)
+					break;
+				
+				if(pos2==pos1+1)
+				{
+					result += template.substr(pos1, 2);
+					pos1 = pos2+1;
+					continue;
+				}
+				
+				tag = template.substring(pos1+1, pos2);
+				pos3 = tag.indexOf("=");
+				if(pos3!=-1)
+				{
+					value = _templateVars[tag.substring(0, pos3)];
+					if(value==null)
+						result += tag.substring(pos3+1);
+					else
+						result += value;
+				}
+				else
+				{
+					value = _templateVars[tag];
+					if(value!=null)
+						result += value;
+				}
+				pos1 = pos2+1;
+			}
+			
+			if (pos1 < template.length)
+				result += template.substr(pos1);
+			
+			return result;
+		}
+		
+		public function get templateVars():Object
+		{
+			return _templateVars;
+		}
+		
+		public function set templateVars(value:Object):void
+		{
+			if(_templateVars==null && value==null)
+				return;
+			
+			_templateVars = value;
+			flushVars();			
+		}
+		
+		public function setVar(name:String, value:String):GTextField
+		{
+			if(!_templateVars)
+				_templateVars = {};
+			_templateVars[name] = value;
+			
+			return this;
+		}
+		
+		public function flushVars():void
+		{
+			render();
+		}
+		
 		override protected function handleSizeChanged():void
 		{
 			if(!_updatingSize)
@@ -900,15 +994,10 @@ package fairygui
 					dh = this.height-int(_textFormat.size);
 				else
 					dh = this.height-_textHeight;
-				if(dh>_fontAdjustment)
-				{
-					if(_verticalAlign==VertAlignType.Middle)
-						_yOffset = int((dh-_fontAdjustment)/2);
-					else
-						_yOffset = int(dh);
-				}
+				if(_verticalAlign==VertAlignType.Middle)
+					_yOffset = int(dh/2);
 				else
-					_yOffset = 0;
+					_yOffset = int(dh);
 			}
 			
 			_yOffset -=_fontAdjustment;
@@ -993,6 +1082,9 @@ package fairygui
 			
 			if(_stroke || _shadowOffset!=null)
 				updateTextFilters();
+			
+			if(xml.@vars=="true")
+				_templateVars = {};
 		}
 		
 		override public function setup_afterAdd(xml:XML):void

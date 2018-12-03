@@ -25,6 +25,7 @@ package fairygui
 		private var _verticalAlign:int;
 		private var _autoSize:Boolean;
 		private var _fill:int;
+		private var _shrinkOnly:Boolean;
 		private var _showErrorSign:Boolean;
 		private var _playing:Boolean;
 		private var _frame:int;
@@ -39,6 +40,7 @@ package fairygui
 		private var _container:Sprite;
 		private var _content:DisplayObject;
 		private var _errorSign:GObject;
+		private var _content2:GComponent;
 		
 		private var _updatingLayout:Boolean;
 		
@@ -81,10 +83,13 @@ package fairygui
 				if(_content!=null)
 					freeExternal(_content);
 			}
+			if(_content2!=null)
+				_content2.dispose();
+
 			super.dispose();
 		}
 
-		public function get url():String
+		final public function get url():String
 		{
 			return _url;
 		}
@@ -109,7 +114,7 @@ package fairygui
 			this.url = value;
 		}
 		
-		public function get align():int
+		final public function get align():int
 		{
 			return _align;
 		}
@@ -123,7 +128,7 @@ package fairygui
 			}
 		}
 		
-		public function get verticalAlign():int
+		final public function get verticalAlign():int
 		{
 			return _verticalAlign;
 		}
@@ -137,7 +142,7 @@ package fairygui
 			}
 		}
 		
-		public function get fill():int
+		final public function get fill():int
 		{
 			return _fill;
 		}
@@ -151,7 +156,21 @@ package fairygui
 			}
 		}		
 		
-		public function get autoSize():Boolean
+		final public function get shrinkOnly():Boolean
+		{
+			return _shrinkOnly;
+		}
+		
+		public function set shrinkOnly(value:Boolean):void
+		{
+			if(_shrinkOnly!=value)
+			{
+				_shrinkOnly = value;
+				updateLayout();
+			}
+		}
+		
+		final public function get autoSize():Boolean
 		{
 			return _autoSize;
 		}
@@ -165,7 +184,7 @@ package fairygui
 			}
 		}
 
-		public function get playing():Boolean
+		final public function get playing():Boolean
 		{
 			return _playing;
 		}
@@ -183,7 +202,7 @@ package fairygui
 			}
 		}
 		
-		public function get frame():int
+		final public function get frame():int
 		{
 			return _frame;
 		}
@@ -194,7 +213,7 @@ package fairygui
 			{
 				_frame = value;
 				if(_content is fairygui.display.MovieClip)
-					fairygui.display.MovieClip(_content).currentFrame = value;
+					fairygui.display.MovieClip(_content).frame= value;
 				else if(_content is flash.display.MovieClip)
 				{
 					if(_playing)
@@ -206,7 +225,27 @@ package fairygui
 			}
 		}
 		
-		public function get color():uint
+		final public function get timeScale():Number
+		{
+			if(_content is fairygui.display.MovieClip)
+				return fairygui.display.MovieClip(_content).timeScale;
+			else
+				return 1;
+		}
+		
+		public function set timeScale(value:Number):void
+		{
+			if(_content is fairygui.display.MovieClip)
+				fairygui.display.MovieClip(_content).timeScale = value;
+		}
+		
+		public function advance(timeInMiniseconds:int):void
+		{
+			if(_content is fairygui.display.MovieClip)
+				fairygui.display.MovieClip(_content).advance(timeInMiniseconds);
+		}
+		
+		final public function get color():uint
 		{
 			return _color;
 		}
@@ -230,7 +269,7 @@ package fairygui
 			_container.transform.colorTransform = ct;
 		}
 
-		public function get showErrorSign():Boolean
+		final public function get showErrorSign():Boolean
 		{
 			return _showErrorSign;
 		}
@@ -263,6 +302,11 @@ package fairygui
 			_contentSourceWidth = value.width;
 			_contentSourceHeight = value.height;
 			updateLayout();
+		}
+		
+		public function get component():GComponent
+		{
+			return _content2;
 		}
 		
 		protected function loadContent():void
@@ -311,6 +355,25 @@ package fairygui
 				{
 					_loading = 2;
 					_contentItem.owner.addItemCallback(_contentItem, __swfLoaded);
+				}
+				else if(_contentItem.type==PackageItemType.Component)
+				{
+					var obj:GObject = UIPackage.createObjectFromURL(itemURL);
+					if(!obj)
+						setErrorState();
+					else if(!(obj is GComponent))
+					{
+						obj.dispose();
+						setErrorState();
+					}
+					else
+					{
+						_content2 = obj.asCom;
+						_container.addChild(_content2.displayObject);
+						_contentSourceWidth = _contentItem.width;
+						_contentSourceHeight = _contentItem.height;
+						updateLayout();
+					}
 				}
 				else
 					setErrorState();
@@ -488,7 +551,7 @@ package fairygui
 		
 		private function updateLayout():void
 		{
-			if(_content==null)
+			if(_content2==null && _content==null)
 			{
 				if(_autoSize)
 				{
@@ -499,10 +562,6 @@ package fairygui
 				return;
 			}
 			
-			_content.x = 0;
-			_content.y = 0;
-			_content.scaleX = 1;
-			_content.scaleY = 1;
 			_contentWidth = _contentSourceWidth;
 			_contentHeight = _contentSourceHeight;
 			
@@ -517,7 +576,21 @@ package fairygui
 				_updatingLayout = false;
 				
 				if(_width==_contentWidth && _height==_contentHeight) //可能由于大小限制
+				{
+					if(_content2!=null)
+					{
+						_content2.setXY(0, 0);
+						_content2.setScale(1, 1);
+					}
+					else
+					{
+						_content.x = 0;
+						_content.y = 0;
+						_content.scaleX = 1;
+						_content.scaleY = 1;
+					}
 					return;
+				}
 			}
 				
 			var sx:Number = 1, sy:Number = 1;
@@ -546,12 +619,25 @@ package fairygui
 						else
 							sx = sy;
 					}
+					
+					if(_shrinkOnly)
+					{
+						if(sx>1)
+							sx = 1;
+						if(sy>1)
+							sy = 1;
+					}
+					
 					_contentWidth = _contentSourceWidth * sx;
 					_contentHeight = _contentSourceHeight * sy;
 				}
 			}	
 			
-			if(_contentItem && _contentItem.type==PackageItemType.Image)
+			if(_content2!=null)
+			{
+				_content2.setScale(sx, sy);
+			}
+			else if(_contentItem && _contentItem.type==PackageItemType.Image)
 			{
 				resizeImage();
 			}
@@ -561,14 +647,26 @@ package fairygui
 				_content.scaleY =  sy;
 			}
 			
+			var nx:Number, ny:Number;
 			if(_align==AlignType.Center)
-				_content.x = int((this.width-_contentWidth)/2);
+				nx = int((this.width-_contentWidth)/2);
 			else if(_align==AlignType.Right)
-				_content.x = this.width-_contentWidth;
+				nx = this.width-_contentWidth;
+			else
+				nx = 0;
 			if(_verticalAlign==VertAlignType.Middle)
-				_content.y = int((this.height-_contentHeight)/2);
+				ny = int((this.height-_contentHeight)/2);
 			else if(_verticalAlign==VertAlignType.Bottom)
-				_content.y = this.height-_contentHeight;
+				ny = this.height-_contentHeight;
+			else
+				ny = 0;
+			if(_content2!=null)
+				_content2.setXY(nx, ny);
+			else
+			{
+				_content.x = nx;
+				_content.y = ny;
+			}
 		}
 		
 		protected function clearContent():void 
@@ -577,6 +675,13 @@ package fairygui
 			
 			if(_content!=null && _content.parent!=null) 
 				_container.removeChild(_content);
+			
+			if(_content2!=null)
+			{
+				_container.removeChild(_content2.displayObject);
+				_content2.dispose();
+				_content2 = null;
+			}
 			
 			if(_contentItem!=null)
 			{
@@ -680,6 +785,8 @@ package fairygui
 			str = xml.@fill;
 			if(str)
 				_fill = LoaderFillType.parse(str);
+			
+			_shrinkOnly = xml.@shrinkOnly=="true";
 			
 			_autoSize = xml.@autoSize=="true";
 			

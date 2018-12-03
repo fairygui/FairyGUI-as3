@@ -1,11 +1,14 @@
 package fairygui
 {
+	import fairygui.tween.GTween;
+	import fairygui.tween.GTweener;
 	import fairygui.utils.ToolSet;
 
 	public class GearColor extends GearBase
 	{
 		private var _storage:Object;
 		private var _default:GearColorValue;
+		private var _tweener:GTweener;
 		
 		public function GearColor(owner:GObject)
 		{
@@ -50,17 +53,68 @@ package fairygui
 		
 		override public function apply():void
 		{
-			_owner._gearLocked = true;
-
 			var gv:GearColorValue = _storage[_controller.selectedPageId];
 			if(!gv)
 				gv = _default;
 			
-			IColorGear(_owner).color = gv.color;
-			if((_owner is ITextColorGear) && gv.strokeColor!=0xFF000000)
-				ITextColorGear(_owner).strokeColor = gv.strokeColor;
-			
-			_owner._gearLocked = false;
+			if(_tween && !UIPackage._constructing && !disableAllTweenEffect)
+			{
+				if((_owner is ITextColorGear) && gv.strokeColor!=0xFF000000)
+				{
+					_owner._gearLocked = true;	
+					ITextColorGear(_owner).strokeColor = gv.strokeColor;
+					_owner._gearLocked = false;
+				}
+				
+				if (_tweener != null)
+				{
+					if (_tweener.endValue.color != gv.color)
+					{
+						_tweener.kill(true);
+						_tweener = null;
+					}
+					else
+						return;
+				}
+				
+				if (IColorGear(_owner).color != gv.color)
+				{
+					if (_owner.checkGearController(0, _controller))
+						_displayLockToken = _owner.addDisplayLock();
+					
+					_tweener = GTween.toColor(IColorGear(_owner).color, gv.color, _tweenTime)
+						.setDelay(_delay)
+						.setEase(_easeType)
+						.setTarget(this)
+						.onUpdate(__tweenUpdate)
+						.onComplete(__tweenComplete);
+				}
+			}
+			else
+			{
+				_owner._gearLocked = true;	
+				IColorGear(_owner).color = gv.color;
+				if((_owner is ITextColorGear) && gv.strokeColor!=0xFF000000)
+					ITextColorGear(_owner).strokeColor = gv.strokeColor;
+				_owner._gearLocked = false;
+			}
+		}
+		
+		private function __tweenUpdate(tweener:GTweener):void
+		{
+			_owner._gearLocked = true;	
+			IColorGear(_owner).color = tweener.value.color;
+			_owner._gearLocked = false;	
+		}
+		
+		private function __tweenComplete():void
+		{
+			if(_displayLockToken!=0)
+			{
+				_owner.releaseDisplayLock(_displayLockToken);
+				_displayLockToken = 0;
+			}
+			_tweener = null;
 		}
 		
 		override public function updateState():void

@@ -1,14 +1,13 @@
 package fairygui
 {
-	import com.greensock.TweenLite;	
+	import fairygui.tween.GTween;
+	import fairygui.tween.GTweener;
 
 	public class GearSize extends GearBase
 	{
-		public var tweener:TweenLite;
-		
 		private var _storage:Object;
 		private var _default:GearSizeValue;
-		private var _tweenValue:GearSizeValue;
+		private var _tweener:GTweener;
 		
 		public function GearSize(owner:GObject)
 		{
@@ -52,59 +51,32 @@ package fairygui
 
 			if(_tween && !UIPackage._constructing && !disableAllTweenEffect)
 			{
-				var a:Boolean;
-				var b:Boolean;
-				if(tweener!=null)
+				if (_tweener != null)
 				{
-					a = tweener.vars.onUpdateParams[0];
-					b = tweener.vars.onUpdateParams[1];
-					if(a && (tweener.vars.width!=gv.width || tweener.vars.height!=gv.height)
-						|| b && (tweener.vars.scaleX!=gv.scaleX || tweener.vars.scaleY!=gv.scaleY))
+					if (_tweener.endValue.x != gv.width || _tweener.endValue.y != gv.height
+						|| _tweener.endValue.z != gv.scaleX || _tweener.endValue.w != gv.scaleY)
 					{
-						_owner._gearLocked = true;
-						if(a)
-							_owner.setSize(tweener.vars.width, tweener.vars.height, _owner.checkGearController(1, _controller));
-						if(b)
-							_owner.setScale(tweener.vars.scaleX, tweener.vars.scaleY);
-						_owner._gearLocked = false;
-						tweener.kill();
-						tweener = null;
-						if(_displayLockToken!=0)
-						{
-							_owner.releaseDisplayLock(_displayLockToken);
-							_displayLockToken = 0;
-						}
+						_tweener.kill(true);
+						_tweener = null;
 					}
 					else
 						return;
 				}
-				
-				a = gv.width != _owner.width || gv.height != _owner.height;
-				b = gv.scaleX != _owner.scaleX || gv.scaleY != _owner.scaleY;
+
+				var a:Boolean = gv.width != _owner.width || gv.height != _owner.height;
+				var b:Boolean = gv.scaleX != _owner.scaleX || gv.scaleY != _owner.scaleY;
 				if(a || b)
 				{
 					if(_owner.checkGearController(0, _controller))
 						_displayLockToken = _owner.addDisplayLock();
-					var vars:Object = 
-						{
-							width: gv.width,
-							height: gv.height,
-							scaleX: gv.scaleX,
-							scaleY: gv.scaleY,
-							ease: _easeType,
-							delay: _delay,
-							overwrite:0
-						};
-					vars.onUpdate = __tweenUpdate;
-					vars.onUpdateParams = [a,b];
-					vars.onComplete = __tweenComplete;
-					if(_tweenValue==null)
-						_tweenValue = new GearSizeValue(0,0,0,0);
-					_tweenValue.width = _owner.width;
-					_tweenValue.height = _owner.height;
-					_tweenValue.scaleX = _owner.scaleX;
-					_tweenValue.scaleY = _owner.scaleY;
-					tweener = TweenLite.to(_tweenValue, _tweenTime, vars);
+					
+					_tweener = GTween.to4(_owner.width,_owner.height,_owner.scaleX, _owner.scaleY, gv.width,gv.height,gv.scaleX, gv.scaleY, _tweenTime)
+						.setDelay(_delay)
+						.setEase(_easeType)
+						.setUserData((a ? 1 : 0) + (b ? 2 : 0))
+						.setTarget(this)
+						.onUpdate(__tweenUpdate)
+						.onComplete(__tweenComplete);
 				}
 			}
 			else
@@ -116,13 +88,14 @@ package fairygui
 			}
 		}
 		
-		private function __tweenUpdate(a:Boolean, b:Boolean):void
+		private function __tweenUpdate(tweener:GTweener):void
 		{
+			var flag:int = int(tweener.userData);
 			_owner._gearLocked = true;
-			if(a)
-				_owner.setSize(_tweenValue.width, _tweenValue.height, _owner.checkGearController(1, _controller));
-			if(b)
-				_owner.setScale(_tweenValue.scaleX, _tweenValue.scaleY);
+			if ((flag & 1) != 0)
+				_owner.setSize(tweener.value.x, tweener.value.y, _owner.checkGearController(1, _controller));
+			if ((flag & 2) != 0)
+				_owner.setScale(tweener.value.z, tweener.value.w);
 			_owner._gearLocked = false;							
 		}
 		
@@ -133,7 +106,7 @@ package fairygui
 				_owner.releaseDisplayLock(_displayLockToken);
 				_displayLockToken = 0;
 			}
-			tweener = null;
+			_tweener = null;
 		}
 		
 		override public function updateState():void

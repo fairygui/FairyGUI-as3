@@ -14,6 +14,8 @@ package fairygui.utils
 		public var defaultImgWidth:int = 0;
 		public var defaultImgHeight:int = 0;
 		
+		public var maxFontSize:int = 0;
+		
 		public static var inst:UBBParser = new UBBParser();
 		
 		public function UBBParser()
@@ -29,6 +31,7 @@ package fairygui.utils
 			_handlers["color"] = onTag_COLOR;
 			_handlers["font"] = onTag_FONT;
 			_handlers["size"] = onTag_SIZE;
+			_handlers["align"] = onTag_ALIGN;
 		}
 		
 		protected function onTag_URL(tagName:String, end:Boolean, attr:String):String {
@@ -77,43 +80,83 @@ package fairygui.utils
 				return "</font>";
 		}
 		
+		protected function onTag_ALIGN(tagName:String, end:Boolean, attr:String):String {
+			if (!end)
+				return "<p align=\"" + attr + "\">";
+			else
+				return "</p>";
+		}
+		
 		protected function onTag_SIZE(tagName:String, end:Boolean, attr:String):String {
 			if(!end) {
+				var size:int;
 				if(attr=="normal")
-					attr = ""+normalFontSize;
+					size = normalFontSize;
 				else if(attr=="small")
-					attr = ""+smallFontSize;
+					size = smallFontSize;
 				else if(attr=="large")
-					attr = ""+largeFontSize;
+					size = largeFontSize;
 				else if(attr.length && attr.charAt(0)=="+")
-					attr = ""+(smallFontSize+int(attr.substr(1)));
+					size = (smallFontSize+int(attr.substr(1)));
 				else if(attr.length && attr.charAt(0)=="-")
-					attr = ""+(smallFontSize-int(attr.substr(1)));
-				return "<font size=\""+ attr + "\">";
+					size = (smallFontSize-int(attr.substr(1)));
+				else
+					size = parseInt(attr);
+				if(size>maxFontSize)
+					maxFontSize = size;
+				return "<font size=\""+ size + "\">";
 			}
 			else
 				return "</font>";
 		}
 
 		protected function getTagText(remove:Boolean=false):String {
-			var pos:int = _text.indexOf("[", _readPos);
-			if(pos==-1)
+			var pos1:int = _readPos;
+			var pos2:int
+			var result:String = "";
+			while ((pos2 = _text.indexOf("[", pos1)) != -1)
+			{
+				if (_text.charCodeAt(pos2 - 1) == 92 )//\
+				{
+					result += _text.substring(pos1, pos2 - 1);
+					result += "[";
+					pos1 = pos2 + 1;
+				}
+				else
+				{
+					result += _text.substring(pos1, pos2);
+					break;
+				}
+			}
+			if (pos2 == -1)
 				return null;
 			
-			var ret:String = _text.substring(_readPos, pos);
-			if(remove)
-				_readPos = pos;
-			return ret;
+			if (remove)
+				_readPos = pos2;
+			
+			return result;
 		}		
 		
 		public function parse(text:String):String {
 			_text = text;
+			maxFontSize = 0;
+			
 			var pos1:int = 0, pos2:int, pos3:int;
 			var end:Boolean;
 			var tag:String, attr:String;
 			var repl:String;
 			var func:Function;
+			var result:String = "";
 			while((pos2=_text.indexOf("[", pos1))!=-1) {
+				if (pos2 > 0 && _text.charCodeAt(pos2 - 1) == 92 )//\
+				{
+					result += _text.substring(pos1, pos2 - 1);
+					result += "[";
+					pos1 = pos2 + 1;
+					continue;
+				}
+
+				result += _text.substring(pos1, pos2);
 				pos1 = pos2;
 				pos2 = _text.indexOf("]", pos1);
 				if(pos2==-1)
@@ -121,8 +164,7 @@ package fairygui.utils
 				
 				end = _text.charAt(pos1+1)=='/';
 				tag = _text.substring(end?pos1+2:pos1+1, pos2);
-				pos2++;
-				_readPos = pos2;
+				_readPos = pos2 + 1;
 				attr = null;
 				repl = null;
 				pos3 = tag.indexOf("=");
@@ -134,16 +176,20 @@ package fairygui.utils
 				func = _handlers[tag];
 				if(func!=null) {
 					repl = func(tag, end, attr);
-					if(repl==null)
-						repl = "";
+					if(repl!=null)
+						result += repl;
 				}
-				else {
-					pos1 = pos2;
-					continue;
-				}
-				_text = _text.substring(0, pos1) + repl + _text.substring(_readPos);
+				else
+					result += _text.substring(pos1, _readPos);
+				pos1 = _readPos;
 			}
-			return _text;
+			
+			if (pos1 < _text.length)
+				result += _text.substr(pos1);
+			
+			_text = null;
+			
+			return result;
 		}
 	}
 }

@@ -2,10 +2,8 @@ package fairygui.text
 {
 	import flash.display.DisplayObject;
 	
-	import fairygui.LoaderFillType;
 	import fairygui.GLoader;
-	import fairygui.PackageItem;
-	import fairygui.UIPackage;
+	import fairygui.LoaderFillType;
 	import fairygui.display.UIDisplayObject;
 
 	public class RichTextObjectFactory implements IRichTextObjectFactory
@@ -30,28 +28,7 @@ package fairygui.text
 			}
 			loader.url = src;
 			
-			var pi:PackageItem = UIPackage.getItemByURL(src);
-			if(width!=0)
-				loader.width = width;
-			else
-			{
-				if (pi != null)
-					width = pi.width;
-				else
-					width = 20;
-				loader.width = width;
-			}
-			
-			if(height!=0)
-				loader.height = height;
-			else
-			{
-				if (pi != null)
-					height = pi.height;
-				else
-					height = 20;
-				loader.height = height;
-			}
+			loader.setSize(width, height);
 			
 			return loader.displayObject;
 		}

@@ -55,7 +55,6 @@ package fairygui
 		private var _eventLocked:Boolean;
 		private var _virtualItems:Vector.<ItemInfo>;
 		private var itemInfoVer:uint = 0; //用来标志item是否在本次处理中已经被重用了
-		private var enterCounter:uint = 0; //因为HandleScroll是会重入的，这个用来避免极端情况下的死锁
 		
 		public function GList()
 		{
@@ -1082,13 +1081,13 @@ package fairygui
 				var i:int;
 				if (_layout == ListLayoutType.SingleColumn || _layout == ListLayoutType.FlowHorizontal)
 				{
-					for (i = 0; i < index; i += _curLineItemCount)
+					for (i = _curLineItemCount-1; i < index; i += _curLineItemCount)
 						pos += _virtualItems[i].height + _lineGap;
 					rect = new Rectangle(0, pos, _itemSize.x, ii.height);
 				}
 				else if (_layout == ListLayoutType.SingleRow || _layout == ListLayoutType.FlowVertical)
 				{
-					for (i = 0; i < index; i += _curLineItemCount)
+					for (i = _curLineItemCount-1; i < index; i += _curLineItemCount)
 						pos += _virtualItems[i].width + _columnGap;
 					rect = new Rectangle(pos, 0, ii.width, _itemSize.y);
 				}
@@ -1163,9 +1162,9 @@ package fairygui
 				{
 					var j:int = _firstIndex % _numItems;
 					if (index >= j)
-						index = _firstIndex + (index - j);
+						index = index - j;
 					else
-						index = _firstIndex + _numItems + (j - index);
+						index = _numItems - j + index;
 				}
 				else
 					index -= _firstIndex;
@@ -1178,18 +1177,12 @@ package fairygui
 		{
 			_setVirtual(false);
 		}
-		
-		/// <summary>
-		/// Set the list to be virtual list, and has loop behavior.
-		/// </summary>
+	
 		public function setVirtualAndLoop():void
 		{
 			_setVirtual(true);
 		}
-		
-		/// <summary>
-		/// Set the list to be virtual list.
-		/// </summary>
+
 		private function _setVirtual(loop:Boolean):void
 		{
 			if (!_virtual)
@@ -1246,11 +1239,6 @@ package fairygui
 			}
 		}
 		
-		/// <summary>
-		/// Set the list item count. 
-		/// If the list is not virtual, specified number of items will be created. 
-		/// If the list is virtual, only items in view will be created.
-		/// </summary>
 		public function get numItems():int
 		{
 			if (_virtual)
@@ -1629,15 +1617,34 @@ package fairygui
 			if (_eventLocked)
 				return;
 
-			enterCounter = 0;
 			if (_layout == ListLayoutType.SingleColumn || _layout == ListLayoutType.FlowHorizontal)
 			{
-				handleScroll1(forceUpdate);
+				var enterCounter:int = 0;
+				while(handleScroll1(forceUpdate))
+				{
+					enterCounter++;
+					forceUpdate = false;
+					if(enterCounter>20)
+					{
+						trace("FairyGUI: list will never be filled as the item renderer function always returns a different size.");
+						break;
+					}
+				}
 				handleArchOrder1();
 			}
 			else if (_layout == ListLayoutType.SingleRow || _layout == ListLayoutType.FlowVertical)
 			{
-				handleScroll2(forceUpdate);
+				enterCounter = 0;
+				while(handleScroll2(forceUpdate))
+				{
+					enterCounter++;
+					forceUpdate = false;
+					if(enterCounter>20)
+					{
+						trace("FairyGUI: list will never be filled as the item renderer function always returns a different size.");
+						break;
+					}
+				}
 				handleArchOrder2();
 			}
 			else
@@ -1650,15 +1657,8 @@ package fairygui
 		
 		private static var pos_param:Number;
 		
-		private function handleScroll1(forceUpdate:Boolean):void
+		private function handleScroll1(forceUpdate:Boolean):Boolean
 		{
-			enterCounter++;
-			if (enterCounter > 3)
-			{
-				trace("FairyGUI: list will never be filled as the item renderer function always returns a different size.");
-				return;
-			}
-
 			var pos:Number = _scrollPane.scrollingPosY;
 			var max:Number = pos + _scrollPane.viewHeight;
 			var end:Boolean = max == _scrollPane.contentHeight;//这个标志表示当前需要滚动到最末，无论内容变化大小
@@ -1668,14 +1668,14 @@ package fairygui
 			var newFirstIndex:int = getIndexOnPos1(forceUpdate);
 			pos = GList.pos_param;
 			if (newFirstIndex == _firstIndex && !forceUpdate)
-				return;
+				return false;
 
 			var oldFirstIndex:int = _firstIndex;
 			_firstIndex = newFirstIndex;
 			var curIndex:int = newFirstIndex;
 			var forward:Boolean = oldFirstIndex > newFirstIndex;
-			var oldCount:int = this.numChildren;
-			var lastIndex:int = oldFirstIndex + oldCount - 1;
+			var childCount:int = this.numChildren;
+			var lastIndex:int = oldFirstIndex + childCount - 1;
 			var reuseIndex:int = forward ? lastIndex : oldFirstIndex;
 			var curX:Number = 0, curY:Number = pos;
 			var needRender:Boolean;
@@ -1803,7 +1803,7 @@ package fairygui
 				curIndex++;
 			}
 			
-			for (i = 0; i < oldCount; i++)
+			for (i = 0; i < childCount; i++)
 			{
 				ii = _virtualItems[oldFirstIndex + i];
 				if (ii.updateFlag != itemInfoVer && ii.obj != null)
@@ -1815,22 +1815,25 @@ package fairygui
 				}
 			}
 			
+			childCount = _children.length;
+			for (i = 0; i < childCount; i++)
+			{
+				var obj:GObject = _virtualItems[newFirstIndex + i].obj;
+				if (_children[i] != obj)
+					setChildIndex(obj, i);
+			}
+			
 			if (deltaSize != 0 || firstItemDeltaSize != 0)
 				_scrollPane.changeContentSizeOnScrolling(0, deltaSize, 0, firstItemDeltaSize);
 			
 			if (curIndex > 0 && this.numChildren > 0 && _container.y < 0 && getChildAt(0).y > -_container.y)//最后一页没填满！
-				handleScroll1(false);
+				return true;
+			else
+				return false;
 		}
 		
-		private function handleScroll2(forceUpdate:Boolean):void
+		private function handleScroll2(forceUpdate:Boolean):Boolean
 		{
-			enterCounter++;
-			if (enterCounter > 3)
-			{
-				trace("FairyGUI: list will never be filled as the item renderer function always returns a different size.");
-				return;
-			}
-			
 			var pos:Number = _scrollPane.scrollingPosX;
 			var max:Number = pos + _scrollPane.viewWidth;
 			var end:Boolean = pos == _scrollPane.contentWidth;//这个标志表示当前需要滚动到最末，无论内容变化大小
@@ -1840,14 +1843,14 @@ package fairygui
 			var newFirstIndex:int = getIndexOnPos2(forceUpdate);
 			pos = GList.pos_param;
 			if (newFirstIndex == _firstIndex && !forceUpdate)
-				return;
+				return false;
 			
 			var oldFirstIndex:int = _firstIndex;
 			_firstIndex = newFirstIndex;
 			var curIndex:int = newFirstIndex;
 			var forward:Boolean = oldFirstIndex > newFirstIndex;
-			var oldCount:int = this.numChildren;
-			var lastIndex:int = oldFirstIndex + oldCount - 1;
+			var childCount:int = this.numChildren;
+			var lastIndex:int = oldFirstIndex + childCount - 1;
 			var reuseIndex:int = forward ? lastIndex : oldFirstIndex;
 			var curX:Number = pos, curY:Number = 0;
 			var needRender:Boolean;
@@ -1974,7 +1977,7 @@ package fairygui
 				curIndex++;
 			}
 			
-			for (i = 0; i < oldCount; i++)
+			for (i = 0; i < childCount; i++)
 			{
 				ii = _virtualItems[oldFirstIndex + i];
 				if (ii.updateFlag != itemInfoVer && ii.obj != null)
@@ -1986,11 +1989,21 @@ package fairygui
 				}
 			}
 			
+			childCount = _children.length;
+			for (i = 0; i < childCount; i++)
+			{
+				var obj:GObject = _virtualItems[newFirstIndex + i].obj;
+				if (_children[i] != obj)
+					setChildIndex(obj, i);
+			}
+			
 			if (deltaSize != 0 || firstItemDeltaSize != 0)
 				_scrollPane.changeContentSizeOnScrolling(deltaSize, 0, firstItemDeltaSize, 0);
 			
 			if (curIndex > 0 && this.numChildren > 0 && _container.x < 0 && getChildAt(0).x > - _container.x)//最后一页没填满！
-				handleScroll2(false);
+				return true;
+			else
+				return false;
 		}
 		
 		private function handleScroll3(forceUpdate:Boolean):void
@@ -2493,6 +2506,15 @@ package fairygui
 						if (foldInvisibleItems && !child.visible)
 							continue;
 						
+						if (j==0 && (_lineCount != 0 && k >= _lineCount
+							|| _lineCount == 0 && curY + child.height > viewHeight))
+						{
+							//new page
+							page++;
+							curY = 0;
+							k = 0;
+						}
+						
 						lineSize += child.sourceWidth;
 						j++;
 						if (j == _columnCount || i == cnt - 1)
@@ -2528,15 +2550,6 @@ package fairygui
 							lineSize = 0;
 							
 							k++;
-							
-							if (_lineCount != 0 && k >= _lineCount
-								|| _lineCount == 0 && curY + child.height > viewHeight)
-							{
-								//new page
-								page++;
-								curY = 0;
-								k = 0;
-							}
 						}
 					}
 				}
@@ -2737,6 +2750,23 @@ package fairygui
 					str = cxml.@selectedIcon;
 					if(str && (obj is GButton))
 						GButton(obj).selectedIcon = str;
+					str = cxml.@selectedTitle;
+					if(str && (obj is GButton))
+						GButton(obj).selectedTitle = str;
+					if(obj is GComponent)
+					{
+						str = cxml.@controllers;
+						if(str)
+						{
+							arr = str.split(",");
+							for(var j:int=0;j<arr.length;j+=2)
+							{
+								var cc:Controller = GComponent(obj).getController(arr[j]);
+								if(cc!=null)
+									cc.selectedPageId = arr[j+1];
+							}
+						}
+					}
 				}
 			}
 		}

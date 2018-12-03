@@ -41,16 +41,41 @@ package fairygui
 		
 		final public function get frame():int
 		{
-			return _movieClip.currentFrame;
+			return _movieClip.frame;
 		}
 		
 		public function set frame(value:int):void
 		{
-			if(_movieClip.currentFrame!=value)
+			if(_movieClip.frame!=value)
 			{
-				_movieClip.currentFrame = value;
+				_movieClip.frame = value;
 				updateGear(5);
 			}
+		}
+		
+		final public function get timeScale():Number
+		{
+			return _movieClip.timeScale;
+		}
+		
+		public function set timeScale(value:Number):void
+		{
+			_movieClip.timeScale = value;
+		}
+		
+		public function rewind():void
+		{
+			_movieClip.rewind();
+		}
+		
+		public function syncStatus(anotherMc:GMovieClip):void
+		{
+			_movieClip.syncStatus(anotherMc._movieClip);
+		}
+		
+		public function advance(timeInMiniseconds:int):void
+		{
+			_movieClip.advance(timeInMiniseconds);
 		}
 		
 		//从start帧开始，播放到end帧（-1表示结尾），重复times次（0表示无限循环），循环结束后，停止在endAt帧（-1表示参数end）
@@ -123,7 +148,7 @@ package fairygui
 			var str:String;
 			str = xml.@frame;
 			if(str)
-				_movieClip.currentFrame = parseInt(str);
+				_movieClip.frame = parseInt(str);
 			str = xml.@playing;
 			_movieClip.playing = str!= "false";
 			str = xml.@color;
