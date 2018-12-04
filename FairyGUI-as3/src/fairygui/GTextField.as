@@ -42,11 +42,11 @@ package fairygui
 		protected var _shadowOffset:Point;
 		protected var _textFilters:Array;
 		protected var _templateVars:Object;
-
+		
 		protected var _textField:TextField;
 		protected var _bitmap:UIImage;
 		protected var _bitmapData:BitmapData;
-
+		
 		protected var _updatingSize:Boolean;
 		protected var _requireRender:Boolean;
 		protected var _sizeDirty:Boolean;
@@ -132,7 +132,7 @@ package fairygui
 			_requireRender = false;
 			_bitmapFont = null;
 		}
-
+		
 		override public function set text(value:String):void
 		{
 			_text = value;
@@ -252,7 +252,7 @@ package fairygui
 				updateTextFormat();
 			}
 		}
-
+		
 		final public function get underline():Boolean
 		{
 			return _underline;
@@ -509,7 +509,7 @@ package fairygui
 			else
 				_textField.text = value;
 		}
-
+		
 		protected function renderNow():void
 		{
 			_requireRender = false;
@@ -530,7 +530,7 @@ package fairygui
 			h = Math.max(_height, int(_textFormat.size));
 			if(h!=_textField.height)
 				_textField.height = h;
-
+			
 			if(truncationText)
 			{
 				getTxt(_text);
@@ -541,7 +541,7 @@ package fairygui
 				else
 					_textField.text = _text;
 			}
-						_textField.defaultTextFormat = _textFormat;
+			_textField.defaultTextFormat = _textFormat;
 			_maxFontSize = int(_textFormat.size);
 			
 			var text2:String = _text;
@@ -561,10 +561,10 @@ package fairygui
 				}
 				_textHeight += 4;
 			}
-
+			
 			if(_widthAutoSize)
 				w = _textWidth;
-
+			
 			if(_heightAutoSize)
 				h = _textHeight;
 			else
@@ -575,7 +575,7 @@ package fairygui
 				_textHeight = h;
 			
 			_textField.height = _textHeight + _fontAdjustment + 3;
-
+			
 			_updatingSize = true;
 			this.setSize(w,h);
 			_updatingSize = false;
@@ -623,7 +623,8 @@ package fairygui
 			}
 		}
 		
-private function renderWithBitmapFont(updateBounds:Boolean):voidprivate function renderWithBitmapFont():void		{
+		private function renderWithBitmapFont():void	
+		{
 			switchBitmapMode(true);
 			
 			if(!_lines)
@@ -700,7 +701,7 @@ private function renderWithBitmapFont(updateBounds:Boolean):voidprivate function
 						wordEnd = lineWidth;
 					wordChars = 0;
 				}
-
+				
 				if(cc==32) //space
 				{
 					glyphWidth = Math.ceil(_fontSize/2);
@@ -1007,7 +1008,7 @@ private function renderWithBitmapFont(updateBounds:Boolean):voidprivate function
 		override public function setup_beforeAdd(xml:XML):void
 		{
 			super.setup_beforeAdd(xml);
-
+			
 			var str:String;
 			var arr:Array;
 			
@@ -1018,7 +1019,7 @@ private function renderWithBitmapFont(updateBounds:Boolean):voidprivate function
 			str = xml.@fontSize;
 			if(str)
 				_fontSize = parseInt(str);
-
+			
 			str = xml.@color;
 			if(str)
 				_color = ToolSet.convertFromHtmlColor(str);
@@ -1051,7 +1052,7 @@ private function renderWithBitmapFont(updateBounds:Boolean):voidprivate function
 				_heightAutoSize = _autoSize==AutoSizeType.Both||_autoSize==AutoSizeType.Height;
 				updateAutoSize();
 			}
-
+			
 			_underline = xml.@underline == "true";
 			_italic = xml.@italic == "true";
 			_bold = xml.@bold == "true";
@@ -1096,7 +1097,7 @@ private function renderWithBitmapFont(updateBounds:Boolean):voidprivate function
 			var str:String = xml.@text;
 			if(str)
 				this.text = str;
-
+			
 			_sizeDirty = false;
 		}
 		
