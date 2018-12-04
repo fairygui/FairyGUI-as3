@@ -890,6 +890,7 @@ package fairygui
 					item.loading++;
 				}else//加载 外部文件
 				{
+					frame.rect.setEmpty();
 					var url:String;
 					url=ManagerSkin.assetsHead+item.owner.name+item.path+str;
 					MassLoaderManager.getInstance().loadBMD(url,1,new Handler(loadedHandler,[item,frame]),null,new Handler(errorHandler,[item]));
@@ -927,8 +928,6 @@ package fairygui
 						}
 					}
 				}
-				else
-					frame.rect.setEmpty();
 			}
 		}
 		

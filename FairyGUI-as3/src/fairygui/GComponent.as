@@ -12,9 +12,13 @@ package fairygui
 	import fairygui.utils.GTimers;
 	import fairygui.utils.PixelHitTest;
 	import fairygui.utils.PixelHitTestData;
+	
+	import ktv.inter.IChangLang;
+	import ktv.message.local.UIEvent;
+	import ktv.message.local.UIEventDispatcher;
 
 	[Event(name = "dropEvent", type = "fairygui.event.DropEvent")]
-	public class GComponent extends GObject
+	public class GComponent extends GObject implements IChangLang
 	{
 		private var _sortingChildCount:int;
 		private var _opaque:Boolean;
@@ -35,6 +39,90 @@ package fairygui
 		internal var _container:Sprite;
 		internal var _scrollPane:ScrollPane;
 		internal var _alignOffset:Point;
+		private var _translateText:Boolean=false;
+		
+		public function get translateText():Boolean
+		{
+			return _translateText;
+		}
+		
+		/**
+		 *是否   翻译文本
+		 * @param value
+		 *
+		 */
+		public function set translateText(value:Boolean):void
+		{
+			_translateText=value;
+			if (_translateText)
+			{
+				UIEventDispatcher.getInstance().addEventListener(UIEvent.CHANGE_LANG, changeLang);
+			}
+			else
+			{
+				UIEventDispatcher.getInstance().removeEventListener(UIEvent.CHANGE_LANG, changeLang);
+			}
+		}
+		
+		/**
+		 *循环调用子级  都 设置/取消 翻译
+		 * @param obj
+		 *
+		 */
+		public function setTranslate(obj:GComponent):void
+		{
+			if (!obj._children)
+				return;
+			for (var i:int=0; i < obj._children.length; i++)
+			{
+				var chind:GComponent=obj._children[i] as GComponent;
+				if (chind)
+				{
+					chind.translateText=translateText;
+					if (chind._children.length)
+					{
+						setTranslate(chind);
+					}
+				}
+			}
+		}
+		
+		public function changeSkin(event:UIEvent):void
+		{
+			
+		}
+		
+		public function changeLang(event:UIEvent):void
+		{
+			setChildLang(this);
+		}
+		
+		private function setChildLang(obj:GComponent):void
+		{
+			if (!obj || !obj.packageItem || !obj.packageItem.displayList)
+			{
+				return;
+			}
+			var xml:XML=obj.packageItem.owner.getComponentData(packageItem);
+			var displayList:Vector.<DisplayListItem>=obj.packageItem.displayList;
+			var childCount:int=displayList.length;
+			var i:int;
+			var di:DisplayListItem;
+			var child:GObject;
+			for (i=0; i < childCount; i++)
+			{
+				if(i<obj._children.length)
+					child=obj._children[i];
+				if(child)
+				{
+					di=displayList[i];
+					child.setLang(di.desc);
+					//检测是否还有 子级   循环调用212
+					setChildLang(child as GComponent);
+				}
+			}
+		}
+		
 		
 		public function GComponent():void
 		{
@@ -51,6 +139,9 @@ package fairygui
 			_rootContainer.mouseEnabled = false;
 			setDisplayObject(_rootContainer);			
 			_container = _rootContainer;
+			
+			translateText=true;
+			setTranslate(this);
 		}
 		
 		public override function dispose():void
@@ -78,6 +169,8 @@ package fairygui
 			
 			_boundsChanged = false;
 			super.dispose();
+			
+			translateText=false;
 		}
 		
 		final public function get displayListContainer():DisplayObjectContainer
@@ -358,6 +451,30 @@ package fairygui
 				}
 
 				setBoundsChangedFlag();
+			}
+			
+			if (packageItem)
+			{
+				var oldIndex:int=-1;
+				var di:DisplayListItem;
+				for (i=0; i < packageItem.displayList.length; i++)
+				{
+					di=packageItem.displayList[i];
+					if (child.packageItem === di.packageItem) //查找 与child 对应的  DisplayListItem
+					{
+						child.packageItem=di.packageItem;
+						oldIndex=i;
+						break;
+					}
+				}
+				if (oldIndex == -1)
+				{
+					trace("没有找到child对应的PackageItem");
+				}
+				//交换index
+				packageItem.displayList.splice(oldIndex, 1); //删除之前index
+				packageItem.displayList.splice(index, 0, di);
+				trace("交换packageItem.displayList");
 			}
 			
 			return index;
