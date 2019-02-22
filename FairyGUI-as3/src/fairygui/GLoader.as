@@ -15,6 +15,8 @@ package fairygui
 	import fairygui.display.MovieClip;
 	import fairygui.display.UISprite;
 	import fairygui.utils.ToolSet;
+	import fairygui.gears.IAnimationGear;
+	import fairygui.gears.IColorGear;
 
 	public class GLoader extends GObject implements IColorGear, IAnimationGear
 	{

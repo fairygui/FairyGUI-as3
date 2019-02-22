@@ -1,13 +1,14 @@
-package fairygui
+package fairygui.gears
 {
 	import fairygui.tween.GTween;
 	import fairygui.tween.GTweener;
+	import fairygui.GObject;
+	import fairygui.UIPackage;
 
 	public class GearLook extends GearBase
 	{
 		private var _storage:Object;
 		private var _default:GearLookValue;
-		private var _tweener:GTweener;
 		
 		public function GearLook(owner:GObject)
 		{
@@ -49,19 +50,19 @@ package fairygui
 			if(!gv)
 				gv = _default;
 			
-			if(_tween && !UIPackage._constructing && !disableAllTweenEffect)
+			if(_tweenConfig != null && _tweenConfig.tween && !UIPackage._constructing && !disableAllTweenEffect)
 			{
 				_owner._gearLocked = true;
 				_owner.grayed = gv.grayed;
 				_owner.touchable = gv.touchable;
 				_owner._gearLocked = false;
 				
-				if (_tweener != null)
+				if (_tweenConfig._tweener != null)
 				{
-					if (_tweener.endValue.x != gv.alpha || _tweener.endValue.y != gv.rotation)
+					if (_tweenConfig._tweener.endValue.x != gv.alpha || _tweenConfig._tweener.endValue.y != gv.rotation)
 					{
-						_tweener.kill(true);
-						_tweener = null;
+						_tweenConfig._tweener.kill(true);
+						_tweenConfig._tweener = null;
 					}
 					else
 						return;
@@ -72,11 +73,11 @@ package fairygui
 				if(a || b)
 				{
 					if(_owner.checkGearController(0, _controller))
-						_displayLockToken = _owner.addDisplayLock();
+						_tweenConfig._displayLockToken = _owner.addDisplayLock();
 					
-					_tweener = GTween.to2(_owner.alpha, _owner.rotation, gv.alpha, gv.rotation, _tweenTime)
-						.setDelay(_delay)
-						.setEase(_easeType)
+					_tweenConfig._tweener = GTween.to2(_owner.alpha, _owner.rotation, gv.alpha, gv.rotation, _tweenConfig.duration)
+						.setDelay(_tweenConfig.delay)
+						.setEase(_tweenConfig.easeType)
 						.setUserData((a ? 1 : 0) + (b ? 2 : 0))
 						.setTarget(this)
 						.onUpdate(__tweenUpdate)
@@ -107,12 +108,12 @@ package fairygui
 		
 		private function __tweenComplete():void
 		{
-			if(_displayLockToken!=0)
+			if(_tweenConfig._displayLockToken!=0)
 			{
-				_owner.releaseDisplayLock(_displayLockToken);
-				_displayLockToken = 0;
+				_owner.releaseDisplayLock(_tweenConfig._displayLockToken);
+				_tweenConfig._displayLockToken = 0;
 			}
-			_tweener = null;
+			_tweenConfig._tweener = null;
 		}
 		
 		override public function updateState():void

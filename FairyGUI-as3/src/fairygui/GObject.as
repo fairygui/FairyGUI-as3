@@ -19,6 +19,15 @@ package fairygui
 	import fairygui.event.DragEvent;
 	import fairygui.event.GTouchEvent;
 	import fairygui.event.IBubbleEvent;
+	import fairygui.gears.GearAnimation;
+	import fairygui.gears.GearBase;
+	import fairygui.gears.GearColor;
+	import fairygui.gears.GearDisplay;
+	import fairygui.gears.GearIcon;
+	import fairygui.gears.GearLook;
+	import fairygui.gears.GearSize;
+	import fairygui.gears.GearText;
+	import fairygui.gears.GearXY;
 	import fairygui.utils.ColorMatrix;
 	import fairygui.utils.GTimers;
 	import fairygui.utils.SimpleDispatcher;
@@ -67,6 +76,7 @@ package fairygui
 		private var _tooltips:String;
 		private var _pixelSnapping:Boolean;
 		private var _data:Object;
+		private var _disposed:Boolean;
 		
 		private var _relations:Relations;
 		private var _group:GGroup;
@@ -87,8 +97,8 @@ package fairygui
 		internal var _id:String;
 		internal var _name:String;
 		internal var _underConstruct:Boolean;
-		internal var _gearLocked:Boolean;
 		internal var _sizePercentInGroup:Number;
+		public var _gearLocked:Boolean;
 		
 		internal static var _gInstanceCounter:uint;
 		
@@ -792,18 +802,18 @@ package fairygui
 				gear.updateState();
 		}
 		
-		internal function checkGearController(index:int, c:Controller):Boolean
+		public function checkGearController(index:int, c:Controller):Boolean
 		{
 			return _gears[index] != null && _gears[index].controller==c;
 		}
 		
-		internal function updateGearFromRelations(index:int, dx:Number, dy:Number):void
+		public function updateGearFromRelations(index:int, dx:Number, dy:Number):void
 		{
 			if (_gears[index] != null)
 				_gears[index].updateFromRelations(dx, dy);
 		}
 		
-		internal function addDisplayLock():uint
+		public function addDisplayLock():uint
 		{
 			var gearDisplay:GearDisplay = GearDisplay(_gears[0]);
 			if(gearDisplay && gearDisplay.controller)
@@ -817,7 +827,7 @@ package fairygui
 				return 0;
 		}
 		
-		internal function releaseDisplayLock(token:uint):void
+		public function releaseDisplayLock(token:uint):void
 		{
 			var gearDisplay:GearDisplay = GearDisplay(_gears[0]);
 			if(gearDisplay && gearDisplay.controller)
@@ -1005,10 +1015,25 @@ package fairygui
 		{
 		}
 		
+		public function get isDisposed():Boolean
+		{
+			return _disposed;
+		}
+		
 		public function dispose():void
 		{
+			if(_disposed)
+				return;
+			
+			_disposed = true;
 			removeFromParent();
 			_relations.dispose();
+			for (var i:int = 0; i < 8; i++)
+			{
+				var gear:GearBase = _gears[i];
+				if (gear != null)
+					gear.dispose();
+			}
 		}
 
 		public function addClickListener(listener:Function):void

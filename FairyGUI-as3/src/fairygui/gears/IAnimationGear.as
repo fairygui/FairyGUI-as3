@@ -1,4 +1,4 @@
-package fairygui
+package fairygui.gears
 {
 	public interface IAnimationGear
 	{

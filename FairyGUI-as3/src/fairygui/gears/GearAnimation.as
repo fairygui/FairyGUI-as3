@@ -1,5 +1,7 @@
-package fairygui
+package fairygui.gears
 {
+	import fairygui.GObject;
+
 	public class GearAnimation extends GearBase
 	{
 		private var _storage:Object;

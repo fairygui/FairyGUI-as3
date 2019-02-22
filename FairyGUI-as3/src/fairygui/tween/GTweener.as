@@ -243,6 +243,7 @@ package fairygui.tween
 			_valueSize = 1;
 			_startValue.x = start;
 			_endValue.x = end;
+			_value.x = start;
 			_duration = duration;
 			return this;
 		}
@@ -254,6 +255,8 @@ package fairygui.tween
 			_endValue.x = end;
 			_startValue.y = start2;
 			_endValue.y = end2;
+			_value.x = start;
+			_value.y = start2;
 			_duration = duration;
 			return this;
 		}
@@ -268,6 +271,9 @@ package fairygui.tween
 			_endValue.y = end2;
 			_startValue.z = start3;
 			_endValue.z = end3;
+			_value.x = start;
+			_value.y = start2;
+			_value.z = start3;
 			_duration = duration;
 			return this;
 		}
@@ -284,6 +290,10 @@ package fairygui.tween
 			_endValue.z = end3;
 			_startValue.w = start4;
 			_endValue.w = end4;
+			_value.x = start;
+			_value.y = start2;
+			_value.z = start3;
+			_value.w = start4;
 			_duration = duration;
 			return this;
 		}
@@ -293,6 +303,7 @@ package fairygui.tween
 			_valueSize = 4;
 			_startValue.color = start; 
 			_endValue.color = end;
+			_value.color = start;
 			_duration = duration;
 			return this;
 		}
@@ -336,7 +347,7 @@ package fairygui.tween
 		}
 		
 		internal function _update(dt:Number):void
-		{
+		{			
 			if (_timeScale != 1)
 				dt *= _timeScale;
 			if (dt == 0)

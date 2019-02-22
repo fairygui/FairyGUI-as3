@@ -1,26 +1,29 @@
-package fairygui
+package fairygui.gears
 {
 	import fairygui.tween.EaseType;
+	import fairygui.Controller;
+	import fairygui.GObject;
 
 	public class GearBase
 	{
 		public static var disableAllTweenEffect:Boolean = false;
-		
-		protected var _tween:Boolean;
-		protected var _easeType:int;
-		protected var _tweenTime:Number;
-		protected var _delay:Number;
-		protected var _displayLockToken:uint;
-		
+
 		protected var _owner:GObject;
 		protected var _controller:Controller;
+		protected var _tweenConfig:GearTweenConfig;
 		
 		public function GearBase(owner:GObject)
 		{
 			_owner = owner;
-			_easeType = EaseType.QuadOut;
-			_tweenTime = 0.3;
-			_delay = 0;
+		}
+		
+		public function dispose():void
+		{
+			if (_tweenConfig != null && _tweenConfig._tweener != null)
+			{
+				_tweenConfig._tweener.kill();
+				_tweenConfig._tweener = null;
+			}
 		}
 
 		final public function get controller():Controller
@@ -37,45 +40,12 @@ package fairygui
 					init();
 			}
 		}
-
-		final public function get tween():Boolean
-		{
-			return _tween;
-		}
 		
-		public function set tween(val:Boolean):void
+		public function get tweenConfig():GearTweenConfig
 		{
-			_tween = val;
-		}
-		
-		final public function get tweenTime():Number
-		{
-			return _tweenTime;
-		}
-		
-		public function set tweenTime(value:Number):void
-		{
-			_tweenTime = value;
-		}
-		
-		final public function get delay():Number
-		{
-			return _delay;
-		}
-		
-		public function set delay(value:Number):void
-		{
-			_delay = value;
-		}
-		
-		final public function get easeType():int
-		{
-			return _easeType;
-		}
-		
-		public function set easeType(value:int):void
-		{
-			_easeType = value;
+			if (_tweenConfig == null)
+				_tweenConfig = new GearTweenConfig();
+			return _tweenConfig;
 		}
 		
 		public function setup(xml:XML):void
@@ -90,19 +60,18 @@ package fairygui
 
 			str = xml.@tween;
 			if(str)
-				_tween = true;
-
-			str = xml.@ease;
-			if(str)
-				_easeType = EaseType.parseEaseType(str);
-			
-			str = xml.@duration;
-			if(str)
-				_tweenTime = parseFloat(str);
-			
-			str = xml.@delay;
-			if(str)
-				_delay = parseFloat(str);
+			{
+				_tweenConfig = new GearTweenConfig();
+				str = xml.@ease;
+				if(str)
+					_tweenConfig.easeType = EaseType.parseEaseType(str);
+				str = xml.@duration;
+				if(str)
+					_tweenConfig.duration = parseFloat(str);
+				str = xml.@delay;
+				if(str)
+					_tweenConfig.delay = parseFloat(str);
+			}
 			
 			if(this is GearDisplay)
 			{

@@ -1,15 +1,16 @@
-package fairygui
+package fairygui.gears
 {
 	import flash.geom.Point;
 	
 	import fairygui.tween.GTween;
 	import fairygui.tween.GTweener;
+	import fairygui.GObject;
+	import fairygui.UIPackage;
 	
 	public class GearXY extends GearBase
 	{
 		private var _storage:Object;
 		private var _default:Point;
-		private var _tweener:GTweener;
 		
 		public function GearXY(owner:GObject)
 		{
@@ -46,14 +47,14 @@ package fairygui
 			if(!pt)
 				pt = _default;
 
-			if(_tween && !UIPackage._constructing && !disableAllTweenEffect)
+			if(_tweenConfig != null && _tweenConfig.tween && !UIPackage._constructing && !disableAllTweenEffect)
 			{
-				if (_tweener != null)
+				if (_tweenConfig._tweener != null)
 				{
-					if (_tweener.endValue.x != pt.x || _tweener.endValue.y != pt.y)
+					if (_tweenConfig._tweener.endValue.x != pt.x || _tweenConfig._tweener.endValue.y != pt.y)
 					{
-						_tweener.kill(true);
-						_tweener = null;
+						_tweenConfig._tweener.kill(true);
+						_tweenConfig._tweener = null;
 					}
 					else
 						return;
@@ -62,11 +63,11 @@ package fairygui
 				if (_owner.x != pt.x || _owner.y != pt.y)
 				{
 					if(_owner.checkGearController(0, _controller))
-						_displayLockToken = _owner.addDisplayLock();
+						_tweenConfig._displayLockToken = _owner.addDisplayLock();
 					
-					_tweener = GTween.to2(_owner.x, _owner.y, pt.x, pt.y, _tweenTime)
-						.setDelay(_delay)
-						.setEase(_easeType)
+					_tweenConfig._tweener = GTween.to2(_owner.x, _owner.y, pt.x, pt.y, _tweenConfig.duration)
+						.setDelay(_tweenConfig.delay)
+						.setEase(_tweenConfig.easeType)
 						.setTarget(this)
 						.onUpdate(__tweenUpdate)
 						.onComplete(__tweenComplete);
@@ -89,12 +90,12 @@ package fairygui
 		
 		private function __tweenComplete():void
 		{
-			if(_displayLockToken!=0)
+			if(_tweenConfig._displayLockToken!=0)
 			{
-				_owner.releaseDisplayLock(_displayLockToken);
-				_displayLockToken = 0;
+				_owner.releaseDisplayLock(_tweenConfig._displayLockToken);
+				_tweenConfig._displayLockToken = 0;
 			}
-			_tweener = null;
+			_tweenConfig._tweener = null;
 		}
 		
 		override public function updateState():void

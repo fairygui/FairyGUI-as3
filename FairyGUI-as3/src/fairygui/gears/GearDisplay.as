@@ -1,11 +1,13 @@
-package fairygui
+package fairygui.gears
 {
+	import fairygui.GObject;
 
 	public class GearDisplay extends GearBase
 	{
 		public var pages:Array;
 
 		private var _visible:int;
+		private var _displayLockToken:uint;
 		
 		public function GearDisplay(owner:GObject)
 		{

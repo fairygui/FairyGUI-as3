@@ -8,6 +8,7 @@ package fairygui
 	
 	import fairygui.display.UISprite;
 	import fairygui.utils.ToolSet;
+	import fairygui.gears.IColorGear;
 	
 	public class GGraph extends GObject implements IColorGear
 	{

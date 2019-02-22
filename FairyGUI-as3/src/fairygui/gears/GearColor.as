@@ -1,14 +1,15 @@
-package fairygui
+package fairygui.gears
 {
 	import fairygui.tween.GTween;
 	import fairygui.tween.GTweener;
 	import fairygui.utils.ToolSet;
+	import fairygui.GObject;
+	import fairygui.UIPackage;
 
 	public class GearColor extends GearBase
 	{
 		private var _storage:Object;
 		private var _default:GearColorValue;
-		private var _tweener:GTweener;
 		
 		public function GearColor(owner:GObject)
 		{
@@ -57,7 +58,7 @@ package fairygui
 			if(!gv)
 				gv = _default;
 			
-			if(_tween && !UIPackage._constructing && !disableAllTweenEffect)
+			if(_tweenConfig != null && _tweenConfig.tween && !UIPackage._constructing && !disableAllTweenEffect)
 			{
 				if((_owner is ITextColorGear) && gv.strokeColor!=0xFF000000)
 				{
@@ -66,12 +67,12 @@ package fairygui
 					_owner._gearLocked = false;
 				}
 				
-				if (_tweener != null)
+				if (_tweenConfig._tweener != null)
 				{
-					if (_tweener.endValue.color != gv.color)
+					if (_tweenConfig._tweener.endValue.color != gv.color)
 					{
-						_tweener.kill(true);
-						_tweener = null;
+						_tweenConfig._tweener.kill(true);
+						_tweenConfig._tweener = null;
 					}
 					else
 						return;
@@ -80,11 +81,11 @@ package fairygui
 				if (IColorGear(_owner).color != gv.color)
 				{
 					if (_owner.checkGearController(0, _controller))
-						_displayLockToken = _owner.addDisplayLock();
+						_tweenConfig._displayLockToken = _owner.addDisplayLock();
 					
-					_tweener = GTween.toColor(IColorGear(_owner).color, gv.color, _tweenTime)
-						.setDelay(_delay)
-						.setEase(_easeType)
+					_tweenConfig._tweener = GTween.toColor(IColorGear(_owner).color, gv.color, _tweenConfig.duration)
+						.setDelay(_tweenConfig.delay)
+						.setEase(_tweenConfig.easeType)
 						.setTarget(this)
 						.onUpdate(__tweenUpdate)
 						.onComplete(__tweenComplete);
@@ -109,12 +110,12 @@ package fairygui
 		
 		private function __tweenComplete():void
 		{
-			if(_displayLockToken!=0)
+			if(_tweenConfig._displayLockToken!=0)
 			{
-				_owner.releaseDisplayLock(_displayLockToken);
-				_displayLockToken = 0;
+				_owner.releaseDisplayLock(_tweenConfig._displayLockToken);
+				_tweenConfig._displayLockToken = 0;
 			}
-			_tweener = null;
+			_tweenConfig._tweener = null;
 		}
 		
 		override public function updateState():void

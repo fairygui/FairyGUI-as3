@@ -7,6 +7,7 @@ package fairygui
 	
 	import fairygui.display.UIImage;
 	import fairygui.utils.ToolSet;
+	import fairygui.gears.IColorGear;
 
 	public class GImage extends GObject implements IColorGear
 	{

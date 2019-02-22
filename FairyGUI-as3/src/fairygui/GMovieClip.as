@@ -5,6 +5,8 @@ package fairygui
 	
 	import fairygui.display.UIMovieClip;
 	import fairygui.utils.ToolSet;
+	import fairygui.gears.IAnimationGear;
+	import fairygui.gears.IColorGear;
 	
 	public class GMovieClip extends GObject implements IAnimationGear, IColorGear
 	{	

@@ -9,6 +9,7 @@ package fairygui
 	import fairygui.event.StateChangeEvent;
 	import fairygui.utils.GTimers;
 	import fairygui.utils.ToolSet;
+	import fairygui.gears.IColorGear;
 	
 	[Event(name = "stateChanged", type = "fairygui.event.StateChangeEvent")]
 	public class GButton extends GComponent

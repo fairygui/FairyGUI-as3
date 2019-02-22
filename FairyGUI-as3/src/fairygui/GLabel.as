@@ -1,6 +1,7 @@
 package fairygui
 {
 	import fairygui.utils.ToolSet;
+	import fairygui.gears.IColorGear;
 	
 	public class GLabel extends GComponent implements IColorGear
 	{

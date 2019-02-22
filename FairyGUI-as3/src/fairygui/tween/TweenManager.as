@@ -4,6 +4,8 @@ package fairygui.tween
 	import flash.events.TimerEvent;
 	import flash.utils.Timer;
 	import flash.utils.getTimer;
+	
+	import fairygui.GObject;
 
 	public class TweenManager
 	{
@@ -130,7 +132,9 @@ package fairygui.tween
 				}
 				else
 				{
-					if(!tweener._paused)
+					if ((tweener._target is GObject) && GObject(tweener._target).isDisposed)
+						tweener._killed = true;
+					else if(!tweener._paused)
 						tweener._update(dt);
 					
 					if (freePosStart != -1)

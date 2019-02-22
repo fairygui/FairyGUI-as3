@@ -30,7 +30,7 @@ package fairygui
 		
 		private var _reader:IUIPackageReader;
 		
-		internal static var _constructing:int;
+		public static var _constructing:int;
 		
 		private static var _packageInstById:Object = {};
 		private static var _packageInstByName:Object = {};

@@ -5,6 +5,7 @@ package fairygui
 	import flash.display.Sprite;
 	
 	import fairygui.display.UISprite;
+	import fairygui.gears.IAnimationGear;
 	
 	public class GSwfObject extends GObject implements IAnimationGear
 	{

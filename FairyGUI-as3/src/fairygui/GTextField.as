@@ -15,6 +15,7 @@ package fairygui
 	import fairygui.utils.FontUtils;
 	import fairygui.utils.GTimers;
 	import fairygui.utils.ToolSet;
+	import fairygui.gears.ITextColorGear;
 
 	public class GTextField extends GObject implements ITextColorGear
 	{

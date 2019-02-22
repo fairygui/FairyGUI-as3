@@ -1,13 +1,14 @@
-package fairygui
+package fairygui.gears
 {
 	import fairygui.tween.GTween;
 	import fairygui.tween.GTweener;
+	import fairygui.GObject;
+	import fairygui.UIPackage;
 
 	public class GearSize extends GearBase
 	{
 		private var _storage:Object;
 		private var _default:GearSizeValue;
-		private var _tweener:GTweener;
 		
 		public function GearSize(owner:GObject)
 		{
@@ -49,15 +50,15 @@ package fairygui
 			if(!gv)
 				gv = _default;
 
-			if(_tween && !UIPackage._constructing && !disableAllTweenEffect)
+			if(_tweenConfig != null && _tweenConfig.tween && !UIPackage._constructing && !disableAllTweenEffect)
 			{
-				if (_tweener != null)
+				if (_tweenConfig._tweener != null)
 				{
-					if (_tweener.endValue.x != gv.width || _tweener.endValue.y != gv.height
-						|| _tweener.endValue.z != gv.scaleX || _tweener.endValue.w != gv.scaleY)
+					if (_tweenConfig._tweener.endValue.x != gv.width || _tweenConfig._tweener.endValue.y != gv.height
+						|| _tweenConfig._tweener.endValue.z != gv.scaleX || _tweenConfig._tweener.endValue.w != gv.scaleY)
 					{
-						_tweener.kill(true);
-						_tweener = null;
+						_tweenConfig._tweener.kill(true);
+						_tweenConfig._tweener = null;
 					}
 					else
 						return;
@@ -68,11 +69,11 @@ package fairygui
 				if(a || b)
 				{
 					if(_owner.checkGearController(0, _controller))
-						_displayLockToken = _owner.addDisplayLock();
+						_tweenConfig._displayLockToken = _owner.addDisplayLock();
 					
-					_tweener = GTween.to4(_owner.width,_owner.height,_owner.scaleX, _owner.scaleY, gv.width,gv.height,gv.scaleX, gv.scaleY, _tweenTime)
-						.setDelay(_delay)
-						.setEase(_easeType)
+					_tweenConfig._tweener = GTween.to4(_owner.width,_owner.height,_owner.scaleX, _owner.scaleY, gv.width,gv.height,gv.scaleX, gv.scaleY, _tweenConfig.duration)
+						.setDelay(_tweenConfig.delay)
+						.setEase(_tweenConfig.easeType)
 						.setUserData((a ? 1 : 0) + (b ? 2 : 0))
 						.setTarget(this)
 						.onUpdate(__tweenUpdate)
@@ -101,12 +102,12 @@ package fairygui
 		
 		private function __tweenComplete():void
 		{
-			if(_displayLockToken!=0)
+			if(_tweenConfig._displayLockToken!=0)
 			{
-				_owner.releaseDisplayLock(_displayLockToken);
-				_displayLockToken = 0;
+				_owner.releaseDisplayLock(_tweenConfig._displayLockToken);
+				_tweenConfig._displayLockToken = 0;
 			}
-			_tweener = null;
+			_tweenConfig._tweener = null;
 		}
 		
 		override public function updateState():void
