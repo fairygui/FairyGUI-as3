@@ -9,11 +9,12 @@ package fairygui
 	[Event(name = "stateChanged", type = "fairygui.event.StateChangeEvent")]
 	public class GSlider extends GComponent
 	{
+		public static const BAR_MOUSE_UP:String = "BAR_MOUSE_UP";
 		private var _max:int;
 		private var _value:int;
 		private var _titleType:int;
 		private var _reverse:Boolean;
-
+		
 		private var _titleObject:GTextField;
 		private var _barObjectH:GObject;
 		private var _barObjectV:GObject;
@@ -28,7 +29,7 @@ package fairygui
 		private var _barStartY:int;
 		
 		public var changeOnClick:Boolean = true;
-
+		
 		/**是否可拖动开关**/
 		public var canDrag:Boolean = true;
 		/**
@@ -43,13 +44,13 @@ package fairygui
 		public function GSlider()
 		{
 			super();
-
+			
 			_titleType = ProgressTitleType.Percent;
 			_value = 50;
 			_max = 100;
 			_clickPos = new Point();
 		}
-
+		
 		final public function get titleType():int
 		{
 			return _titleType;
@@ -180,27 +181,24 @@ package fairygui
 			}
 			
 			addEventListener(GTouchEvent.BEGIN, __barMouseDown);
+			addEventListener(GTouchEvent.END, __gripMouseUp);
 		}
 		
 		protected function __gripMouseUp(event:GTouchEvent):void
 		{
-			if(isAutoHide)
+			if(isAutoHide && _titleObject)
 			{
 				GTimers.inst.remove(hideTxt);
 				GTimers.inst.add(500,1,hideTxt);
 			}
 			
-			if(isMoveSendEvent)
-			{
-				dispatchEvent(new StateChangeEvent(StateChangeEvent.CHANGED));
-			}
+			dispatchEvent(new StateChangeEvent(GSlider.BAR_MOUSE_UP));
 		}
 		
 		private function hideTxt():void
 		{
 			GTimers.inst.remove(hideTxt);
-			if(_titleObject)
-				_titleObject.visible=false;
+			_titleObject.visible=false;
 		}
 		
 		override protected function handleSizeChanged():void
@@ -227,7 +225,7 @@ package fairygui
 			}
 			
 			update();
-			if(isAutoHide)
+			if(isAutoHide && _titleObject)
 			{
 				hideTxt();
 			}
@@ -272,10 +270,7 @@ package fairygui
 			if(newValue!=_value)
 			{
 				_value = newValue;
-				if(isMoveSendEvent)
-				{
-					dispatchEvent(new StateChangeEvent(StateChangeEvent.CHANGED));
-				}
+				dispatchEvent(new StateChangeEvent(StateChangeEvent.CHANGED));
 			}
 			updateWidthPercent(percent);
 		}
@@ -309,7 +304,7 @@ package fairygui
 			updateWidthPercent(percent);
 			if(_titleObject)
 				_titleObject.visible=true;
-			if(isAutoHide)
+			if(isAutoHide && _titleObject)
 			{
 				GTimers.inst.remove(hideTxt);
 				GTimers.inst.add(500,1,hideTxt);

@@ -12,7 +12,6 @@ package fairygui
 	import fairygui.text.BMGlyph;
 	import fairygui.text.BitmapFont;
 	import fairygui.utils.CharSize;
-	import fairygui.utils.FontUtils;
 	import fairygui.utils.GTimers;
 	import fairygui.utils.ToolSet;
 	
@@ -76,8 +75,11 @@ package fairygui
 		/**
 		 *是否需要截断文本 
 		 */
-		public var truncationText:Boolean=false;
-		
+		public var substringText:Boolean=false;
+		/**
+		 *是否使用 嵌入字体  默认 true 
+		 */		
+		public var embedFonts:Boolean=true;
 		
 		
 		public function GTextField()
@@ -440,7 +442,10 @@ package fairygui
 				else
 					_textFormat.font = UIConfig.defaultFont;
 				
-				_textFormat.font=ManagerFont.setFontHandler(text,[_textFormat.font]);
+				if(embedFonts)
+				{
+					_textFormat.font=ManagerFont.setFontHandler(text,[_textFormat.font]);
+				}
 				var charSize:Object = CharSize.getSize(int(_textFormat.size), _textFormat.font, _bold);
 				_fontAdjustment = charSize.yIndent;
 			}
@@ -458,7 +463,8 @@ package fairygui
 			
 			_textField.defaultTextFormat = _textFormat;
 			//			_textField.embedFonts = FontUtils.isEmbeddedFont(_textFormat);
-			_textField.embedFonts =ManagerFont.embedFont;
+			_textField.embedFonts =(embedFonts&&ManagerFont.embedFont);
+			
 			
 			if(!_underConstruct)
 				render();
@@ -531,7 +537,7 @@ package fairygui
 			if(h!=_textField.height)
 				_textField.height = h;
 			
-			if(truncationText)
+			if(substringText && _templateVars==null)// 有模板 字符串时 不截断
 			{
 				getTxt(_text);
 			}else
@@ -546,8 +552,10 @@ package fairygui
 			
 			var text2:String = _text;
 			if (_templateVars != null)
+			{
 				text2 = parseTemplate(text2);
-			updateTextFieldText(text2);
+				updateTextFieldText(text2);
+			}
 			
 			_textWidth = Math.ceil(_textField.textWidth);
 			if(_textWidth>0)
@@ -621,6 +629,11 @@ package fairygui
 			{
 				_textField.htmlText=value;
 			}
+		}
+		
+		public function get sourceText():String
+		{
+			return _textField.text;
 		}
 		
 		private function renderWithBitmapFont():void	

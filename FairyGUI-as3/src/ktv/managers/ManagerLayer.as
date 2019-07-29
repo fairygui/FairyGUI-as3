@@ -36,6 +36,12 @@ package ktv.managers
 		 */
 		public static const LAYER_COVRE:String="layer_cover";
 		private var layer_cover:GComponent=new GComponent();
+		
+		/**
+		 * 进度加载页	4
+		 */
+		public static const LAYER_PROGRESS:String="layer_progress";
+		private var layer_progress:GComponent=new GComponent();
 
 		public function ManagerLayer()
 		{
@@ -48,6 +54,7 @@ package ktv.managers
 			GRoot.inst.addChild(layer_panel);
 			GRoot.inst.addChild(layer_dialog);
 			GRoot.inst.addChild(layer_cover);
+			GRoot.inst.addChild(layer_progress);
 		}
 
 		/**
@@ -119,14 +126,11 @@ package ktv.managers
 		public function dispose():void
 		{
 			layer_bg.removeChildren(0,-1,true);
-			layer_bg.removeFromParent();
 			layer_panel.removeChildren(0,-1,true);
-			layer_panel.removeFromParent();
 			layer_dialog.removeChildren(0,-1,true);
-			layer_dialog.removeFromParent();
 			layer_cover.removeChildren(0,-1,true);
-			layer_cover.removeFromParent();
-			trace("dispose():LayerTool");
+//			layer_progress.removeChildren(0,-1,true);
+			trace("dispose():ManagerLayer");
 		}
 
 		public static function getInstance():ManagerLayer

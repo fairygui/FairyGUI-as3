@@ -31,6 +31,8 @@ package ktv.morn.core.managers
 		private var _close:TextField;
 		private var colorArray:Array=[0xff0011, 0x77ff99, 0x99ffee, 0xff22dd, 0xff2211, 0x9bd948, 0x96ff73, 0x80ff00, 0x99ffff, 0xb9ff73, 0xff794c, 0xff4c4d, 0xffbfbf, 0xffdc73, 0xbfff00, 0x99ffe5, 0xbfffff, 0xff0000, 0x00ff00, 0xff26ff];
 
+		private var sendBtn:TextField;
+
 		private var clear2:TextField;
 
 		private var copy:TextField;
@@ -42,6 +44,9 @@ package ktv.morn.core.managers
 		private var titleTextFormat:TextFormat;
 
 		private var title:TextField;
+		
+		private var hideBtn:Sprite=new Sprite();
+		private var showBtn:Sprite=new Sprite();
 		public static const BG_WIDTH:int=700;
 		public static const BG_HEIGHT:int=500;
 		private var _titleName:String="Debug";
@@ -53,6 +58,12 @@ package ktv.morn.core.managers
 		private var _type:String=TYPE_MC;
 
 		private var _moveBox:Sprite;
+		
+		/**
+		 * SendCallback(str);
+		 */		
+		public var sendCallback:Function;
+		
 
 		public function LogManager()
 		{
@@ -77,20 +88,24 @@ package ktv.morn.core.managers
 			_filter.borderColor=0xBFBFBF;
 			_filter.defaultTextFormat=new TextFormat(logFontName, txtSize);
 			_filter.addEventListener(KeyboardEvent.KEY_DOWN, onFilterKeyDown);
-			_filter.addEventListener(FocusEvent.FOCUS_OUT, onFilterFocusOut);
+//			_filter.addEventListener(FocusEvent.FOCUS_OUT, onFilterFocusOut);
 			_box.addChild(_filter);
 			//控制按钮			
+			sendBtn=createLinkButton("Send");
+			sendBtn.addEventListener(MouseEvent.CLICK, onSendClick);
+			sendBtn.x=280;
+			_box.addChild(sendBtn);
 			clear2=createLinkButton("Clear");
 			clear2.addEventListener(MouseEvent.CLICK, onClearClick);
-			clear2.x=280;
+			clear2.x=315;
 			_box.addChild(clear2);
 			_scroll=createLinkButton("Pause");
 			_scroll.addEventListener(MouseEvent.CLICK, onScrollClick);
-			_scroll.x=315;
+			_scroll.x=350;
 			_box.addChild(_scroll);
 			copy=createLinkButton("Copy");
 			copy.addEventListener(MouseEvent.CLICK, onCopyClick);
-			copy.x=350;
+			copy.x=385;
 			_box.addChild(copy);
 			//信息栏
 			_textField=new TextField();
@@ -116,6 +131,7 @@ package ktv.morn.core.managers
 			_close.addEventListener(MouseEvent.CLICK, onCloseClick);
 			_close.x=moveBox.x + moveBox.width - _close.width;
 			_box.addChildAt(_close, 3);
+			//标题
 			title=new TextField();
 			title.mouseEnabled=false;
 			title.x=copy.x + copy.width;
@@ -131,11 +147,81 @@ package ktv.morn.core.managers
 			title.defaultTextFormat=titleTextFormat;
 			title.text=titleName;
 			_box.addChild(title);
+			//隐藏箭头
+			var dragRect_8:int=30;
+			hideBtn.x=BG_WIDTH/2-dragRect_8/2;
+			hideBtn.y=BG_HEIGHT-dragRect_8;
+			hideBtn.graphics.beginFill(0xFFFFFF,0.5);
+			hideBtn.graphics.drawRect(0,0,dragRect_8,dragRect_8);
+			hideBtn.graphics.endFill();
+			hideBtn.graphics.beginFill(0xFF0000,0.7);
+			hideBtn.graphics.moveTo(dragRect_8*0.1,dragRect_8*0.7);
+			hideBtn.graphics.lineTo(dragRect_8*0.5,dragRect_8*0.3);
+			hideBtn.graphics.lineTo(dragRect_8*0.9,dragRect_8*0.7);
+			hideBtn.graphics.lineTo(dragRect_8*0.5,dragRect_8*0.6);
+			hideBtn.graphics.lineTo(dragRect_8*0.1,dragRect_8*0.7);
+			hideBtn.graphics.endFill();
+			_box.addChild(hideBtn);
+			hideBtn.addEventListener(MouseEvent.CLICK, onHideClick);
+			dragRect_8=22;
+			//显示箭头
+			showBtn.x=BG_WIDTH/2-dragRect_8/2;
+			showBtn.y=title.y+dragRect_8;
+			showBtn.graphics.beginFill(0xFFFFFF,0.5);
+			showBtn.graphics.drawRect(0,0,dragRect_8,dragRect_8);
+			showBtn.graphics.endFill();
+			showBtn.graphics.beginFill(0xFF0000,0.7);
+			showBtn.graphics.moveTo(dragRect_8*0.1,dragRect_8*0.7);
+			showBtn.graphics.lineTo(dragRect_8*0.5,dragRect_8*0.3);
+			showBtn.graphics.lineTo(dragRect_8*0.9,dragRect_8*0.7);
+			showBtn.graphics.lineTo(dragRect_8*0.5,dragRect_8*0.6);
+			showBtn.graphics.lineTo(dragRect_8*0.1,dragRect_8*0.7);
+			showBtn.graphics.endFill();
+			showBtn.scaleY=-1;
+			showBtn.visible=false;
+			_box.addChild(showBtn);
+			showBtn.addEventListener(MouseEvent.CLICK, onHideClick);
+			
 			stageWindow.addEventListener(KeyboardEvent.KEY_DOWN, onStageKeyDown);
 			addEventListener(Event.REMOVED_FROM_STAGE, removeStage);
 			addEventListener(MouseEvent.MOUSE_WHEEL, box_MOUSE_WHEEL);
 		}
-
+		
+		protected function onHideClick(event:MouseEvent):void
+		{
+			var isShow:Boolean;
+			if(event.currentTarget==hideBtn)
+			{
+				isShow=false;
+				moveBox.scaleX=0.6;
+				title.x=moveBox.x;
+				_close.x=moveBox.x + moveBox.width - _close.width;
+			}else
+			{
+				isShow=true;
+				moveBox.scaleX=1;
+				title.x=copy.x + copy.width;
+				_close.x=moveBox.x + moveBox.width - _close.width;
+			}
+			
+			_filter.visible=isShow;
+			sendBtn.visible=isShow;
+			clear2.visible=isShow;
+			_scroll.visible=isShow;
+			copy.visible=isShow;
+			
+			_textField.visible=isShow;
+			bitmapBg.visible=isShow;
+			
+			hideBtn.visible=isShow;
+			showBtn.visible=!isShow;
+		}
+		
+		protected function KeyDownHandler(event:KeyboardEvent):void
+		{
+			
+		}
+		
 		private function createBitmap(width:int, height:int, color:uint=0, alpha:Number=1):Bitmap
 		{
 			var bitmap:Bitmap=new Bitmap(new BitmapData(1, 1, false, color));
@@ -169,12 +255,15 @@ package ktv.morn.core.managers
 			_msgs.length=0;
 			_filters.length=0;
 			_filter.removeEventListener(KeyboardEvent.KEY_DOWN, onFilterKeyDown);
-			_filter.removeEventListener(FocusEvent.FOCUS_OUT, onFilterFocusOut);
+//			_filter.removeEventListener(FocusEvent.FOCUS_OUT, onFilterFocusOut);
+			sendBtn.removeEventListener(MouseEvent.CLICK, onSendClick);
 			clear2.removeEventListener(MouseEvent.CLICK, onClearClick);
 			_scroll.removeEventListener(MouseEvent.CLICK, onScrollClick);
 			copy.removeEventListener(MouseEvent.CLICK, onCopyClick);
 			_move.removeEventListener(MouseEvent.MOUSE_DOWN, onMoveDown);
 			_close.removeEventListener(MouseEvent.CLICK, onCloseClick);
+			hideBtn.removeEventListener(MouseEvent.CLICK, onHideClick);
+			showBtn.removeEventListener(MouseEvent.CLICK, onHideClick);
 			removeEventListener(Event.ADDED_TO_STAGE, onAddedToStage);
 			stage.removeEventListener(MouseEvent.MOUSE_UP, onMoveDown);
 			stage.removeEventListener(MouseEvent.MOUSE_MOVE, onMoveDown);
@@ -269,6 +358,7 @@ package ktv.morn.core.managers
 		private function onCopyClick(e:MouseEvent):void
 		{
 			System.setClipboard(_textField.text);
+			info("复制到剪切板完毕");
 		}
 
 		private function onScrollClick(e:MouseEvent):void
@@ -281,6 +371,16 @@ package ktv.morn.core.managers
 			}
 		}
 
+		private function onSendClick(e:MouseEvent):void
+		{
+			 if(_filter.text.length>0 && sendCallback!=null)
+			 {
+				 sendCallback(_filter.text);
+				 _filter.text="";
+				 _filters=[];
+			 }
+		}
+		
 		private function onClearClick(e:MouseEvent):void
 		{
 			clear();
@@ -357,7 +457,7 @@ package ktv.morn.core.managers
 			trace(type, args.join(" "));
 			if (!_box || !_box.visible)
 				return;
-			var msg:String="<font size='20' color='#" + color.toString(16) + "'><b>" + type + "</b></font><font color='#" + color.toString(16) + "'>" + args.join(" ") + "</font>";
+			var msg:String=" <font size='20' color='#" + color.toString(16) + "'><b>" + type + "</b></font><font color='#" + color.toString(16) + "'>" + args.join(" ") + "</font> \n";
 			if (_msgs.length > _maxMsg)
 			{
 				_msgs.length=0;

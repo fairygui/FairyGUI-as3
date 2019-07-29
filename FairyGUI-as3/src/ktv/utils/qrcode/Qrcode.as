@@ -4,7 +4,6 @@
 	import com.google.zxing.common.BitMatrix;
 	import com.google.zxing.qrcode.QRCodeWriter;
 	
-	import flash.display.Bitmap;
 	import flash.display.BitmapData;
 	import flash.geom.Matrix;
 	import flash.geom.Point;

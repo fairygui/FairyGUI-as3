@@ -16,7 +16,7 @@ package fairygui
 	import ktv.inter.IChangLang;
 	import ktv.message.local.UIEvent;
 	import ktv.message.local.UIEventDispatcher;
-
+	
 	[Event(name = "dropEvent", type = "fairygui.event.DropEvent")]
 	public class GComponent extends GObject implements IChangLang
 	{
@@ -188,7 +188,7 @@ package fairygui
 		{
 			if(!child)
 				throw new Error("child is null");
-
+			
 			var numChildren:int = _children.length; 
 			
 			if (index >= 0 && index <= numChildren)
@@ -222,7 +222,7 @@ package fairygui
 					childStateChanged(child);
 					setBoundsChangedFlag();
 				}
-
+				
 				return child;
 			}
 			else
@@ -230,7 +230,7 @@ package fairygui
 				throw new RangeError("Invalid child index");
 			}
 		}
-
+		
 		private function getInsertPosForSortingChild(target:GObject):int
 		{
 			var cnt:int = _children.length;
@@ -256,7 +256,7 @@ package fairygui
 			}
 			return child;
 		}
-
+		
 		public function removeChildAt(index:int, dispose:Boolean=false):GObject
 		{
 			if (index >= 0 && index < numChildren)
@@ -289,7 +289,7 @@ package fairygui
 				throw new RangeError("Invalid child index");
 			}
 		}
-
+		
 		public function removeChildren(beginIndex:int=0, endIndex:int=-1, dispose:Boolean=false):void
 		{
 			if (endIndex < 0 || endIndex >= numChildren) 
@@ -449,11 +449,11 @@ package fairygui
 				{
 					GTimers.inst.callLater(buildNativeDisplayList);
 				}
-
+				
 				setBoundsChangedFlag();
 			}
 			
-			if (packageItem)
+			if (packageItem&&packageItem.displayList&&packageItem.displayList.length)
 			{
 				var oldIndex:int=-1;
 				var di:DisplayListItem;
@@ -472,8 +472,9 @@ package fairygui
 					trace("没有找到child对应的PackageItem");
 				}
 				//交换index
-				packageItem.displayList.splice(oldIndex, 1); //删除之前index
-				packageItem.displayList.splice(index, 0, di);
+				packageItem.displayList.splice(oldIndex, 1,di); //删除之前index
+				//				packageItem.displayList.splice(oldIndex, 1); //删除之前index
+				//				packageItem.displayList.splice(index, 0, di);
 				trace("交换packageItem.displayList");
 			}
 			
@@ -493,11 +494,11 @@ package fairygui
 		{
 			var child1:GObject = _children[index1];
 			var child2:GObject = _children[index2];
-
+			
 			setChildIndex(child1, index2);
 			setChildIndex(child2, index1);
 		}
-
+		
 		final public function get numChildren():int 
 		{ 
 			return _children.length; 
@@ -518,7 +519,7 @@ package fairygui
 			}
 			return false;
 		}
-
+		
 		public function addController(controller:Controller):void
 		{
 			_controllers.push(controller);
@@ -554,7 +555,7 @@ package fairygui
 			_controllers.splice(index,1);
 			
 			for each(var child:GObject in _children)
-				child.handleControllerChanged(c);
+			child.handleControllerChanged(c);
 		}
 		
 		final public function get controllers():Vector.<Controller>
@@ -648,41 +649,41 @@ package fairygui
 			switch (_childrenRenderOrder)
 			{
 				case ChildrenRenderOrder.Ascent:
+				{
+					for (i = 0; i < cnt; i++)
 					{
-						for (i = 0; i < cnt; i++)
-						{
-							child = _children[i];
-							if (child.displayObject != null && child.internalVisible)
-								_container.addChild(child.displayObject);
-						}
+						child = _children[i];
+						if (child.displayObject != null && child.internalVisible)
+							_container.addChild(child.displayObject);
 					}
+				}
 					break;
 				case ChildrenRenderOrder.Descent:
+				{
+					for (i = cnt - 1; i >= 0; i--)
 					{
-						for (i = cnt - 1; i >= 0; i--)
-						{
-							child = _children[i];
-							if (child.displayObject != null && child.internalVisible)
-								_container.addChild(child.displayObject);
-						}
+						child = _children[i];
+						if (child.displayObject != null && child.internalVisible)
+							_container.addChild(child.displayObject);
 					}
+				}
 					break;
 				
 				case ChildrenRenderOrder.Arch:
+				{
+					for (i = 0; i < _apexIndex; i++)
 					{
-						for (i = 0; i < _apexIndex; i++)
-						{
-							child = _children[i];
-							if (child.displayObject != null && child.internalVisible)
-								_container.addChild(child.displayObject);
-						}
-						for (i = cnt - 1; i >= _apexIndex; i--)
-						{
-							child = _children[i];
-							if (child.displayObject != null && child.internalVisible)
-								_container.addChild(child.displayObject);
-						}
+						child = _children[i];
+						if (child.displayObject != null && child.internalVisible)
+							_container.addChild(child.displayObject);
 					}
+					for (i = cnt - 1; i >= _apexIndex; i--)
+					{
+						child = _children[i];
+						if (child.displayObject != null && child.internalVisible)
+							_container.addChild(child.displayObject);
+					}
+				}
 					break;
 			}
 		}
@@ -815,7 +816,7 @@ package fairygui
 		{
 			if(_rootContainer.hitArea!=null)
 				_rootContainer.removeChild(_rootContainer.hitArea);
-
+			
 			_hitArea = value;
 			if(_hitArea!=null)
 			{
@@ -901,7 +902,7 @@ package fairygui
 				w = 1;
 			if(h==0)
 				h = 1;
-
+			
 			var g:Graphics = _rootContainer.graphics;
 			g.clear();
 			g.lineStyle(0,0,0);
@@ -925,13 +926,13 @@ package fairygui
 		}
 		
 		protected function setupScroll(scrollBarMargin:Margin,
-										scroll:int,
-										scrollBarDisplay:int,
-										flags:int,
-										vtScrollBarRes:String,
-										hzScrollBarRes:String,
-										headerRes:String,
-										footerRes:String):void
+									   scroll:int,
+									   scrollBarDisplay:int,
+									   flags:int,
+									   vtScrollBarRes:String,
+									   hzScrollBarRes:String,
+									   headerRes:String,
+									   footerRes:String):void
 		{
 			if (_rootContainer == _container)
 			{
@@ -951,7 +952,7 @@ package fairygui
 					_container = new Sprite();
 					_rootContainer.addChild(_container);
 				}
-					
+				
 				_container.scrollRect = new Rectangle();
 				updateClipRect();
 				
@@ -1018,7 +1019,7 @@ package fairygui
 				GTimers.inst.add(0, 1, __render);
 			}
 		}
-
+		
 		private function __render():void
 		{
 			if(_boundsChanged)
@@ -1030,7 +1031,7 @@ package fairygui
 				updateBounds();
 			}
 		}
-
+		
 		public function ensureBoundsCorrect():void
 		{
 			for each(var child:GObject in _children)
@@ -1050,7 +1051,7 @@ package fairygui
 				ax = int.MAX_VALUE, ay = int.MAX_VALUE;
 				var ar:int = int.MIN_VALUE, ab:int = int.MIN_VALUE;
 				var tmp:int;
-	
+				
 				for each(var child:GObject in _children)
 				{
 					tmp = child.x;
@@ -1083,7 +1084,7 @@ package fairygui
 		protected function setBounds(ax:int, ay:int, aw:int, ah:int):void
 		{
 			_boundsChanged = false;
-
+			
 			if(_scrollPane)
 				_scrollPane.setContentSize(Math.round(ax+aw),  Math.round(ay+ah));
 		}
@@ -1347,7 +1348,7 @@ package fairygui
 				controller._parent = this;
 				controller.setup(cxml);
 			}
-
+			
 			var child:GObject;			
 			var displayList:Vector.<DisplayListItem> = packageItem.displayList;
 			var childCount:int = displayList.length;
@@ -1389,7 +1390,7 @@ package fairygui
 			str = xml.@mask;
 			if(str)
 				this.mask = getChildById(str).displayObject;
-
+			
 			col = xml.transition;
 			var trans:Transition;
 			for each(cxml in col)
@@ -1415,12 +1416,12 @@ package fairygui
 			
 			constructFromXML(xml);
 		}
-
+		
 		protected function constructFromXML(xml:XML):void
 		{
 			
 		}
-
+		
 		override public function setup_afterAdd(xml:XML):void
 		{
 			super.setup_afterAdd(xml);

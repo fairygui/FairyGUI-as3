@@ -36,9 +36,9 @@ package ktv.message.socket
 		private var loopByte:ByteArray;
 		private var socketMessage:SocketMessage;
 		/**
-		 *是否包含发送消息的长度 
+		 *flash 发送消息的长度  前面是否 加载 消息的长度     1000{send:2} 
 		 */		
-		public var isHasByteHeadLength:Boolean=true;
+		public var isHasByteHeadLength:Boolean=false;
 		
 		public function SocketManager()
 		{
@@ -100,14 +100,15 @@ package ktv.message.socket
 		{
 			timer.stop();
 			timer.reset();
-			LogManager.log.info("socket连接成功!");
+			LogManager.log.info("socket 连接成功!");
 			sendEvent(SocketEvent.SOCKET_CONNECTED);
 		}
 
 		protected function timerRun(event:TimerEvent):void
 		{
 			socketConnect();
-			LogManager.log.error("持续连接socket	次数:" + timer.currentCount);
+			if(timer.currentCount>10 && timer.currentCount%10!=0 ) return;
+//			LogManager.log.error("持续连接socket	次数:" + timer.currentCount);
 		}
 
 		protected function socketClose(event:Event):void
@@ -123,13 +124,13 @@ package ktv.message.socket
 
 		protected function security_error(event:SecurityErrorEvent):void
 		{
-			LogManager.log.error("socket连接错误" + event.type + event.toString());
+//			LogManager.log.error("socket连接错误" + event.type + event.toString());
 			timer.start();
 		}
 
 		protected function io_error(event:IOErrorEvent):void
 		{
-			LogManager.log.error("socket连接错误" + event.type);
+//			LogManager.log.error("socket连接错误" + event.type);
 			timer.start();
 		}
 
@@ -138,7 +139,8 @@ package ktv.message.socket
 			var tempByte:ByteArray=new ByteArray();
 			socket.readBytes(tempByte);
 			var testMessage:String=tempByte.readUTFBytes(tempByte.length);
-			if(testMessage.indexOf(messageHead.toString()) != -1)//查找发来的数据是否含有消息头
+			
+			if(testMessage.substr(0,messageHead.length)==messageHead.toString())//查找发来的数据是否含有-测试消息头
 			{
 				testMessage=testMessage.replace(messageHead,"");
 				var tempAry:Array=testMessage.split(messageHead);

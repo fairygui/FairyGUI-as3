@@ -10,6 +10,10 @@ package ktv.managers
 
 	public class Interface
 	{
+		/**
+		 *发送数据后的回调 可以在这里侦听 发送模拟数据 
+		 */		
+		public static var SendCallback:Function;
 		public static var isSocket:Boolean=false;
 		public static function sendPfAndPid(pf:String,pid:String=""):void
 		{
@@ -17,7 +21,7 @@ package ktv.managers
 			if(isSocket)
 			{
 				var obj:Object={pf:pf,pid:pid};
-				sendObj(obj);
+				sendStr(JSON.stringify(obj));
 			}else
 			{
 				LogManager.log.send("pf:"+pf+" pid:"+pid);
@@ -28,19 +32,36 @@ package ktv.managers
 			}
 		}
 		public static var messageHeader:String="";
+		private static function sendStr(str:String):void
+		{
+			if(str)
+			{
+				if(isSocket)
+				{
+					SocketManager.getInstance().sendMessage(messageHeader+str);
+				}
+				else//本地发送  本地接受
+				{
+					LogManager.log.send(str);
+					UIEventDispatcher.sendEvent(UIEvent.LOACL_MESSAGE,str);
+				}
+			}
+		}
+		
 		public static function sendObj(obj:Object):void
 		{
 			if(obj)
 			{
-				if(isSocket)
+				if(obj is String)
 				{
-					SocketManager.getInstance().sendMessage(messageHeader+JSON.stringify(obj));
+					sendStr(String(obj));
+				}else
+				{
+					sendStr(JSON.stringify(obj));
 				}
-				else//本地发送  本地接受
+				if(SendCallback)
 				{
-					var str:String=JSON.stringify(obj);
-					LogManager.log.send(str);
-					UIEventDispatcher.sendEvent(UIEvent.LOACL_MESSAGE,str);
+					SendCallback(obj);
 				}
 			}
 		}

@@ -1565,6 +1565,21 @@ package fairygui
 			}
 		}
 		
+		public function get disabled():Boolean
+		{
+			return _touchable;
+		}
+		/**
+		 *禁用 透明度变成  0.3 
+		 * @param value
+		 * 
+		 */		
+		public function set disabled(value:Boolean):void
+		{
+			this.alpha=value?0.3:1;
+			this.touchable = !value;
+		}
+		
 		//touch support
 		//-------------------------------------------------------------------
 		private var _touchPointId:int;

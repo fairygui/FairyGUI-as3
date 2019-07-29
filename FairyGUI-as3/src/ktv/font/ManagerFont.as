@@ -115,11 +115,11 @@ package ktv.font
 			LoaderInfo(e.currentTarget).removeEventListener(Event.COMPLETE, completeHandler);
 			LoaderInfo(e.currentTarget).removeEventListener(IOErrorEvent.IO_ERROR,iOError);
 			dispatchEvent(new Event(FONT_ERROR));
-			trace("字体加载路径错误:"+fontURLAry[crtLoadIndex]);
+			trace("字体加载路径错误:["+fontURLAry[crtLoadIndex]+"]");
 			crtLoadIndex++;
 			loadFont(fontURLAry);
 		}
- 
+		
 		/**
 		 * 注册要使用的内嵌字体
 		 */		
@@ -169,7 +169,7 @@ package ktv.font
 			ArrEmbedFonts=tempFontAry;
 			for ( i= 0; i < ArrEmbedFonts.length; i++) 
 			{
-				trace("字体Font顺序"+i+":"+Font(ArrEmbedFonts[i]).fontName);
+				trace("字体Font顺序["+i+"]:["+Font(ArrEmbedFonts[i]).fontName+"]");
 			}
 			
 		}
@@ -213,7 +213,8 @@ package ktv.font
 				for (var i:int = 0; i < fontAry.length; i++)
 				{
 					var tempFont:Font=fontAry[i];
-					if(tempFont.hasGlyphs(str)) //  按照字体数组中的列表 进行选择   优先使用默认字体 
+					//  按照字体数组中的列表 进行选择   优先使用默认字体 
+					if(tempFont.hasGlyphs(trimSpace(str)))// 去掉空白字符 (含有换行符  会导致为false )
 					{
 						ManagerFont.embedFont=true;
 						fontName=tempFont.fontName;
@@ -236,5 +237,11 @@ package ktv.font
 			return fontName;
 		}
 		
+		private static function trimSpace(str:String):String 
+		{
+			var pattern:RegExp = /\r|\n|\r\n/g;
+			var pattern1:RegExp = /\t|\n\t/g;
+			return str.replace(pattern, "").replace(pattern1," ");
+		}
 	}
 }

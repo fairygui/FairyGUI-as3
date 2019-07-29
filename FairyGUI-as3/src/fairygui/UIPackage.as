@@ -790,7 +790,7 @@ package fairygui
 			}else//加载 外部文件
 			{
 				var url:String=ManagerSkin.assetsHead+pi.url;
-				MassLoaderManager.getInstance().loadBMD(url,1,new Handler(loadedHandler,[pi]),null,new Handler(errorHandler,[pi]));
+				MassLoaderManager.getInstance().loadSWF(url,1,new Handler(loadedHandler,[pi]),null,new Handler(errorHandler,[pi]));
 				function loadedHandler(pi:PackageItem,content:*):void
 				{
 					var callback:Function = pi.callbacks.pop();
@@ -818,7 +818,7 @@ package fairygui
 						{
 							ary[index]="skin0";//使用默认的皮肤
 							var tempURL:String=ary.join("/");
-							MassLoaderManager.getInstance().loadBMD(tempURL,1,new Handler(loadedHandler,[pi]),null,new Handler(errorHandler));
+							MassLoaderManager.getInstance().loadSWF(tempURL,1,new Handler(loadedHandler,[pi]),null,new Handler(errorHandler));
 						}
 					}
 				}

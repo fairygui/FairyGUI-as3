@@ -2,13 +2,14 @@ package ktv.message.local
 {
 	import flash.events.EventDispatcher;
 
-	[Event(name="UIEvent.CHANGE_BG", type="ktv.message.local.UIEvent")]
-	[Event(name="UIEvent.CHANGE_SKIN", type="ktv.message.local.UIEvent")]
-	[Event(name="UIEvent.CHANGE_LANG", type="ktv.message.local.UIEvent")]
-	[Event(name="UIEvent.LOACL_MESSAGE", type="ktv.message.local.UIEvent")]
-	[Event(name="UIEvent.IMAGE_COMPLETE", type="ktv.message.local.UIEvent")]
-	[Event(name="UIEvent.IMAGE_ERROR", type="ktv.message.local.UIEvent")]
-	[Event(name="UIEvent.CHANGE_PAGE", type="ktv.message.local.UIEvent")]
+	[Event(name="CHANGE_BG", type="ktv.message.local.UIEvent")]
+	[Event(name="CHANGE_SKIN", type="ktv.message.local.UIEvent")]
+	[Event(name="CHANGE_LANG", type="ktv.message.local.UIEvent")]
+	[Event(name="LOACL_MESSAGE", type="ktv.message.local.UIEvent")]
+	[Event(name="IMAGE_COMPLETE", type="ktv.message.local.UIEvent")]
+	[Event(name="IMAGE_ERROR", type="ktv.message.local.UIEvent")]
+	[Event(name="CHANGE_PAGE", type="ktv.message.local.UIEvent")]
+	[Event(name="LOAD_PROGRESS", type="ktv.message.local.UIEvent")]
 	public class UIEventDispatcher extends EventDispatcher
 	{
 		private static var instance:UIEventDispatcher;

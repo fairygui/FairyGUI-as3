@@ -140,7 +140,8 @@ package fairygui
 		
 		public function addPageAt(name:String, index:int):void
 		{
-			var nid:String = "_"+(_nextPageId++);
+			var nid:String = "_"+(_nextPageId++);//原始的
+			nid=index+"";//2019.7.22 代码动态增加显示 关联 失效bug 修改的
 			if(index==_pageIds.length)
 			{
 				_pageIds.push(nid);

@@ -1,6 +1,6 @@
 package ktv.utils.transition
 {
-//	import com.greensock.TweenLite;
+	import com.greensock.TweenLite;
 	
 	import flash.display.DisplayObject;
 	import flash.display.MovieClip;
@@ -37,19 +37,19 @@ package ktv.utils.transition
 			switch (modes)
 			{
 				case 1:
-//					TweenLite.from(mc,0.6,{alpha:0});
+					TweenLite.from(mc,0.6,{alpha:0});
 					break;
 				case 2: 
-//					TweenLite.from(mc,0.6,{scaleX:0});
+					TweenLite.from(mc,0.6,{scaleX:0});
 					break;
 				case 3: 
-//					TweenLite.from(mc,0.6,{x:mc.width,scaleX:0});
+					TweenLite.from(mc,0.6,{x:mc.width,scaleX:0});
 					break;
 				case 4: 
-//					TweenLite.from(mc,0.6,{scaleY:0});
+					TweenLite.from(mc,0.6,{scaleY:0});
 					break;
 				case 5: 
-//					TweenLite.from(mc,0.6,{y:mc.height,scaleY:0});
+					TweenLite.from(mc,0.6,{y:mc.height,scaleY:0});
 					break;
 			}
 		}
