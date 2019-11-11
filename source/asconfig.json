@@ -1,0 +1,12 @@
+{
+	"compilerOptions": {
+		"output": "bin/FairyGUI-as3.swc",
+		"source-path": [
+			"src"
+		],
+		"include-sources": [
+			"src"
+		]
+	},
+	"type": "lib"
+}
