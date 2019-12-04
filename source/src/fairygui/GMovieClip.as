@@ -140,6 +140,8 @@ package fairygui
 			_movieClip.frames = pi.frames;
 			_movieClip.boundsRect = new Rectangle(0, 0, sourceWidth, sourceHeight);
 			_movieClip.smoothing = pi.smoothing;
+
+			handleSizeChanged();
 		}
 
 		override protected function handleSizeChanged():void
