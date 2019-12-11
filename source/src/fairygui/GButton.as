@@ -639,7 +639,7 @@ package fairygui
 				var pi:PackageItem = UIPackage.getItemByURL(_sound);
 				if(pi)
 				{
-					var sound:Sound = pi.sound;
+					var sound:Sound = pi.owner.getSound(pi);
 					if(sound)
 						GRoot.inst.playOneShotSound(sound, _soundVolumeScale);
 				}
