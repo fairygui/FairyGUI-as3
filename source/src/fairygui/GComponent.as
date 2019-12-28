@@ -1156,7 +1156,9 @@ package fairygui
 		
 		internal function constructFromResource2(objectPool:Vector.<GObject>, poolIndex:int):void
 		{
-			var xml:XML = packageItem.owner.getComponentData(packageItem);
+			var contentItem:PackageItem = packageItem.getBranch();
+
+			var xml:XML = contentItem.owner.getComponentData(contentItem);
 			
 			var str:String;
 			var arr:Array;
@@ -1266,7 +1268,7 @@ package fairygui
 			}
 
 			var child:GObject;
-			var displayList:Vector.<DisplayListItem> = packageItem.displayList;
+			var displayList:Vector.<DisplayListItem> = contentItem.displayList;
 			var childCount:int = displayList.length;
 			var i:int;
 			for (i = 0; i < childCount; i++)
@@ -1319,7 +1321,7 @@ package fairygui
 				}
 				else
 				{
-					var hitTestData:PixelHitTestData = packageItem.owner.getPixelHitTestData(arr[0]);
+					var hitTestData:PixelHitTestData = contentItem.owner.getPixelHitTestData(arr[0]);
 					if (hitTestData != null)
 						this.hitArea = new PixelHitTest(hitTestData, parseInt(arr[1]), parseInt(arr[2])).createHitAreaSprite();
 				}
