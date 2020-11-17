@@ -1578,7 +1578,7 @@ package fairygui
 			}
 		}
 		
-		private function __mousemove(evt:MouseEvent):void
+		private function __mousemove(evt:Event):void
 		{
 			if(_buttonStatus!=1
 				|| GRoot.touchPointInput && _touchPointId!=TouchEvent(evt).touchPointID)
@@ -1601,7 +1601,8 @@ package fairygui
 					return;
 			}
 
-			evt.updateAfterEvent();
+			if(evt is MouseEvent)
+				MouseEvent(evt).updateAfterEvent();
 			
 			var devt:GTouchEvent = new GTouchEvent(GTouchEvent.DRAG);
 			devt.copyFrom(evt);
